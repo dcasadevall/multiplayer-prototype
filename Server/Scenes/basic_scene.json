@@ -1,0 +1,17 @@
+[
+  {
+    "components": {
+      "PositionComponent": {
+        "x": 0,
+        "y": 1,
+        "z": 0
+      },
+      "HealthComponent": {
+        "maxHealth": 100
+      }
+    },
+    "tags": [
+      "PlayerSpawn"
+    ]
+  }
+]
