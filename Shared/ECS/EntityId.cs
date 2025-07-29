@@ -1,0 +1,14 @@
+using System;
+
+namespace Shared.ECS;
+
+/// <summary>
+/// Uniquely identifies an entity in the ECS world.
+/// </summary>
+public readonly struct EntityId
+{
+    public readonly Guid Value;
+    public EntityId(Guid value) => Value = value;
+    public static EntityId New() => new EntityId(Guid.NewGuid());
+    public override string ToString() => Value.ToString();
+}
