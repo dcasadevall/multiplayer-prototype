@@ -32,5 +32,5 @@ internal class SystemSchedule(ISystem system, int intervalMs)
     /// The last time this system was ticked (in UTC).
     /// Used to determine if the system is due for another update.
     /// </summary>
-    public DateTime LastTick { get; set; } = DateTime.UtcNow;
+    public DateTime LastTick { get; set; } = DateTime.MinValue;
 }
