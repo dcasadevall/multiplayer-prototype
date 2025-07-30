@@ -6,7 +6,7 @@ namespace Shared.ECS;
 /// Manages the lifecycle, storage, and lookup of all entities in the ECS world.
 /// 
 /// <para>
-/// The <c>EntityManager</c> is responsible for:
+/// The <c>EntityRegistry</c> is responsible for:
 /// <list type="bullet">
 ///   <item>Creating new entities with unique IDs.</item>
 ///   <item>Storing and retrieving entities by their <see cref="EntityId"/>.</item>
@@ -19,7 +19,7 @@ namespace Shared.ECS;
 /// Systems interact with the <c>EntityManager</c> to query and manipulate entities during simulation ticks.
 /// </para>
 /// </summary>
-public class EntityManager
+public class EntityRegistry
 {
     private readonly Dictionary<EntityId, Entity> _entities = new();
 

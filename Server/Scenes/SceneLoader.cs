@@ -13,14 +13,14 @@ public class EntityDescription
 
 public static class SceneLoader
 {
-    public static void Load(string path, EntityManager manager)
+    public static void Load(string path, EntityRegistry registry)
     {
         var json = File.ReadAllText(path);
         var entries = JsonSerializer.Deserialize<List<EntityDescription>>(json);
 
         foreach (var entry in entries)
         {
-            var entity = manager.CreateEntity();
+            var entity = registry.CreateEntity();
             foreach (var comp in entry.Components)
                 switch (comp.Key)
                 {

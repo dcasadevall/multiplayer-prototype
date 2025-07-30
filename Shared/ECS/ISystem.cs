@@ -13,7 +13,7 @@ namespace Shared.ECS;
 /// 
 /// <para>
 /// The ECS world calls <see cref="Update"/> for each system at its configured tick interval,
-/// passing the <see cref="EntityManager"/> and the elapsed time since the last update.
+/// passing the <see cref="EntityRegistry"/> and the elapsed time since the last update.
 /// </para>
 /// </summary>
 public interface ISystem
@@ -22,7 +22,7 @@ public interface ISystem
     /// Called by the world at each system tick.
     /// Implement logic to process relevant entities here.
     /// </summary>
-    /// <param name="manager">The entity manager for querying and manipulating entities.</param>
+    /// <param name="registry">The entity manager for querying and manipulating entities.</param>
     /// <param name="deltaTime">The time in seconds since the last update for this system.</param>
-    void Update(EntityManager manager, float deltaTime);
+    void Update(EntityRegistry registry, float deltaTime);
 }

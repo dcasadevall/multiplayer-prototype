@@ -18,10 +18,12 @@ public class WorldBuilder
 
     /// <summary>
     /// Build and return a new World instance with the configured systems.
+    /// <param name="clock">The clock used for this world.</param>
+    /// <param name="entityRegistry">The entity registry used for this world.</param>
     /// </summary>
-    public World Build()
+    public World Build(IClock clock, EntityRegistry entityRegistry)
     {
-        var world = new World(_systems);
+        var world = new World(_systems, clock, entityRegistry);
         return world;
     }
 }

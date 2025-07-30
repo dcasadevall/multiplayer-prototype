@@ -9,7 +9,7 @@ namespace Shared.ECS.Simulation;
 /// The <c>World</c> class is responsible for:
 /// <list type="bullet">
 ///   <item>Registering and managing all systems for the simulation.</item>
-///   <item>Maintaining an <see cref="EntityManager"/> for entity/component storage.</item>
+///   <item>Maintaining an <see cref="EntityRegistry"/> for entity/component storage.</item>
 ///   <item>Driving the simulation loop, ticking each system at its configured interval (using <see cref="TickRateMsAttribute"/> or a default).</item>
 ///   <item>Providing lifecycle control: <see cref="Start"/>, <see cref="Stop"/>, and <see cref="Dispose"/>.</item>
 /// </list>
@@ -24,18 +24,24 @@ namespace Shared.ECS.Simulation;
 public class World : IDisposable
 {
     private readonly List<ISystem> _systems = [];
+    private readonly IClock _clock;
+    private readonly EntityRegistry _entityRegistry;
+
     private CancellationTokenSource? _cancelTokenSource;
     private bool _isRunning;
     private int _defaultTickRateMs = 50;
     private Task? _tickTask;
-    public EntityManager EntityManager { get; } = new();
 
     /// <summary>
-    /// Initializes a new <see cref="World"/> with the given systems.
+    /// Initializes a new <see cref="World"/> with the given systems and clock.
     /// </summary>
     /// <param name="systems">The systems to register with this world.</param>
-    internal World(IEnumerable<ISystem> systems)
+    /// <param name="clock">The clock to use for ticks.</param>
+    /// <param name="entityRegistry">Registry used for managing entities in this world</param>
+    internal World(IEnumerable<ISystem> systems, IClock clock, EntityRegistry entityRegistry)
     {
+        _clock = clock;
+        _entityRegistry = entityRegistry;
         _systems.AddRange(systems);
     }
 
@@ -107,14 +113,14 @@ public class World : IDisposable
 
         while (!token.IsCancellationRequested)
         {
-            var now = DateTime.UtcNow;
+            var now = _clock.UtcNow;
 
             foreach (var s in schedules)
             {
                 var delta = (now - s.LastTick).TotalMilliseconds;
                 if (delta >= s.IntervalMs)
                 {
-                    s.System.Update(EntityManager, (float)(delta / 1000.0));
+                    s.System.Update(_entityRegistry, (float)(delta / 1000.0));
                     s.LastTick = now;
                 }
             }

@@ -1,0 +1,7 @@
+/Users/dcasadevall/Github/multiplayer-prototype/Tests/Shared/bin/Debug/net8.0/CoverletSourceRootsMapping_UnitTests
+/Users/dcasadevall/Github/multiplayer-prototype/Tests/Shared/obj/Debug/net8.0/UnitTests.csproj.AssemblyReference.cache
+/Users/dcasadevall/Github/multiplayer-prototype/Tests/Shared/obj/Debug/net8.0/UnitTests.GeneratedMSBuildEditorConfig.editorconfig
+/Users/dcasadevall/Github/multiplayer-prototype/Tests/Shared/obj/Debug/net8.0/UnitTests.AssemblyInfoInputs.cache
+/Users/dcasadevall/Github/multiplayer-prototype/Tests/Shared/obj/Debug/net8.0/UnitTests.AssemblyInfo.cs
+/Users/dcasadevall/Github/multiplayer-prototype/Tests/Shared/obj/Debug/net8.0/UnitTests.csproj.CoreCompileInputs.cache
+/Users/dcasadevall/Github/multiplayer-prototype/Tests/Shared/obj/Debug/net8.0/UnitTests.sourcelink.json

@@ -10,7 +10,7 @@ public class ReplicationSystem : ISystem
         typeof(ReplicatedEntity)
     ];
 
-    public void Update(EntityManager manager, float deltaTime)
+    public void Update(EntityRegistry registry, float deltaTime)
     {
         throw new NotImplementedException();
     }
