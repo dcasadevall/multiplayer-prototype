@@ -1,5 +1,6 @@
 using Shared.ECS;
 using Shared.ECS.Simulation;
+using Shared.Scheduling;
 using Xunit;
 
 namespace SharedUnitTests.ECS.Simulation;
@@ -18,14 +19,28 @@ public class WorldTests
         }
     }
 
-    [TickRateMs(100)]
-    private class SlowSystem : TestSystem
-    {
-    }
+    [TickInterval(5)]
+    private class SlowSystem : TestSystem { }
 
-    [TickRateMs(20)]
-    private class TwentyMsSystem : TestSystem
+    [TickInterval(1)]
+    private class FastSystem : TestSystem { }
+
+    /// <summary>
+    /// A mock scheduler that allows manual ticking for deterministic tests.
+    /// </summary>
+    private class MockScheduler : IScheduler
     {
+        public Action? TickAction { get; private set; }
+        public IDisposable ScheduleAtFixedRate(Action task, TimeSpan initialDelay, TimeSpan period, CancellationToken cancellationToken = default)
+        {
+            TickAction = task;
+            return new DummyDisposable();
+        }
+
+        private class DummyDisposable : IDisposable
+        {
+            public void Dispose() { }
+        }
     }
 
     [Fact]
@@ -33,40 +48,29 @@ public class WorldTests
     {
         var clock = new MockClock(new DateTime(2024, 1, 1));
         var slow = new SlowSystem();
-        var fast = new TwentyMsSystem();
+        var fast = new FastSystem();
         var registry = new EntityRegistry();
-        var world = new World(new ISystem[] { slow, fast }, clock, registry);
+        var tickRate = TimeSpan.FromMilliseconds(20);
+        var scheduler = new MockScheduler();
+        var world = new World(new ISystem[] { slow, fast }, clock, registry, tickRate, scheduler);
 
         world.Start();
 
-        // No time advanced: nothing should tick
-        Thread.Sleep(5); // let the tick loop run
-        Assert.Equal(0, slow.TickCount);
-        Assert.Equal(0, fast.TickCount);
-
-        // Advance 20ms: fast system should tick once
-        clock.Advance(TimeSpan.FromMilliseconds(20));
-        Thread.Sleep(5);
+        for (int i = 0; i < 1; i++) scheduler.TickAction!();
         Assert.Equal(0, slow.TickCount);
         Assert.Equal(1, fast.TickCount);
 
-        // Advance another 20ms: fast ticks again, slow still not
-        clock.Advance(TimeSpan.FromMilliseconds(20));
-        Thread.Sleep(5);
+        for (int i = 0; i < 1; i++) scheduler.TickAction!();
         Assert.Equal(0, slow.TickCount);
         Assert.Equal(2, fast.TickCount);
 
-        // Advance 60ms (total 100ms): both should tick
-        clock.Advance(TimeSpan.FromMilliseconds(60));
-        Thread.Sleep(5);
-        Assert.Equal(1, slow.TickCount);
-        Assert.Equal(3, fast.TickCount);
+        for (int i = 0; i < 3; i++) scheduler.TickAction!();
+        Assert.Equal(1, slow.TickCount); // Should tick on 5th tick
+        Assert.Equal(5, fast.TickCount);
 
-        // Advance 100ms: both tick again (fast catches up)
-        clock.Advance(TimeSpan.FromMilliseconds(100));
-        Thread.Sleep(5);
-        Assert.Equal(2, slow.TickCount);
-        Assert.Equal(8, fast.TickCount);
+        for (int i = 0; i < 5; i++) scheduler.TickAction!();
+        Assert.Equal(2, slow.TickCount); // Should tick on 10th tick
+        Assert.Equal(10, fast.TickCount);
 
         world.Stop();
     }
@@ -75,19 +79,19 @@ public class WorldTests
     public void System_Receives_Correct_DeltaTime()
     {
         var clock = new MockClock(new DateTime(2024, 1, 1));
-        var twentyMsSystem = new TwentyMsSystem();
+        var fast = new FastSystem();
         var registry = new EntityRegistry();
-        var world = new World([twentyMsSystem], clock, registry);
+        var tickRate = TimeSpan.FromMilliseconds(20);
+        var scheduler = new MockScheduler();
+        var world = new World([fast], clock, registry, tickRate, scheduler);
 
         world.Start();
 
-        clock.Advance(TimeSpan.FromMilliseconds(20));
-        Thread.Sleep(1000);
-        Assert.Equal(0.02f, twentyMsSystem.LastDelta, 2);
+        scheduler.TickAction!();
+        Assert.Equal(0.02f, fast.LastDelta, 2);
 
-        clock.Advance(TimeSpan.FromMilliseconds(40));
-        Thread.Sleep(5);
-        Assert.Equal(0.04f, twentyMsSystem.LastDelta, 2);
+        scheduler.TickAction!();
+        Assert.Equal(0.02f, fast.LastDelta, 2);
 
         world.Stop();
     }

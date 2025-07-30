@@ -1,4 +1,4 @@
-namespace Shared.ECS.Simulation;
+namespace Shared.Clock;
 
 /// <summary>
 /// Abstraction for providing the current time, to allow for testable ticking.

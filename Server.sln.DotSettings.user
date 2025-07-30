@@ -4,5 +4,6 @@
 	<s:String x:Key="/Default/Environment/UnitTesting/UnitTestSessionStore/Sessions/=05716c50_002Da85e_002D491f_002D8af8_002D96cf6843221d/@EntryIndexedValue">&lt;SessionState ContinuousTestingMode="0" IsActive="True" Name="System_Receives_Correct_DeltaTime" xmlns="urn:schemas-jetbrains-com:jetbrains-ut-session"&gt;
   &lt;TestAncestor&gt;
     &lt;TestId&gt;xUnit::A1B2C3D4-E5F6-7890-ABCD-EF1234567890::net8.0::SharedUnitTests.ECS.Simulation.WorldTests.System_Receives_Correct_DeltaTime&lt;/TestId&gt;
+    &lt;TestId&gt;xUnit::A1B2C3D4-E5F6-7890-ABCD-EF1234567890::net8.0::SharedUnitTests.ECS.Simulation.WorldTests.Systems_Tick_At_Configured_Intervals&lt;/TestId&gt;
   &lt;/TestAncestor&gt;
 &lt;/SessionState&gt;</s:String></wpf:ResourceDictionary>

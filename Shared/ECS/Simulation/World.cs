@@ -1,60 +1,100 @@
-using System.Reflection;
+using Shared.Clock;
+using Shared.Scheduling;
 
 namespace Shared.ECS.Simulation;
 
 /// <summary>
-/// Represents an ECS world that manages entity and system lifecycles, and drives simulation ticks.
+/// Represents an ECS world that manages entity and system lifecycles with a fixed timestep simulation.
 /// 
 /// <para>
-/// The <c>World</c> class is responsible for:
+/// The <c>World</c> class provides:
 /// <list type="bullet">
-///   <item>Registering and managing all systems for the simulation.</item>
-///   <item>Maintaining an <see cref="EntityRegistry"/> for entity/component storage.</item>
-///   <item>Driving the simulation loop, ticking each system at its configured interval (using <see cref="TickRateMsAttribute"/> or a default).</item>
-///   <item>Providing lifecycle control: <see cref="Start"/>, <see cref="Stop"/>, and <see cref="Dispose"/>.</item>
+///   <item>Deterministic simulation with fixed timesteps</item>
+///   <item>Discrete tick indexes for unambiguous event scheduling</item>
+///   <item>System scheduling based on tick intervals rather than real time</item>
+///   <item>Lifecycle control: <see cref="Start"/>, <see cref="Stop"/>, and <see cref="Dispose"/></item>
 /// </list>
 /// </para>
 /// 
 /// <para>
-/// On <see cref="Start"/>, the world launches a background task that repeatedly checks each system's last tick time.
-/// If the elapsed time since the last tick exceeds the system's interval, the system's <c>Update</c> method is called,
-/// and the tick time is updated. This allows each system to run at its own rate, decoupled from other systems.
+/// On <see cref="Start"/>, the world launches a background task that runs at a constant rate.
+/// Each iteration is a "tick" with a fixed delta time. Systems are updated based on their
+/// <see cref="TickIntervalAttribute"/>, ensuring deterministic behavior regardless of
+/// real-world performance fluctuations.
 /// </para>
 /// </summary>
 public class World : IDisposable
 {
-    private readonly List<ISystem> _systems = [];
+    private readonly List<SystemSchedule> _scheduledSystems = [];
     private readonly IClock _clock;
+    private readonly IScheduler _scheduler;
     private readonly EntityRegistry _entityRegistry;
 
     private CancellationTokenSource? _cancelTokenSource;
+    private IDisposable? _tickDisposable;
     private bool _isRunning;
-    private int _defaultTickRateMs = 50;
-    private Task? _tickTask;
+    private uint _tickIndex;
+    private readonly float _fixedDeltaTime;
+    private readonly TimeSpan _tickRate;
 
     /// <summary>
-    /// Initializes a new <see cref="World"/> with the given systems and clock.
+    /// Gets the current tick index. This represents the number of simulation steps
+    /// that have been processed since the world started.
+    /// </summary>
+    public uint CurrentTickIndex => _tickIndex;
+
+    /// <summary>
+    /// Gets the fixed delta time used for each simulation step.
+    /// </summary>
+    public float FixedDeltaTime => _fixedDeltaTime;
+
+    /// <summary>
+    /// Gets the tick rate (time between ticks).
+    /// </summary>
+    public TimeSpan TickRate => _tickRate;
+
+    /// <summary>
+    /// Event raised when the world starts its first tick.
+    /// </summary>
+    public event Action? OnFirstTick;
+
+    /// <summary>
+    /// Event raised on each tick before systems are updated.
+    /// </summary>
+    public event Action<uint>? OnTick;
+
+    /// <summary>
+    /// Initializes a new <see cref="World"/> with the given systems and configuration.
     /// </summary>
     /// <param name="systems">The systems to register with this world.</param>
-    /// <param name="clock">The clock to use for ticks.</param>
-    /// <param name="entityRegistry">Registry used for managing entities in this world</param>
-    public World(IEnumerable<ISystem> systems, IClock clock, EntityRegistry entityRegistry)
+    /// <param name="clock">The clock to use for timing.</param>
+    /// <param name="entityRegistry">Registry used for managing entities in this world.</param>
+    /// <param name="tickRate">The time between ticks (e.g., 33ms for 30Hz).</param>
+    /// <param name="scheduler">The scheduler to use for driving ticks.</param>
+    public World(IEnumerable<ISystem> systems, 
+        IClock clock, 
+        EntityRegistry entityRegistry, 
+        TimeSpan tickRate, 
+        IScheduler scheduler)
     {
         _clock = clock;
         _entityRegistry = entityRegistry;
-        _systems.AddRange(systems);
+        _tickRate = tickRate;
+        _fixedDeltaTime = (float)tickRate.TotalSeconds;
+        _tickIndex = 0;
+        _scheduler = scheduler;
+
+        // Create scheduled systems
+        foreach (var system in systems)
+        {
+            _scheduledSystems.Add(new SystemSchedule(system));
+        }
     }
 
     /// <summary>
-    /// Starts the simulation loop for this world.
-    /// 
-    /// <para>
-    /// Launches a background task that ticks all registered systems at their configured intervals.
-    /// Each system's tick interval is determined by its <see cref="TickRateMsAttribute"/>, or the provided <paramref name="defaultTickRateMs"/> if not specified.
-    /// </para>
+    /// Starts the fixed timestep simulation loop.
     /// </summary>
-    /// <param name="defaultTickRateMs">Default tick interval (ms) for systems without a <see cref="TickRateMsAttribute"/>.</param>
-    public void Start(int defaultTickRateMs = 50)
+    public void Start()
     {
         if (_isRunning)
         {
@@ -62,8 +102,12 @@ public class World : IDisposable
         }
 
         _cancelTokenSource = new CancellationTokenSource();
-        _defaultTickRateMs = defaultTickRateMs;
-        _tickTask = Task.Run(() => TickLoop(_cancelTokenSource.Token));
+        _tickDisposable = _scheduler.ScheduleAtFixedRate(
+            Tick,
+            TimeSpan.Zero,
+            _tickRate,
+            _cancelTokenSource.Token
+        );
         _isRunning = true;
     }
 
@@ -78,7 +122,7 @@ public class World : IDisposable
         }
 
         _cancelTokenSource?.Cancel();
-        _tickTask?.Wait();
+        _tickDisposable?.Dispose();
 
         _isRunning = false;
     }
@@ -92,40 +136,34 @@ public class World : IDisposable
     }
 
     /// <summary>
-    /// The main simulation loop.
-    /// 
+    /// The main fixed timestep simulation loop.
+    ///
     /// <para>
-    /// For each registered system, tracks its last tick time and interval.
-    /// On each iteration, checks if enough time has elapsed since the last tick for each system.
-    /// If so, calls <c>Update</c> on the system, passing the elapsed time in seconds, and updates the last tick time.
-    /// This allows each system to run at its own tick rate, independent of other systems.
+    /// Runs at a constant rate, processing one simulation step per iteration.
+    /// Each step increments the tick index and updates systems that are due to run
+    /// based on their tick intervals. This ensures deterministic behavior.
     /// </para>
     /// </summary>
-    /// <param name="token">Cancellation token to stop the loop.</param>
-    private async Task TickLoop(CancellationToken token)
+    private void Tick()
     {
-        var schedules = _systems.Select(system =>
-        {
-            var attr = system.GetType().GetCustomAttribute<TickRateMsAttribute>();
-            var interval = attr?.IntervalMs ?? _defaultTickRateMs;
-            return new SystemSchedule(system, interval);
-        }).ToList();
+        _tickIndex++;
 
-        while (!token.IsCancellationRequested)
+        // Handle first tick
+        if (_tickIndex == 1)
         {
-            var now = _clock.UtcNow;
+            OnFirstTick?.Invoke();
+        }
 
-            foreach (var s in schedules)
+        // Notify tick event
+        OnTick?.Invoke(_tickIndex);
+
+        // Update systems that should run on this tick
+        foreach (var scheduledSystem in _scheduledSystems)
+        {
+            if (scheduledSystem.ShouldRun(_tickIndex))
             {
-                var delta = (now - s.LastTick).TotalMilliseconds;
-                if (delta >= s.IntervalMs)
-                {
-                    s.System.Update(_entityRegistry, (float)(delta / 1000.0));
-                    s.LastTick = now;
-                }
+                scheduledSystem.System.Update(_entityRegistry, _fixedDeltaTime);
             }
-
-            await Task.Delay(10, token);
         }
     }
 }

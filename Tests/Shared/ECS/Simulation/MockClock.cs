@@ -1,3 +1,4 @@
+using Shared.Clock;
 using Shared.ECS.Simulation;
 
 namespace SharedUnitTests.ECS.Simulation;

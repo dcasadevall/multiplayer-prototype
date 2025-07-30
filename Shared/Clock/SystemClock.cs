@@ -1,4 +1,4 @@
-namespace Shared.ECS.Simulation;
+namespace Shared.Clock;
 
 /// <summary>
 /// Default implementation of <see cref="IClock"/> that returns the real system UTC time.
