@@ -68,11 +68,11 @@ public class WorldTests
         Assert.Equal(2U, fast.TickNumber);
 
         for (int i = 0; i < 3; i++) scheduler.TickAction!();
-        Assert.Equal(1U, slow.TickNumber); // Should tick on 5th tick
+        Assert.Equal(5U, slow.TickNumber); // Should tick on 5th tick
         Assert.Equal(5U, fast.TickNumber);
 
         for (int i = 0; i < 5; i++) scheduler.TickAction!();
-        Assert.Equal(2U, slow.TickNumber); // Should tick on 10th tick
+        Assert.Equal(10U, slow.TickNumber); // Should tick on 10th tick
         Assert.Equal(10U, fast.TickNumber);
 
         world.Stop();

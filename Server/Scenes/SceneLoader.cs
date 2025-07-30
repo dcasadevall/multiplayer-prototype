@@ -1,5 +1,6 @@
 using System.Numerics;
 using System.Text.Json;
+using System.Text.Json.Serialization;
 using Shared.ECS;
 using Shared.ECS.Components;
 
@@ -7,7 +8,10 @@ namespace Server.Scenes;
 
 public class EntityDescription
 {
+    [JsonPropertyName("components")]
     public Dictionary<string, JsonElement> Components { get; set; } = new();
+    
+    [JsonPropertyName("tags")]
     public List<string> Tags { get; set; } = new();
 }
 

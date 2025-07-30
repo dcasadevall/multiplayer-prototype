@@ -183,6 +183,7 @@ public class SceneLoaderTests
             Assert.Single(entities);
 
             var entity = entities.First();
+            
             Assert.True(entity.Has<PositionComponent>());
             Assert.False(entity.Has<HealthComponent>());
 
