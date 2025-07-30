@@ -23,6 +23,7 @@ public interface ISystem
     /// Implement logic to process relevant entities here.
     /// </summary>
     /// <param name="registry">The entity manager for querying and manipulating entities.</param>
+    /// <param name="tickNumber">The current tick number in the simulation, starting from 1.</param>
     /// <param name="deltaTime">The time in seconds since the last update for this system.</param>
-    void Update(EntityRegistry registry, float deltaTime);
+    void Update(EntityRegistry registry, uint tickNumber, float deltaTime);
 }

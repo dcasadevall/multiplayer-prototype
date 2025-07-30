@@ -13,7 +13,7 @@ public class HealthSystem : ISystem
 {
     private const int HealthRegenRate = 5; // Health per 10 ticks
 
-    public void Update(EntityRegistry entityRegistry, float deltaTime)
+    public void Update(EntityRegistry entityRegistry, uint tickNumber, float deltaTime)
     {
         // Get all entities with health components
         var entities = entityRegistry.GetAll()

@@ -1,17 +1,13 @@
 using Server.ECS.Components;
 using Shared.ECS;
+using Shared.ECS.Simulation;
 
 namespace Server.ECS.Systems;
 
+[TickInterval(50)]
 public class ReplicationSystem : ISystem
 {
-    public Type[] ObservedComponents =>
-    [
-        typeof(ReplicatedEntity)
-    ];
-
-    public void Update(EntityRegistry registry, float deltaTime)
+    public void Update(EntityRegistry registry, uint tickNumber, float deltaTime)
     {
-        throw new NotImplementedException();
     }
 }

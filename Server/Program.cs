@@ -3,32 +3,19 @@ using Shared.Clock;
 using Shared.ECS;
 using Shared.ECS.Simulation;
 using Shared.ECS.Systems;
+using Shared.Scheduling;
 
 var entityRegistry = new EntityRegistry();
-var clock = new SystemClock();
+var scheduler = new TimerScheduler();
+SceneLoader.Load("Server/Scenes/basic_scene.json", entityRegistry);
 
 // Create a fixed timestep world running at 30Hz
-var world = new WorldBuilder(clock, entityRegistry)
+var world = new WorldBuilder(entityRegistry, scheduler)
     .WithFrequency(30) // 30Hz = 33.33ms per tick
+    .AddSystem(new WorldDiagnosticsSystem())
     .AddSystem(new MovementSystem())
     .AddSystem(new HealthSystem())
     .Build();
-
-// Set up first tick event to load the scene
-world.OnFirstTick += () =>
-{
-    Console.WriteLine("First tick - loading scene...");
-    SceneLoader.Load("Server/Scenes/basic_scene.json", entityRegistry);
-};
-
-// Set up tick event for monitoring
-world.OnTick += (tickIndex) =>
-{
-    if (tickIndex % 300 == 0) // Log every 10 seconds at 30Hz
-    {
-        Console.WriteLine($"Tick {tickIndex} - Entities: {entityRegistry.GetAll().Count()}");
-    }
-};
 
 Console.WriteLine("Starting fixed timestep world at 30Hz...");
 world.Start();

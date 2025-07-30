@@ -11,7 +11,7 @@ namespace Shared.ECS.Systems;
 [TickInterval(1)] // Run every tick
 public class MovementSystem : ISystem
 {
-    public void Update(EntityRegistry entityRegistry, float deltaTime)
+    public void Update(EntityRegistry entityRegistry, uint tickNumber, float deltaTime)
     {
         // Get all entities with both position and velocity components
         var entities = entityRegistry.GetAll()

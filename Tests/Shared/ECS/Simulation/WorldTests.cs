@@ -9,12 +9,12 @@ public class WorldTests
 {
     private class TestSystem : ISystem
     {
-        public int TickCount { get; private set; }
+        public uint TickNumber { get; private set; }
         public float LastDelta { get; private set; }
 
-        public void Update(EntityRegistry registry, float deltaTime)
+        public void Update(EntityRegistry registry, uint tickNumber, float deltaTime)
         {
-            TickCount++;
+            TickNumber = tickNumber;
             LastDelta = deltaTime;
         }
     }
@@ -46,31 +46,34 @@ public class WorldTests
     [Fact]
     public void Systems_Tick_At_Configured_Intervals()
     {
-        var clock = new MockClock(new DateTime(2024, 1, 1));
         var slow = new SlowSystem();
         var fast = new FastSystem();
         var registry = new EntityRegistry();
         var tickRate = TimeSpan.FromMilliseconds(20);
         var scheduler = new MockScheduler();
-        var world = new World(new ISystem[] { slow, fast }, clock, registry, tickRate, scheduler);
+        var world = new WorldBuilder(registry, scheduler)
+            .AddSystem(slow)
+            .AddSystem(fast)
+            .WithTickRate(tickRate)
+            .Build();
 
         world.Start();
 
         for (int i = 0; i < 1; i++) scheduler.TickAction!();
-        Assert.Equal(0, slow.TickCount);
-        Assert.Equal(1, fast.TickCount);
+        Assert.Equal(0U, slow.TickNumber);
+        Assert.Equal(1U, fast.TickNumber);
 
         for (int i = 0; i < 1; i++) scheduler.TickAction!();
-        Assert.Equal(0, slow.TickCount);
-        Assert.Equal(2, fast.TickCount);
+        Assert.Equal(0U, slow.TickNumber);
+        Assert.Equal(2U, fast.TickNumber);
 
         for (int i = 0; i < 3; i++) scheduler.TickAction!();
-        Assert.Equal(1, slow.TickCount); // Should tick on 5th tick
-        Assert.Equal(5, fast.TickCount);
+        Assert.Equal(1U, slow.TickNumber); // Should tick on 5th tick
+        Assert.Equal(5U, fast.TickNumber);
 
         for (int i = 0; i < 5; i++) scheduler.TickAction!();
-        Assert.Equal(2, slow.TickCount); // Should tick on 10th tick
-        Assert.Equal(10, fast.TickCount);
+        Assert.Equal(2U, slow.TickNumber); // Should tick on 10th tick
+        Assert.Equal(10U, fast.TickNumber);
 
         world.Stop();
     }
@@ -78,12 +81,14 @@ public class WorldTests
     [Fact]
     public void System_Receives_Correct_DeltaTime()
     {
-        var clock = new MockClock(new DateTime(2024, 1, 1));
         var fast = new FastSystem();
         var registry = new EntityRegistry();
         var tickRate = TimeSpan.FromMilliseconds(20);
         var scheduler = new MockScheduler();
-        var world = new World([fast], clock, registry, tickRate, scheduler);
+        var world = new WorldBuilder(registry, scheduler)
+            .AddSystem(fast)
+            .WithTickRate(tickRate)
+            .Build();
 
         world.Start();
 

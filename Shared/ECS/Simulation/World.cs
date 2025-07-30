@@ -1,4 +1,3 @@
-using Shared.Clock;
 using Shared.Scheduling;
 
 namespace Shared.ECS.Simulation;
@@ -26,14 +25,13 @@ namespace Shared.ECS.Simulation;
 public class World : IDisposable
 {
     private readonly List<SystemSchedule> _scheduledSystems = [];
-    private readonly IClock _clock;
     private readonly IScheduler _scheduler;
     private readonly EntityRegistry _entityRegistry;
 
     private CancellationTokenSource? _cancelTokenSource;
     private IDisposable? _tickDisposable;
     private bool _isRunning;
-    private uint _tickIndex;
+    private uint _tickNumber;
     private readonly float _fixedDeltaTime;
     private readonly TimeSpan _tickRate;
 
@@ -41,7 +39,7 @@ public class World : IDisposable
     /// Gets the current tick index. This represents the number of simulation steps
     /// that have been processed since the world started.
     /// </summary>
-    public uint CurrentTickIndex => _tickIndex;
+    public uint CurrentTickIndex => _tickNumber;
 
     /// <summary>
     /// Gets the fixed delta time used for each simulation step.
@@ -54,34 +52,21 @@ public class World : IDisposable
     public TimeSpan TickRate => _tickRate;
 
     /// <summary>
-    /// Event raised when the world starts its first tick.
-    /// </summary>
-    public event Action? OnFirstTick;
-
-    /// <summary>
-    /// Event raised on each tick before systems are updated.
-    /// </summary>
-    public event Action<uint>? OnTick;
-
-    /// <summary>
     /// Initializes a new <see cref="World"/> with the given systems and configuration.
     /// </summary>
     /// <param name="systems">The systems to register with this world.</param>
-    /// <param name="clock">The clock to use for timing.</param>
     /// <param name="entityRegistry">Registry used for managing entities in this world.</param>
     /// <param name="tickRate">The time between ticks (e.g., 33ms for 30Hz).</param>
     /// <param name="scheduler">The scheduler to use for driving ticks.</param>
-    public World(IEnumerable<ISystem> systems, 
-        IClock clock, 
+    internal World(IEnumerable<ISystem> systems, 
         EntityRegistry entityRegistry, 
         TimeSpan tickRate, 
         IScheduler scheduler)
     {
-        _clock = clock;
         _entityRegistry = entityRegistry;
         _tickRate = tickRate;
         _fixedDeltaTime = (float)tickRate.TotalSeconds;
-        _tickIndex = 0;
+        _tickNumber = 0;
         _scheduler = scheduler;
 
         // Create scheduled systems
@@ -146,23 +131,14 @@ public class World : IDisposable
     /// </summary>
     private void Tick()
     {
-        _tickIndex++;
-
-        // Handle first tick
-        if (_tickIndex == 1)
-        {
-            OnFirstTick?.Invoke();
-        }
-
-        // Notify tick event
-        OnTick?.Invoke(_tickIndex);
+        _tickNumber++;
 
         // Update systems that should run on this tick
         foreach (var scheduledSystem in _scheduledSystems)
         {
-            if (scheduledSystem.ShouldRun(_tickIndex))
+            if (scheduledSystem.ShouldRun(_tickNumber))
             {
-                scheduledSystem.System.Update(_entityRegistry, _fixedDeltaTime);
+                scheduledSystem.System.Update(_entityRegistry, _tickNumber, _fixedDeltaTime);
             }
         }
     }
