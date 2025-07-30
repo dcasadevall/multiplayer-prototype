@@ -4,22 +4,11 @@ namespace Shared.ECS;
 /// Represents a single entity in the ECS world.
 /// Entities are identified by an <see cref="EntityId"/> and are composed of <see cref="IComponent"/>s.
 /// </summary>
-public class Entity
+public class Entity(EntityId id)
 {
     private readonly Dictionary<Type, IComponent> _components = new();
 
-    public Entity(EntityId id)
-    {
-        Id = id;
-    }
-
-    public EntityId Id { get; }
-
-    /// <summary>
-    /// Whether the entity is replicated to clients.
-    /// On the client, this property is ignored.
-    /// </summary>
-    public bool IsReplicated { get; set; } = true;
+    public EntityId Id { get; } = id;
 
     /// <summary>
     /// Add a component to the entity.

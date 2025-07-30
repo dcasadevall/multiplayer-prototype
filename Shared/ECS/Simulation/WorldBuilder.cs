@@ -1,4 +1,4 @@
-namespace Shared.ECS;
+namespace Shared.ECS.Simulation;
 
 /// <summary>
 /// Builder for constructing a World with a set of systems.
@@ -21,8 +21,7 @@ public class WorldBuilder
     /// </summary>
     public World Build()
     {
-        var world = new World();
-        foreach (var system in _systems) world.AddSystem(system);
+        var world = new World(_systems);
         return world;
     }
 }

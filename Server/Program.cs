@@ -1,5 +1,5 @@
 ﻿using Server.Scenes;
-using Shared.ECS;
+using Shared.ECS.Simulation;
 
 var world = new WorldBuilder()
     // .AddSystem(new MovementSystem())

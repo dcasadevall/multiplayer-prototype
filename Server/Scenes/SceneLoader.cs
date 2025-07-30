@@ -1,6 +1,7 @@
 using System.Numerics;
 using System.Text.Json;
 using Shared.ECS;
+using Shared.ECS.Components;
 
 namespace Server.Scenes;
 

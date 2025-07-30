@@ -1,9 +1,9 @@
 using System.Numerics;
 
-namespace Shared.ECS;
+namespace Shared.ECS.Components;
 
 /// <summary>
-///     Stores the 3D position of an entity.
+/// Stores the 3D position of an entity.
 /// </summary>
 public class PositionComponent : IComponent
 {
