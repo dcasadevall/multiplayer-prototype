@@ -38,7 +38,7 @@ public class World : IDisposable
     /// <param name="systems">The systems to register with this world.</param>
     /// <param name="clock">The clock to use for ticks.</param>
     /// <param name="entityRegistry">Registry used for managing entities in this world</param>
-    internal World(IEnumerable<ISystem> systems, IClock clock, EntityRegistry entityRegistry)
+    public World(IEnumerable<ISystem> systems, IClock clock, EntityRegistry entityRegistry)
     {
         _clock = clock;
         _entityRegistry = entityRegistry;

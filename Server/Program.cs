@@ -4,10 +4,12 @@ using Shared.ECS.Simulation;
 
 var entityRegistry = new EntityRegistry();
 var clock = new SystemClock();
-var world = new WorldBuilder()
-    // .AddSystem(new MovementSystem())
-    // .AddSystem(new HealthSystem())
-    .Build(clock, entityRegistry);
+var systems = new List<ISystem>
+{
+    // new MovementSystem(),
+    // new HealthSystem()
+};
+var world = new World(systems, clock, entityRegistry);
 
 SceneLoader.Load("Server/Scenes/basic_scene.json", entityRegistry);
 world.Start();
