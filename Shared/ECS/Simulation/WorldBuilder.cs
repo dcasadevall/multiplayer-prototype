@@ -1,4 +1,5 @@
 using Shared.Clock;
+using Shared.Scheduling;
 
 namespace Shared.ECS.Simulation;
 
@@ -10,6 +11,7 @@ public class WorldBuilder
     private readonly List<ISystem> _systems = [];
     private readonly IClock _clock;
     private readonly EntityRegistry _entityRegistry;
+    private readonly IScheduler _scheduler = new TimerScheduler();
     private TimeSpan _tickRate = TimeSpan.FromMilliseconds(33.33); // 30Hz default
 
     /// <summary>
@@ -63,7 +65,7 @@ public class WorldBuilder
     /// <returns>A new <see cref="World"/> instance.</returns>
     public World Build()
     {
-        return new World(_systems, _clock, _entityRegistry, _tickRate);
+        return new World(_systems, _clock, _entityRegistry, _tickRate, _scheduler);
     }
 
     /// <summary>
@@ -73,7 +75,7 @@ public class WorldBuilder
     /// <returns>A new <see cref="World"/> instance.</returns>
     public World Build(TimeSpan tickRate)
     {
-        return new World(_systems, _clock, _entityRegistry, tickRate);
+        return new World(_systems, _clock, _entityRegistry, tickRate, _scheduler);
     }
 
     /// <summary>
@@ -84,6 +86,6 @@ public class WorldBuilder
     public World Build(int frequencyHz)
     {
         var tickRate = TimeSpan.FromMilliseconds(1000.0 / frequencyHz);
-        return new World(_systems, _clock, _entityRegistry, tickRate);
+        return new World(_systems, _clock, _entityRegistry, tickRate, _scheduler);
     }
 } 
