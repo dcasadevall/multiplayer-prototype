@@ -52,7 +52,7 @@ namespace Server.Networking.Replication
         /// <param name="deltaTime">The time in seconds since the last update for this system.</param>
         public void Update(EntityRegistry registry, uint tickNumber, float deltaTime)
         {
-            _logger.Debug("ReplicationSystem: Sending snapshot to all clients...");
+            // _logger.Debug("ReplicationSystem: Sending snapshot to all clients...");
             var snapshot = _worldSnapshotProducer.ProduceSnapshot();
         
             // Broadcast the snapshot to all connected clients

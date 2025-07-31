@@ -7,6 +7,7 @@ using Core.Player;
 using Core.Projectiles;
 using Shared.ECS;
 using Shared.ECS.Simulation;
+using Shared.Logging;
 using UnityEngine;
 
 namespace Adapters

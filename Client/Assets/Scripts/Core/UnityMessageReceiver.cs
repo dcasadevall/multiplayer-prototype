@@ -100,6 +100,25 @@ namespace Core
             // This is where you would cleanly disconnect from the server
         }
         
+        /// <summary>
+        /// Sends a message to the server.
+        /// </summary>
+        /// <param name="messageData">The message data to send.</param>
+        public void SendToServer(byte[] messageData)
+        {
+            if (!_isListening)
+            {
+                Debug.LogWarning("UnityMessageReceiver: Cannot send message while not connected");
+                return;
+            }
+            
+            Debug.Log($"UnityMessageReceiver: Sending message of {messageData.Length} bytes to server");
+            
+            // TODO: Implement sending logic
+            // This is where you would send the message to the server
+            // using your chosen networking library
+        }
+        
         private void OnDestroy()
         {
             StopListening();

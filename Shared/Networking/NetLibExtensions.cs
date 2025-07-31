@@ -18,7 +18,8 @@ namespace Shared.Networking
     
         public static void RegisterNetLibTypes(this IServiceCollection services)
         {
-            services.AddSingleton<NetManager>(_ => new NetManager(new NoopListener()));
+            // NetManager must be registered by the application.
+            // Server will want to use the listener for incoming connections and clients will use it to connect.
             services.AddSingleton<IMessageSender, NetLibMessageSender>();
         }
     }

@@ -1,6 +1,10 @@
-﻿using Microsoft.Extensions.DependencyInjection;
+﻿using System.Net;
+using LiteNetLib;
+using Microsoft.Extensions.DependencyInjection;
 using Server.Logging;
+using Server.Networking;
 using Server.Networking.Replication;
+using Server.PlayerSpawn;
 using Server.Scenes;
 using Shared;
 using Shared.ECS;
@@ -26,13 +30,25 @@ services.AddSingleton<ISystem, ReplicationSystem>();
 // Scene loading
 services.AddSingleton<SceneLoader>();
 
+// Player related services
+services.AddSingleton<PlayerSpawnHandler>();
+
 // Register all shared services (Networking, Scheduling, etc.)
 services.RegisterSharedTypes();
+
+// Server proxies events with NetEventBroadcaster
+services.AddSingleton<NetEventBroadcaster>();
+services.AddSingleton<INetEventListener>(sp => sp.GetRequiredService<NetEventBroadcaster>());
+services.AddSingleton<NetManager>();
 
 var serviceProvider = services.BuildServiceProvider();
 var entityRegistry = serviceProvider.GetRequiredService<EntityRegistry>();
 var scheduler = serviceProvider.GetRequiredService<IScheduler>();
 var sceneLoader = serviceProvider.GetRequiredService<SceneLoader>();
+var netManager = serviceProvider.GetRequiredService<NetManager>();
+
+// TODO: IInitializable / IDisposable and auto lifecycle management
+var spawnHandler = serviceProvider.GetRequiredService<PlayerSpawnHandler>();
 
 // TODO: More robust scene loading eventually
 sceneLoader.Load("Server/Scenes/basic_scene.json");
@@ -47,6 +63,24 @@ var world = worldBuilder.Build();
 Console.WriteLine("Starting fixed timestep world at 30Hz...");
 world.Start();
 
-Console.WriteLine("Press Enter to stop...");
-Console.ReadLine();
-world.Dispose();
+netManager.Start(9050);
+Console.WriteLine("Server started on port 9050...");
+
+// --- The Server Loop ---
+try
+{
+    while (true)
+    {
+        // Poll for new events
+        netManager.PollEvents();
+        // Sleep to prevent high CPU usage
+        Thread.Sleep(15);
+    }
+}
+finally
+{
+    // Ensure the server is stopped when the loop exits
+    netManager.Stop();
+    world.Dispose();
+    spawnHandler.Dispose();
+}
