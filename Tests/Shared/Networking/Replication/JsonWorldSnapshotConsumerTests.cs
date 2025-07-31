@@ -6,315 +6,316 @@ using Shared.Logging;
 using Shared.Networking.Replication;
 using Xunit;
 
-namespace SharedUnitTests.Networking.Replication;
-
-public class JsonWorldSnapshotConsumerTests
+namespace SharedUnitTests.Networking.Replication
 {
-    private readonly EntityRegistry _registry;
-    private readonly JsonWorldSnapshotConsumer _consumer;
-
-    public JsonWorldSnapshotConsumerTests()
+    public class JsonWorldSnapshotConsumerTests
     {
-        var logger = Substitute.For<ILogger>();
-        _registry = new EntityRegistry();
-        _consumer = new JsonWorldSnapshotConsumer(_registry, logger);
-    }
+        private readonly EntityRegistry _registry;
+        private readonly JsonWorldSnapshotConsumer _consumer;
 
-    [Fact]
-    public void ConsumeSnapshot_WithValidJson_CreatesEntitiesWithComponents()
-    {
-        // Arrange
-        var entityId = Guid.NewGuid();
-        var snapshot = CreateSnapshotWithPositionComponent(entityId, 1.5f, 2.5f, 3.5f);
+        public JsonWorldSnapshotConsumerTests()
+        {
+            var logger = Substitute.For<ILogger>();
+            _registry = new EntityRegistry();
+            _consumer = new JsonWorldSnapshotConsumer(_registry, logger);
+        }
 
-        // Act
-        _consumer.ConsumeSnapshot(snapshot);
+        [Fact]
+        public void ConsumeSnapshot_WithValidJson_CreatesEntitiesWithComponents()
+        {
+            // Arrange
+            var entityId = Guid.NewGuid();
+            var snapshot = CreateSnapshotWithPositionComponent(entityId, 1.5f, 2.5f, 3.5f);
 
-        // Assert
-        var entities = _registry.GetAll().ToList();
-        Assert.Single(entities);
+            // Act
+            _consumer.ConsumeSnapshot(snapshot);
 
-        var entity = entities.First();
-        Assert.Equal(entityId, entity.Id.Value);
-        Assert.True(entity.Has<PositionComponent>());
+            // Assert
+            var entities = _registry.GetAll().ToList();
+            Assert.Single(entities);
 
-        entity.TryGet<PositionComponent>(out var position);
-        Assert.NotNull(position);
-        Assert.Equal(1.5f, position.Value.X);
-        Assert.Equal(2.5f, position.Value.Y);
-        Assert.Equal(3.5f, position.Value.Z);
-    }
+            var entity = entities.First();
+            Assert.Equal(entityId, entity.Id.Value);
+            Assert.True(entity.Has<PositionComponent>());
 
-    [Fact]
-    public void ConsumeSnapshot_WithHealthComponent_CreatesEntityWithHealth()
-    {
-        // Arrange
-        var entityId = Guid.NewGuid();
-        var snapshot = CreateSnapshotWithHealthComponent(entityId, 150);
+            entity.TryGet<PositionComponent>(out var position);
+            Assert.NotNull(position);
+            Assert.Equal(1.5f, position.Value.X);
+            Assert.Equal(2.5f, position.Value.Y);
+            Assert.Equal(3.5f, position.Value.Z);
+        }
 
-        // Act
-        _consumer.ConsumeSnapshot(snapshot);
+        [Fact]
+        public void ConsumeSnapshot_WithHealthComponent_CreatesEntityWithHealth()
+        {
+            // Arrange
+            var entityId = Guid.NewGuid();
+            var snapshot = CreateSnapshotWithHealthComponent(entityId, 150);
 
-        // Assert
-        var entities = _registry.GetAll().ToList();
-        Assert.Single(entities);
+            // Act
+            _consumer.ConsumeSnapshot(snapshot);
 
-        var entity = entities.First();
-        Assert.Equal(entityId, entity.Id.Value);
-        Assert.True(entity.Has<HealthComponent>());
+            // Assert
+            var entities = _registry.GetAll().ToList();
+            Assert.Single(entities);
 
-        entity.TryGet<HealthComponent>(out var health);
-        Assert.NotNull(health);
-        Assert.Equal(150, health.MaxHealth);
-        Assert.Equal(150, health.CurrentHealth);
-    }
+            var entity = entities.First();
+            Assert.Equal(entityId, entity.Id.Value);
+            Assert.True(entity.Has<HealthComponent>());
 
-    [Fact]
-    public void ConsumeSnapshot_WithMultipleComponents_CreatesEntityWithAllComponents()
-    {
-        // Arrange
-        var entityId = Guid.NewGuid();
-        var snapshot = CreateSnapshotWithMultipleComponents(entityId, 10.0f, 20.0f, 30.0f, 200);
+            entity.TryGet<HealthComponent>(out var health);
+            Assert.NotNull(health);
+            Assert.Equal(150, health.MaxHealth);
+            Assert.Equal(150, health.CurrentHealth);
+        }
 
-        // Act
-        _consumer.ConsumeSnapshot(snapshot);
+        [Fact]
+        public void ConsumeSnapshot_WithMultipleComponents_CreatesEntityWithAllComponents()
+        {
+            // Arrange
+            var entityId = Guid.NewGuid();
+            var snapshot = CreateSnapshotWithMultipleComponents(entityId, 10.0f, 20.0f, 30.0f, 200);
 
-        // Assert
-        var entities = _registry.GetAll().ToList();
-        Assert.Single(entities);
+            // Act
+            _consumer.ConsumeSnapshot(snapshot);
 
-        var entity = entities.First();
-        Assert.Equal(entityId, entity.Id.Value);
-        Assert.True(entity.Has<PositionComponent>());
-        Assert.True(entity.Has<HealthComponent>());
+            // Assert
+            var entities = _registry.GetAll().ToList();
+            Assert.Single(entities);
 
-        entity.TryGet<PositionComponent>(out var position);
-        Assert.NotNull(position);
-        Assert.Equal(10.0f, position.Value.X);
-        Assert.Equal(20.0f, position.Value.Y);
-        Assert.Equal(30.0f, position.Value.Z);
+            var entity = entities.First();
+            Assert.Equal(entityId, entity.Id.Value);
+            Assert.True(entity.Has<PositionComponent>());
+            Assert.True(entity.Has<HealthComponent>());
 
-        entity.TryGet<HealthComponent>(out var health);
-        Assert.NotNull(health);
-        Assert.Equal(200, health.MaxHealth);
-        Assert.Equal(200, health.CurrentHealth);
-    }
+            entity.TryGet<PositionComponent>(out var position);
+            Assert.NotNull(position);
+            Assert.Equal(10.0f, position.Value.X);
+            Assert.Equal(20.0f, position.Value.Y);
+            Assert.Equal(30.0f, position.Value.Z);
 
-    [Fact]
-    public void ConsumeSnapshot_WithMultipleEntities_CreatesAllEntities()
-    {
-        // Arrange
-        var entityId1 = Guid.NewGuid();
-        var entityId2 = Guid.NewGuid();
-        var snapshot = CreateSnapshotWithMultipleEntities(entityId1, entityId2);
+            entity.TryGet<HealthComponent>(out var health);
+            Assert.NotNull(health);
+            Assert.Equal(200, health.MaxHealth);
+            Assert.Equal(200, health.CurrentHealth);
+        }
 
-        // Act
-        _consumer.ConsumeSnapshot(snapshot);
+        [Fact]
+        public void ConsumeSnapshot_WithMultipleEntities_CreatesAllEntities()
+        {
+            // Arrange
+            var entityId1 = Guid.NewGuid();
+            var entityId2 = Guid.NewGuid();
+            var snapshot = CreateSnapshotWithMultipleEntities(entityId1, entityId2);
 
-        // Assert
-        var entities = _registry.GetAll().ToList();
-        Assert.Equal(2, entities.Count);
+            // Act
+            _consumer.ConsumeSnapshot(snapshot);
 
-        var entity1 = entities.First(e => e.Id.Value == entityId1);
-        var entity2 = entities.First(e => e.Id.Value == entityId2);
+            // Assert
+            var entities = _registry.GetAll().ToList();
+            Assert.Equal(2, entities.Count);
 
-        Assert.True(entity1.Has<PositionComponent>());
-        Assert.True(entity2.Has<HealthComponent>());
-    }
+            var entity1 = entities.First(e => e.Id.Value == entityId1);
+            var entity2 = entities.First(e => e.Id.Value == entityId2);
 
-    [Fact]
-    public void ConsumeSnapshot_WithInvalidComponentType_IgnoresInvalidComponent()
-    {
-        // Arrange
-        var entityId = Guid.NewGuid();
-        var snapshot = CreateSnapshotWithInvalidComponentType(entityId);
+            Assert.True(entity1.Has<PositionComponent>());
+            Assert.True(entity2.Has<HealthComponent>());
+        }
 
-        // Act
-        _consumer.ConsumeSnapshot(snapshot);
+        [Fact]
+        public void ConsumeSnapshot_WithInvalidComponentType_IgnoresInvalidComponent()
+        {
+            // Arrange
+            var entityId = Guid.NewGuid();
+            var snapshot = CreateSnapshotWithInvalidComponentType(entityId);
 
-        // Assert
-        var entities = _registry.GetAll().ToList();
-        Assert.Single(entities);
+            // Act
+            _consumer.ConsumeSnapshot(snapshot);
 
-        var entity = entities.First();
-        Assert.Equal(entityId, entity.Id.Value);
-        Assert.False(entity.Has<PositionComponent>()); // Should not have the component due to invalid type
-    }
+            // Assert
+            var entities = _registry.GetAll().ToList();
+            Assert.Single(entities);
 
-    [Fact]
-    public void ConsumeSnapshot_WithEmptySnapshot_HandlesGracefully()
-    {
-        // Arrange
-        var initialCount = _registry.GetAll().Count();
+            var entity = entities.First();
+            Assert.Equal(entityId, entity.Id.Value);
+            Assert.False(entity.Has<PositionComponent>()); // Should not have the component due to invalid type
+        }
 
-        // Act & Assert - Should not throw exception
-        var exception = Record.Exception(() => _consumer.ConsumeSnapshot(new byte[0]));
-        Assert.Null(exception);
+        [Fact]
+        public void ConsumeSnapshot_WithEmptySnapshot_HandlesGracefully()
+        {
+            // Arrange
+            var initialCount = _registry.GetAll().Count();
 
-        // Assert
-        var finalCount = _registry.GetAll().Count();
-        Assert.Equal(initialCount, finalCount);
-    }
+            // Act & Assert - Should not throw exception
+            var exception = Record.Exception(() => _consumer.ConsumeSnapshot(new byte[0]));
+            Assert.Null(exception);
 
-    [Fact]
-    public void ConsumeSnapshot_WithExistingEntity_ReplacesComponents()
-    {
-        // Arrange
-        var entityId = Guid.NewGuid();
-        var entity = _registry.GetOrCreate(entityId);
-        entity.AddComponent(new PositionComponent(new System.Numerics.Vector3(1.0f, 1.0f, 1.0f)));
+            // Assert
+            var finalCount = _registry.GetAll().Count();
+            Assert.Equal(initialCount, finalCount);
+        }
 
-        var snapshot = CreateSnapshotWithPositionComponent(entityId, 5.0f, 5.0f, 5.0f);
+        [Fact]
+        public void ConsumeSnapshot_WithExistingEntity_ReplacesComponents()
+        {
+            // Arrange
+            var entityId = Guid.NewGuid();
+            var entity = _registry.GetOrCreate(entityId);
+            entity.AddComponent(new PositionComponent(new System.Numerics.Vector3(1.0f, 1.0f, 1.0f)));
 
-        // Act
-        _consumer.ConsumeSnapshot(snapshot);
+            var snapshot = CreateSnapshotWithPositionComponent(entityId, 5.0f, 5.0f, 5.0f);
 
-        // Assert
-        var updatedEntity = _registry.GetAll().First(e => e.Id.Value == entityId);
-        updatedEntity.TryGet<PositionComponent>(out var position);
-        Assert.NotNull(position);
-        Assert.Equal(5.0f, position.Value.X);
-        Assert.Equal(5.0f, position.Value.Y);
-        Assert.Equal(5.0f, position.Value.Z);
-    }
+            // Act
+            _consumer.ConsumeSnapshot(snapshot);
 
-    private byte[] CreateSnapshotWithPositionComponent(Guid entityId, float x, float y, float z)
-    {
-        var positionComponent = new PositionComponent(new System.Numerics.Vector3(x, y, z));
-        var positionJson = JsonSerializer.Serialize(positionComponent);
+            // Assert
+            var updatedEntity = _registry.GetAll().First(e => e.Id.Value == entityId);
+            updatedEntity.TryGet<PositionComponent>(out var position);
+            Assert.NotNull(position);
+            Assert.Equal(5.0f, position.Value.X);
+            Assert.Equal(5.0f, position.Value.Y);
+            Assert.Equal(5.0f, position.Value.Z);
+        }
+
+        private byte[] CreateSnapshotWithPositionComponent(Guid entityId, float x, float y, float z)
+        {
+            var positionComponent = new PositionComponent(new System.Numerics.Vector3(x, y, z));
+            var positionJson = JsonSerializer.Serialize(positionComponent);
         
-        var snapshot = new WorldSnapshotMessage
-        {
-            Entities =
+            var snapshot = new WorldSnapshotMessage
             {
-                new SnapshotEntity
+                Entities =
                 {
-                    Id = entityId,
-                    Components =
+                    new SnapshotEntity
                     {
-                        new SnapshotComponent
+                        Id = entityId,
+                        Components =
                         {
-                            Type = typeof(PositionComponent).FullName!,
-                            Json = positionJson
+                            new SnapshotComponent
+                            {
+                                Type = typeof(PositionComponent).FullName!,
+                                Json = positionJson
+                            }
                         }
                     }
                 }
-            }
-        };
+            };
 
-        return System.Text.Encoding.UTF8.GetBytes(JsonSerializer.Serialize(snapshot));
-    }
+            return System.Text.Encoding.UTF8.GetBytes(JsonSerializer.Serialize(snapshot));
+        }
 
-    private byte[] CreateSnapshotWithHealthComponent(Guid entityId, int maxHealth)
-    {
-        var snapshot = new WorldSnapshotMessage
+        private byte[] CreateSnapshotWithHealthComponent(Guid entityId, int maxHealth)
         {
-            Entities =
+            var snapshot = new WorldSnapshotMessage
             {
-                new SnapshotEntity
+                Entities =
                 {
-                    Id = entityId,
-                    Components =
+                    new SnapshotEntity
                     {
-                        new SnapshotComponent
+                        Id = entityId,
+                        Components =
                         {
-                            Type = typeof(HealthComponent).FullName!,
-                            Json = JsonSerializer.Serialize(new HealthComponent(maxHealth))
+                            new SnapshotComponent
+                            {
+                                Type = typeof(HealthComponent).FullName!,
+                                Json = JsonSerializer.Serialize(new HealthComponent(maxHealth))
+                            }
                         }
                     }
                 }
-            }
-        };
+            };
 
-        return System.Text.Encoding.UTF8.GetBytes(JsonSerializer.Serialize(snapshot));
-    }
+            return System.Text.Encoding.UTF8.GetBytes(JsonSerializer.Serialize(snapshot));
+        }
 
-    private byte[] CreateSnapshotWithMultipleComponents(Guid entityId, float x, float y, float z, int maxHealth)
-    {
-        var snapshot = new WorldSnapshotMessage
+        private byte[] CreateSnapshotWithMultipleComponents(Guid entityId, float x, float y, float z, int maxHealth)
         {
-            Entities =
+            var snapshot = new WorldSnapshotMessage
             {
-                new SnapshotEntity
+                Entities =
                 {
-                    Id = entityId,
-                    Components =
+                    new SnapshotEntity
                     {
-                        new SnapshotComponent
+                        Id = entityId,
+                        Components =
                         {
-                            Type = typeof(PositionComponent).FullName!,
-                            Json = JsonSerializer.Serialize(new PositionComponent(new System.Numerics.Vector3(x, y, z)))
-                        },
-                        new SnapshotComponent
-                        {
-                            Type = typeof(HealthComponent).FullName!,
-                            Json = JsonSerializer.Serialize(new HealthComponent(maxHealth))
+                            new SnapshotComponent
+                            {
+                                Type = typeof(PositionComponent).FullName!,
+                                Json = JsonSerializer.Serialize(new PositionComponent(new System.Numerics.Vector3(x, y, z)))
+                            },
+                            new SnapshotComponent
+                            {
+                                Type = typeof(HealthComponent).FullName!,
+                                Json = JsonSerializer.Serialize(new HealthComponent(maxHealth))
+                            }
                         }
                     }
                 }
-            }
-        };
+            };
 
-        return System.Text.Encoding.UTF8.GetBytes(JsonSerializer.Serialize(snapshot));
-    }
+            return System.Text.Encoding.UTF8.GetBytes(JsonSerializer.Serialize(snapshot));
+        }
 
-    private byte[] CreateSnapshotWithMultipleEntities(Guid entityId1, Guid entityId2)
-    {
-        var snapshot = new WorldSnapshotMessage
+        private byte[] CreateSnapshotWithMultipleEntities(Guid entityId1, Guid entityId2)
         {
-            Entities =
+            var snapshot = new WorldSnapshotMessage
             {
-                new SnapshotEntity
+                Entities =
                 {
-                    Id = entityId1,
-                    Components =
+                    new SnapshotEntity
                     {
-                        new SnapshotComponent
+                        Id = entityId1,
+                        Components =
                         {
-                            Type = typeof(PositionComponent).FullName!,
-                            Json = JsonSerializer.Serialize(new PositionComponent(new System.Numerics.Vector3(1.0f, 2.0f, 3.0f)))
+                            new SnapshotComponent
+                            {
+                                Type = typeof(PositionComponent).FullName!,
+                                Json = JsonSerializer.Serialize(new PositionComponent(new System.Numerics.Vector3(1.0f, 2.0f, 3.0f)))
+                            }
                         }
-                    }
-                },
-                new SnapshotEntity
-                {
-                    Id = entityId2,
-                    Components =
+                    },
+                    new SnapshotEntity
                     {
-                        new SnapshotComponent
+                        Id = entityId2,
+                        Components =
                         {
-                            Type = typeof(HealthComponent).FullName!,
-                            Json = JsonSerializer.Serialize(new HealthComponent(100))
+                            new SnapshotComponent
+                            {
+                                Type = typeof(HealthComponent).FullName!,
+                                Json = JsonSerializer.Serialize(new HealthComponent(100))
+                            }
                         }
                     }
                 }
-            }
-        };
+            };
 
-        return System.Text.Encoding.UTF8.GetBytes(JsonSerializer.Serialize(snapshot));
-    }
+            return System.Text.Encoding.UTF8.GetBytes(JsonSerializer.Serialize(snapshot));
+        }
 
-    private byte[] CreateSnapshotWithInvalidComponentType(Guid entityId)
-    {
-        var snapshot = new WorldSnapshotMessage
+        private byte[] CreateSnapshotWithInvalidComponentType(Guid entityId)
         {
-            Entities =
+            var snapshot = new WorldSnapshotMessage
             {
-                new SnapshotEntity
+                Entities =
                 {
-                    Id = entityId,
-                    Components =
+                    new SnapshotEntity
                     {
-                        new SnapshotComponent
+                        Id = entityId,
+                        Components =
                         {
-                            Type = "InvalidComponentType",
-                            Json = "{}"
+                            new SnapshotComponent
+                            {
+                                Type = "InvalidComponentType",
+                                Json = "{}"
+                            }
                         }
                     }
                 }
-            }
-        };
+            };
 
-        return System.Text.Encoding.UTF8.GetBytes(JsonSerializer.Serialize(snapshot));
+            return System.Text.Encoding.UTF8.GetBytes(JsonSerializer.Serialize(snapshot));
+        }
     }
 } 

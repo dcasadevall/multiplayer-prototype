@@ -1,7 +1,8 @@
-namespace Shared.Networking;
-
-public enum ChannelType
+namespace Shared.Networking
 {
-    ReliableOrdered,
-    Unreliable,
+    public enum ChannelType
+    {
+        ReliableOrdered,
+        Unreliable,
+    }
 }

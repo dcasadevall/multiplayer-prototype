@@ -3,14 +3,15 @@ using Shared.Networking;
 using Shared.Networking.Replication;
 using Shared.Scheduling;
 
-namespace Shared;
-
-public static class SharedExtensions
+namespace Shared
 {
-    public static void RegisterSharedTypes(this IServiceCollection serviceCollection)
+    public static class SharedExtensions
     {
-        serviceCollection.RegisterSchedulingTypes();
-        serviceCollection.RegisterNetLibTypes();
-        serviceCollection.RegisterJsonReplicationTypes();
+        public static void RegisterSharedTypes(this IServiceCollection serviceCollection)
+        {
+            serviceCollection.RegisterSchedulingTypes();
+            serviceCollection.RegisterNetLibTypes();
+            serviceCollection.RegisterJsonReplicationTypes();
+        }
     }
 }

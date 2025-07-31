@@ -1,12 +1,13 @@
 using Microsoft.Extensions.DependencyInjection;
 
-namespace Shared.Networking.Replication;
-
-public static class ReplicationServiceExtensions
+namespace Shared.Networking.Replication
 {
-    public static void RegisterJsonReplicationTypes(this IServiceCollection service)
+    public static class ReplicationServiceExtensions
     {
-        service.AddSingleton<IWorldSnapshotProducer, JsonWorldSnapshotProducer>();
-        service.AddSingleton<IWorldSnapshotConsumer, JsonWorldSnapshotConsumer>();
+        public static void RegisterJsonReplicationTypes(this IServiceCollection service)
+        {
+            service.AddSingleton<IWorldSnapshotProducer, JsonWorldSnapshotProducer>();
+            service.AddSingleton<IWorldSnapshotConsumer, JsonWorldSnapshotConsumer>();
+        }
     }
 }
