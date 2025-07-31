@@ -5,6 +5,7 @@ using Shared;
 using Shared.ECS;
 using Shared.Networking;
 using UnityEngine;
+using ILogger = Shared.Logging.ILogger;
 
 namespace Core
 {
@@ -36,6 +37,9 @@ namespace Core
             
             // Register ECS core
             _services.AddSingleton<EntityRegistry>();
+            
+            // Unity specific services
+            _services.AddSingleton<ILogger, UnityLogger>();
             
             // Register Unity-specific services
             _services.AddSingleton<MonoBehaviour>(this);

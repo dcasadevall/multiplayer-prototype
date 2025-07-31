@@ -24,10 +24,9 @@ namespace Core
         private readonly Transform _worldRoot;
         
         /// <summary>
-        /// Constructs a new EntityViewSystem using dependency injection.
+        /// Constructs a new EntityViewSystem.
         /// </summary>
-        /// <param name="unityBehaviour">Unity MonoBehaviour for accessing Unity APIs.</param>
-        public EntityViewSystem(MonoBehaviour unityBehaviour)
+        public EntityViewSystem()
         {
             _worldRoot = new GameObject("ECS World Root").transform;
         }

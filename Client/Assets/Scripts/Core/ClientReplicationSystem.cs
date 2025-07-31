@@ -25,25 +25,21 @@ namespace Core
     {
         private readonly IWorldSnapshotConsumer _worldSnapshotConsumer;
         private readonly IMessageReceiver _messageReceiver;
-        private readonly MonoBehaviour _unityBehaviour;
 
-            /// <summary>
-    /// Constructs a new ClientReplicationSystem using dependency injection.
-    /// </summary>
-    /// <param name="worldSnapshotConsumer">Consumer used for processing incoming snapshots.</param>
-    /// <param name="messageReceiver">Receiver for network messages.</param>
-    /// <param name="unityBehaviour">Unity MonoBehaviour for coroutine support.</param>
-    public ClientReplicationSystem(IWorldSnapshotConsumer worldSnapshotConsumer, 
-        IMessageReceiver messageReceiver,
-        MonoBehaviour unityBehaviour)
-    {
-        _worldSnapshotConsumer = worldSnapshotConsumer;
-        _messageReceiver = messageReceiver;
-        _unityBehaviour = unityBehaviour;
-        
-        // Subscribe to snapshot messages
-        _messageReceiver.OnMessageReceived += HandleMessageReceived;
-    }
+        /// <summary>
+        /// Constructs a new ClientReplicationSystem using dependency injection.
+        /// </summary>
+        /// <param name="worldSnapshotConsumer">Consumer used for processing incoming snapshots.</param>
+        /// <param name="messageReceiver">Receiver for network messages.</param>
+        public ClientReplicationSystem(IWorldSnapshotConsumer worldSnapshotConsumer, 
+            IMessageReceiver messageReceiver)
+        {
+            _worldSnapshotConsumer = worldSnapshotConsumer;
+            _messageReceiver = messageReceiver;
+            
+            // Subscribe to snapshot messages
+            _messageReceiver.OnMessageReceived += HandleMessageReceived;
+        }
 
         /// <summary>
         /// Called by the world on each tick to process any pending network messages.

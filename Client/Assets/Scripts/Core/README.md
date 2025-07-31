@@ -8,11 +8,12 @@ The client-side replication system consists of several key components:
 
 ### Core Components
 
-1. **`ClientWorldManager`** - Main coordinator that manages the ECS world lifecycle using DI
-2. **`UnityServiceProvider`** - Unity-compatible service provider for dependency injection
+1. **`ClientWorldManager`** - Main coordinator that manages the ECS world lifecycle using VContainer
+2. **`ClientDIContainer`** - VContainer-based dependency injection container
 3. **`ClientReplicationSystem`** - ECS system that processes incoming server snapshots
 4. **`EntityViewSystem`** - ECS system that renders entities as Unity GameObjects
 5. **`UnityMessageReceiver`** - Unity-specific implementation of `IMessageReceiver`
+6. **`UnityLogger`** - Unity-specific implementation of `ILogger` using Unity's Debug.Log system
 
 ### Architecture
 
@@ -21,13 +22,15 @@ Unity GameManager
     ↓
 ClientWorldManager (MonoBehaviour)
     ↓
-UnityServiceProvider (DI Container)
+ClientDIContainer (VContainer)
     ↓
 ECS World (built with WorldBuilder)
     ├── ClientReplicationSystem (uses IWorldSnapshotConsumer)
     └── EntityViewSystem (renders entities as GameObjects)
     ↓
 UnityMessageReceiver (handles network messages)
+    ↓
+UnityLogger (provides logging via Unity's Debug.Log)
 ```
 
 ## Setup Instructions
@@ -76,8 +79,8 @@ public void HandleMessageReceived(MessageType messageType, byte[] data)
 
 When `ClientWorldManager` starts:
 
-1. Creates a `UnityServiceProvider` for dependency injection
-2. Registers all services (EntityRegistry, IScheduler, ISystem implementations, etc.)
+1. Creates a `ClientDIContainer` for VContainer dependency injection
+2. Registers all services (EntityRegistry, IScheduler, ISystem implementations, UnityLogger, etc.)
 3. Uses `WorldBuilder` to create the world with the specified frequency
 4. Adds all registered systems to the world using DI
 5. Builds and starts the world with fixed timestep simulation
@@ -150,6 +153,35 @@ private void CreateEntityView(Entity entity, EntityRegistry registry)
         var prefab = Resources.Load<GameObject>("ProjectilePrefab");
         var view = Instantiate(prefab);
         // Setup view...
+    }
+}
+```
+
+## UnityLogger Integration
+
+The `UnityLogger` provides a bridge between the shared `ILogger` interface and Unity's logging system:
+
+### Features
+- **Unity Integration**: Uses Unity's `Debug.Log`, `Debug.LogWarning`, and `Debug.LogError`
+- **Structured Logging**: Supports format strings with arguments like `logger.Info("Player {0} joined", playerName)`
+- **Severity Levels**: Maps to appropriate Unity debug methods (Debug, Info, Warn, Error, Fatal)
+- **Consistent Interface**: Same logging interface as the server for code consistency
+
+### Usage Example
+```csharp
+// In any system or service that receives ILogger via DI
+public class MySystem : ISystem
+{
+    private readonly ILogger _logger;
+    
+    public MySystem(ILogger logger)
+    {
+        _logger = logger;
+    }
+    
+    public void Update(EntityRegistry registry, uint tickNumber, float deltaTime)
+    {
+        _logger.Info("Processing tick {0} with {1} entities", tickNumber, registry.GetAll().Count());
     }
 }
 ```
