@@ -1,4 +1,5 @@
-﻿using Server.Scenes;
+﻿using Server.Networking;
+using Server.Scenes;
 using Shared.Clock;
 using Shared.ECS;
 using Shared.ECS.Simulation;
@@ -7,6 +8,7 @@ using Shared.Scheduling;
 
 var entityRegistry = new EntityRegistry();
 var scheduler = new TimerScheduler();
+var netManager = new LiteNetLib.NetManager(new NoopListener());
 SceneLoader.Load("Server/Scenes/basic_scene.json", entityRegistry);
 
 // Create a fixed timestep world running at 30Hz
@@ -15,6 +17,7 @@ var world = new WorldBuilder(entityRegistry, scheduler)
     .AddSystem(new WorldDiagnosticsSystem())
     .AddSystem(new MovementSystem())
     .AddSystem(new HealthSystem())
+    .AddSystem(new ReplicationSystem(netManager, entityRegistry))
     .Build();
 
 Console.WriteLine("Starting fixed timestep world at 30Hz...");

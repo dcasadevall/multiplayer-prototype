@@ -5,25 +5,10 @@ namespace Shared.ECS.Components;
 /// <summary>
 ///     Stores the health state of an entity.
 /// </summary>
-public class HealthComponent : IComponent, ISerializable
+public class HealthComponent(int maxHealth) : IComponent
 {
-    public int CurrentHealth;
-    public int MaxHealth;
-
-    public HealthComponent()
-    {
-    }
-
-    public HealthComponent(int maxHealth)
-    {
-        MaxHealth = maxHealth;
-        CurrentHealth = maxHealth;
-    }
+    public int CurrentHealth = maxHealth;
+    public int MaxHealth = maxHealth;
 
     public bool IsDead => CurrentHealth <= 0;
-    
-    public void GetObjectData(SerializationInfo info, StreamingContext context)
-    {
-        throw new NotImplementedException();
-    }
 }

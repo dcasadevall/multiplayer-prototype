@@ -1,5 +1,6 @@
+using System.Text;
+using System.Text.Json;
 using LiteNetLib;
-using LiteNetLib.Utils;
 using Shared.ECS;
 using Shared.Networking;
 
@@ -21,15 +22,15 @@ namespace Server.Networking;
 /// </summary>
 public class EntityReplicator
 {
-    private readonly EntityRegistry _entityManager;
+    private readonly EntityRegistry _entityRegistry;
 
     /// <summary>
     /// Constructs a new <see cref="EntityReplicator"/> for the given entity registry.
     /// </summary>
-    /// <param name="entityManager">The entity registry to replicate entities from.</param>
-    public EntityReplicator(EntityRegistry entityManager)
+    /// <param name="entityRegistry">The entity registry to replicate entities from.</param>
+    public EntityReplicator(EntityRegistry entityRegistry)
     {
-        _entityManager = entityManager;
+        _entityRegistry = entityRegistry;
     }
 
     /// <summary>
@@ -48,39 +49,39 @@ public class EntityReplicator
     /// <summary>
     /// Creates a binary snapshot of all entities with <see cref="ReplicatedEntityComponent"/>,
     /// including all components implementing <see cref="ISerializableComponent"/>.
+    /// Internally, uses JSON serialization to convert component states into a format suitable for network transmission.
+     /// 
+     /// <para>
+     /// The snapshot includes the entity ID and a list of components with their type and serialized JSON state.
+     /// </para>
+     ///
+     /// NOTE: This implementation does not scale well for large worlds or many entities.
+     /// We should consider moving off of dynamic typing and JSON serialization as needed.
     /// </summary>
     /// <returns>A byte array containing the serialized snapshot.</returns>
     private byte[] CreateSnapshot()
     {
-        var writer = new NetDataWriter();
+        var snapshot = new WorldSnapshotMessage();
 
-        var entities = _entityManager
-            .GetAll()
-            .Where(e => e.Has<ReplicatedEntityComponent>())
-            .ToList();
-        
-        writer.Put(entities.Count);
-
-        foreach (var entity in entities)
+        foreach (var entity in _entityRegistry.GetAll().Where(e => e.Has<ReplicatedEntityComponent>()))
         {
-            writer.Put(entity.Id.Value.ToString());
-
-            var serializableComponents = entity
-                .GetAllComponents()
-                .Where(x => x is ISerializableComponent)
-                .Cast<ISerializableComponent>()
+            var components = entity.GetAllComponents()
+                .Where(component => component is ISerializableComponent)
+                .Select(component => new SnapshotComponent
+                {
+                    Type = component.GetType().FullName!,
+                    Json = JsonSerializer.Serialize(component, component.GetType())
+                })
                 .ToList();
-            
-            writer.Put(serializableComponents.Count);
-            foreach (var component in serializableComponents)
+
+            snapshot.Entities.Add(new SnapshotEntity
             {
-                // For simplicity, serialize the component type name
-                writer.Put(component.GetType().FullName);
-                component.Serialize(writer);
-            }
+                Id = entity.Id.Value,
+                Components = components
+            });
         }
 
-        return writer.CopyData();
+        return Encoding.UTF8.GetBytes(JsonSerializer.Serialize(snapshot));
     }
 
     /// <summary>
@@ -90,6 +91,6 @@ public class EntityReplicator
     /// <param name="snapshotData">The serialized snapshot data.</param>
     private void SendSnapshotTo(NetPeer peer, byte[] snapshotData)
     {
-        peer.Send(snapshotData, DeliveryMethod.ReliableOrdered);
+        peer.Send(snapshotData, DeliveryMethod.Unreliable);
     }
 }

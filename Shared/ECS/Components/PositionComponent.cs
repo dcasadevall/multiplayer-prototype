@@ -8,13 +8,4 @@ namespace Shared.ECS.Components;
 public class PositionComponent : IComponent
 {
     public Vector3 Value;
-
-    public PositionComponent()
-    {
-    }
-
-    public PositionComponent(Vector3 value)
-    {
-        Value = value;
-    }
 }

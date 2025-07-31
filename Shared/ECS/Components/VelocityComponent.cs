@@ -8,13 +8,4 @@ namespace Shared.ECS.Components;
 public class VelocityComponent : IComponent
 {
     public Vector3 Value;
-
-    public VelocityComponent()
-    {
-    }
-
-    public VelocityComponent(Vector3 value)
-    {
-        Value = value;
-    }
 }
