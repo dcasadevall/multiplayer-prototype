@@ -47,6 +47,21 @@ public class Entity(EntityId id)
         component = null;
         return false;
     }
+    
+    /// <summary>
+    /// Gets the component of the given type from the entity.
+    /// </summary>
+    /// <typeparam name="T">The type of the component to get.</typeparam>
+    /// <returns>The component of the given type, or null if not found.</returns>
+    public T? Get<T>() where T : class, IComponent
+    {
+        if (TryGet(out T component))
+        {
+            return component;
+        }
+
+        return null;
+    }
 
     /// <summary>
     /// Check if the entity has a component of the given type.
