@@ -1,4 +1,4 @@
-namespace Shared.Networking;
+namespace Shared.Networking.Replication;
 
 public class WorldSnapshotMessage
 {
@@ -13,6 +13,6 @@ public class SnapshotEntity
 
 public class SnapshotComponent
 {
-    public string Type { get; set; } = null!;
-    public string Json { get; set; } = null!;
+    public required string Type { get; set; }
+    public required string Json { get; set; }
 }

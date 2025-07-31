@@ -25,7 +25,7 @@ public class EntityTests
     {
         // Arrange
         var entity = new Entity(EntityId.New());
-        var position = new PositionComponent(new Vector3(1, 2, 3));
+        var position = new PositionComponent{ Value = new Vector3(1, 2, 3)};
 
         // Act
         entity.AddComponent(position);
@@ -39,7 +39,7 @@ public class EntityTests
     {
         // Arrange
         var entity = new Entity(EntityId.New());
-        var position = new PositionComponent(new Vector3(1, 2, 3));
+        var position = new PositionComponent{ Value = new Vector3(1, 2, 3) };
         entity.AddComponent(position);
 
         // Act
@@ -124,8 +124,11 @@ public class EntityTests
     {
         // Arrange
         var entity = new Entity(EntityId.New());
-        var position = new PositionComponent(new Vector3(1, 2, 3));
-        var velocity = new VelocityComponent(new Vector3(4, 5, 6));
+        var position = new PositionComponent
+        {
+            Value = new Vector3(1, 2, 3)
+        };
+        var velocity = new VelocityComponent { Value = new Vector3(4, 5, 6) };
         var health = new HealthComponent(100);
 
         entity.AddComponent(position);
@@ -160,8 +163,8 @@ public class EntityTests
     {
         // Arrange
         var entity = new Entity(EntityId.New());
-        var position1 = new PositionComponent(new Vector3(1, 2, 3));
-        var position2 = new PositionComponent(new Vector3(4, 5, 6));
+        var position1 = new PositionComponent{ Value = new Vector3(1, 2, 3)};
+        var position2 = new PositionComponent{ Value = new Vector3(4, 5, 6)};
 
         entity.AddComponent(position1);
 

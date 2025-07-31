@@ -25,7 +25,7 @@ public class ComponentTests
             var position = new Vector3(1, 2, 3);
 
             // Act
-            var component = new PositionComponent(position);
+            var component = new PositionComponent{ Value = position };
 
             // Assert
             Assert.Equal(position, component.Value);
@@ -65,7 +65,7 @@ public class ComponentTests
             var velocity = new Vector3(1, 2, 3);
 
             // Act
-            var component = new VelocityComponent(velocity);
+            var component = new VelocityComponent{ Value = velocity };
 
             // Assert
             Assert.Equal(velocity, component.Value);

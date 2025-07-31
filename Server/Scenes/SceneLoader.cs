@@ -1,46 +1,62 @@
-using System.Numerics;
 using System.Text.Json;
-using System.Text.Json.Serialization;
-using Shared.ECS;
-using Shared.ECS.Components;
+using Shared.Networking.Replication;
 
 namespace Server.Scenes;
 
 public class EntityDescription
 {
-    [JsonPropertyName("components")]
     public Dictionary<string, JsonElement> Components { get; set; } = new();
-    
-    [JsonPropertyName("tags")]
     public List<string> Tags { get; set; } = new();
 }
 
-public static class SceneLoader
+public class SceneLoader(IWorldSnapshotConsumer snapshotConsumer)
 {
-    public static void Load(string path, EntityRegistry registry)
+    /// <summary>
+    /// Loads a scene from a JSON file and applies it to the registry using the snapshot consumer.
+    /// </summary>
+    /// <param name="path">Path to the scene JSON file.</param>
+    public void Load(string path)
     {
         var json = File.ReadAllText(path);
-        var entries = JsonSerializer.Deserialize<List<EntityDescription>>(json);
+        var entityDescriptions = JsonSerializer.Deserialize<List<EntityDescription>>(json);
 
-        foreach (var entry in entries)
+        // Convert EntityDescription list to WorldSnapshotMessage
+        var snapshotMsg = new WorldSnapshotMessage
         {
-            var entity = registry.CreateEntity();
-            foreach (var comp in entry.Components)
-                switch (comp.Key)
+            Entities = entityDescriptions.Select(desc =>
+            {
+                var entityId = Guid.NewGuid();
+                var components = desc.Components.Select(kvp =>
+                    new SnapshotComponent
+                    {
+                        Type = GetComponentTypeName(kvp.Key),
+                        Json = kvp.Value.GetRawText()
+                    }).ToList();
+
+                return new SnapshotEntity
                 {
-                    case "PositionComponent":
-                        entity.AddComponent(new PositionComponent(ToVector3(comp.Value)));
-                        break;
-                    case "HealthComponent":
-                        entity.AddComponent(new HealthComponent(comp.Value.GetProperty("maxHealth").GetInt32()));
-                        break;
-                }
-        }
+                    Id = entityId,
+                    Components = components
+                };
+            }).ToList()
+        };
+
+        // Serialize WorldSnapshotMessage to JSON and apply via consumer
+        var snapshotJson = JsonSerializer.Serialize(snapshotMsg);
+        snapshotConsumer.ConsumeSnapshot(System.Text.Encoding.UTF8.GetBytes(snapshotJson));
     }
 
-    private static Vector3 ToVector3(JsonElement el)
+    private static string GetComponentTypeName(string key)
     {
-        return new Vector3(el.GetProperty("x").GetSingle(), el.GetProperty("y").GetSingle(),
-            el.GetProperty("z").GetSingle());
+        // Map scene component keys to fully qualified type names as needed
+        // For example, "PositionComponent" => "Shared.ECS.Components.PositionComponent, Shared"
+        // Adjust this mapping as appropriate for your project
+        return key switch
+        {
+            "PositionComponent" => "Shared.ECS.Components.PositionComponent, Shared",
+            "HealthComponent" => "Shared.ECS.Components.HealthComponent, Shared",
+            "ReplicatedTagComponent" => "Shared.ECS.Components.ReplicatedTagComponent, Shared",
+            _ => key
+        };
     }
 }

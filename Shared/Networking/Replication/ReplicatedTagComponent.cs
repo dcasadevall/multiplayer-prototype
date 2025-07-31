@@ -1,10 +1,10 @@
 using Shared.ECS;
 
-namespace Shared.Networking;
+namespace Shared.Networking.Replication;
 
 /// <summary>
 /// Entities holding this component will be replicated to clients.
 /// </summary>
-public class ReplicatedEntityComponent : IComponent
+public class ReplicatedTagComponent : IComponent
 {
 }

@@ -2,7 +2,7 @@ using System.Net;
 using System.Net.Sockets;
 using LiteNetLib;
 
-namespace Server.Networking;
+namespace Shared.Networking;
 
 public class NoopListener : INetEventListener
 {

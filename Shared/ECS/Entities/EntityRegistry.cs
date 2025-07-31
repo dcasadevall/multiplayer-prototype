@@ -53,4 +53,19 @@ public class EntityRegistry
     /// Returns an enumerable of all entities currently in the world.
     /// </summary>
     public IEnumerable<Entity> GetAll() => _entities.Values;
+
+    /// <summary>
+    /// Attempts to retrieve an entity by its ID, or creates a new one if it does not exist.
+    /// </summary>
+    /// <param name="entityId"></param>
+    /// <returns></returns>
+    public Entity GetOrCreate(Guid entityId)
+    {
+        if (TryGet(new EntityId(entityId), out var entity))
+        {
+            return entity;
+        }
+
+        return CreateEntity();
+    }
 }

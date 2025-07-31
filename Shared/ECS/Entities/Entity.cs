@@ -21,6 +21,16 @@ public class Entity(EntityId id)
     }
 
     /// <summary>
+    /// Adds a component to the entity, or replaces the existing component of the same type.
+    /// </summary>
+    /// <param name="component">The component to add or replace.</param>
+    public void AddOrReplaceComponent(IComponent component)
+    {
+        var type = component.GetType();
+        _components[type] = component;
+    }
+
+    /// <summary>
     /// Try to get a component from the entity.
     /// </summary>
     /// <typeparam name="T">The type of the component to get.</typeparam>

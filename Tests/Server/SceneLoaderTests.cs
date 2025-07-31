@@ -1,19 +1,31 @@
 using System.Numerics;
 using System.Text.Json;
+using NSubstitute;
 using Server.Scenes;
 using Shared.ECS;
 using Shared.ECS.Components;
+using Shared.Networking.Replication;
+using Shared.Logging;
 using Xunit;
 
 namespace ServerUnitTests;
 
 public class SceneLoaderTests
 {
+    private static SceneLoader CreateSceneLoader(EntityRegistry registry)
+    {
+        // Use a dummy logger and the real JsonWorldSnapshotConsumer for tests
+        var logger = Substitute.For<ILogger>();
+        var consumer = new JsonWorldSnapshotConsumer(registry, logger);
+        return new SceneLoader(consumer);
+    }
+    
     [Fact]
     public void Load_WithValidJson_ShouldCreateEntities()
     {
         // Arrange
         var registry = new EntityRegistry();
+        var loader = CreateSceneLoader(registry);
         var json = @"[
             {
                 ""components"": {
@@ -36,13 +48,14 @@ public class SceneLoaderTests
         try
         {
             // Act
-            SceneLoader.Load(tempFile, registry);
+            loader.Load(tempFile);
 
             // Assert
             var entities = registry.GetAll();
-            Assert.Single(entities);
+            var collection = entities as Entity[] ?? entities.ToArray();
+            Assert.Single(collection);
 
-            var entity = entities.First();
+            var entity = collection.First();
             Assert.True(entity.Has<PositionComponent>());
             Assert.True(entity.Has<HealthComponent>());
 
@@ -64,6 +77,7 @@ public class SceneLoaderTests
     {
         // Arrange
         var registry = new EntityRegistry();
+        var loader = CreateSceneLoader(registry);
         var json = @"[
             {
                 ""components"": {
@@ -96,7 +110,7 @@ public class SceneLoaderTests
         try
         {
             // Act
-            SceneLoader.Load(tempFile, registry);
+            loader.Load(tempFile);
 
             // Assert
             var entities = registry.GetAll().ToList();
@@ -132,6 +146,7 @@ public class SceneLoaderTests
     {
         // Arrange
         var registry = new EntityRegistry();
+        var loader = CreateSceneLoader(registry);
         var json = "[]";
 
         var tempFile = Path.GetTempFileName();
@@ -140,7 +155,7 @@ public class SceneLoaderTests
         try
         {
             // Act
-            SceneLoader.Load(tempFile, registry);
+            loader.Load(tempFile);
 
             // Assert
             var entities = registry.GetAll();
@@ -157,6 +172,7 @@ public class SceneLoaderTests
     {
         // Arrange
         var registry = new EntityRegistry();
+        var loader = CreateSceneLoader(registry);
         var json = @"[
             {
                 ""components"": {
@@ -176,7 +192,7 @@ public class SceneLoaderTests
         try
         {
             // Act
-            SceneLoader.Load(tempFile, registry);
+            loader.Load(tempFile);
 
             // Assert
             var entities = registry.GetAll().ToList();
@@ -201,6 +217,7 @@ public class SceneLoaderTests
     {
         // Arrange
         var registry = new EntityRegistry();
+        var loader = CreateSceneLoader(registry);
         var json = @"[
             {
                 ""components"": {
@@ -218,7 +235,7 @@ public class SceneLoaderTests
         try
         {
             // Act
-            SceneLoader.Load(tempFile, registry);
+            loader.Load(tempFile);
 
             // Assert
             var entities = registry.GetAll().ToList();
@@ -243,6 +260,7 @@ public class SceneLoaderTests
     {
         // Arrange
         var registry = new EntityRegistry();
+        var loader = CreateSceneLoader(registry);
         var invalidJson = "{ invalid json }";
 
         var tempFile = Path.GetTempFileName();
@@ -251,7 +269,7 @@ public class SceneLoaderTests
         try
         {
             // Act & Assert
-            Assert.Throws<JsonException>(() => SceneLoader.Load(tempFile, registry));
+            Assert.Throws<JsonException>(() => loader.Load(tempFile));
         }
         finally
         {
@@ -264,9 +282,10 @@ public class SceneLoaderTests
     {
         // Arrange
         var registry = new EntityRegistry();
+        var loader = CreateSceneLoader(registry);
         var nonExistentPath = "non_existent_file.json";
 
         // Act & Assert
-        Assert.Throws<FileNotFoundException>(() => SceneLoader.Load(nonExistentPath, registry));
+        Assert.Throws<FileNotFoundException>(() => loader.Load(nonExistentPath));
     }
 }

@@ -1,8 +1,10 @@
-using LiteNetLib;
 using Shared.ECS;
 using Shared.ECS.Simulation;
+using Shared.Logging;
+using Shared.Networking;
+using Shared.Networking.Replication;
 
-namespace Server.Networking;
+namespace Server.Networking.Replication;
 
 /// <summary>
 /// ECS system responsible for replicating the current world state to all connected clients on a fixed interval.
@@ -14,38 +16,48 @@ namespace Server.Networking;
 /// </para>
 /// 
 /// <para>
-/// The <see cref="ReplicationSystem"/> creates and manages an <see cref="EntityReplicator"/>, which serializes
+/// The <see cref="ReplicationSystem"/> manages a <see cref="IWorldSnapshotProducer"/>, which serializes
 /// all entities marked with <c>ReplicatedEntityComponent</c> and their <c>ISerializableComponent</c> data.
 /// Snapshots are sent to all connected peers using reliable, ordered delivery.
 /// </para>
 /// </summary>
-[TickInterval(30)] // Replicate every second (30 ticks at 30Hz)
+[TickInterval(10)] // Replicate every 300ms at 30 ticks per second
 public class ReplicationSystem : ISystem
 {
-    private readonly NetManager _netManager;
-    private readonly EntityReplicator _replicator;
+    private readonly IMessageSender _messageSender;
+    private readonly ILogger _logger;
+    private readonly IWorldSnapshotProducer _worldSnapshotProducer;
 
     /// <summary>
     /// Constructs a new <see cref="ReplicationSystem"/> for the given network manager.
     /// </summary>
-    /// <param name="netManager">The LiteNetLib network manager for sending snapshots.</param>
-    /// <param name="entityRegistry">The entity registry containing all entities and components.</param>
-    public ReplicationSystem(NetManager netManager, EntityRegistry entityRegistry)
+    /// <param name="messageSender">Sender used for sending network messages.</param>
+    /// <param name="worldSnapshotProducer"></param>
+    /// <param name="logger">Logger for debug output.</param>
+    public ReplicationSystem(IMessageSender messageSender, 
+        IWorldSnapshotProducer worldSnapshotProducer,
+        ILogger logger)
     {
-        _netManager = netManager;
-        _replicator = new EntityReplicator(entityRegistry);
+        _logger = logger;
+        _messageSender = messageSender;
+        _worldSnapshotProducer = worldSnapshotProducer;
     }
 
     /// <summary>
     /// Called by the world on each eligible tick to replicate the current state to all clients.
-    /// Initializes the <see cref="EntityReplicator"/> if needed and sends a full snapshot to all connected peers.
+    /// Sends a full snapshot to all connected peers.
     /// </summary>
     /// <param name="registry">The entity registry containing all entities and components.</param>
     /// <param name="tickNumber">The current world tick number (sequential and deterministic).</param>
     /// <param name="deltaTime">The time in seconds since the last update for this system.</param>
     public void Update(EntityRegistry registry, uint tickNumber, float deltaTime)
     {
-        Console.WriteLine("ReplicationSystem: Sending snapshot to all clients...");
-        _replicator.SendSnapshotToAll(_netManager.ConnectedPeerList);
+        _logger.Debug("ReplicationSystem: Sending snapshot to all clients...");
+        var snapshot = _worldSnapshotProducer.ProduceSnapshot();
+        
+        // Broadcast the snapshot to all connected clients
+        // We use the unreliable channel for snapshot delivery
+        // since the snapshot is a full state for simplicity.
+        _messageSender.BroadcastMessage(MessageType.Snapshot, snapshot);
     }
 }
