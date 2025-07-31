@@ -100,3 +100,7 @@ InitTestScene*.unity*
 
 # Intellij
 .idea/
+
+# NuGet
+Packages/
+Packages.meta
