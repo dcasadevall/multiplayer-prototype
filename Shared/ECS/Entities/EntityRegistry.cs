@@ -57,15 +57,18 @@ public class EntityRegistry
     /// <summary>
     /// Attempts to retrieve an entity by its ID, or creates a new one if it does not exist.
     /// </summary>
-    /// <param name="entityId"></param>
-    /// <returns></returns>
+    /// <param name="entityId">The ID to use for the entity.</param>
+    /// <returns>The existing entity or a newly created one with the specified ID.</returns>
     public Entity GetOrCreate(Guid entityId)
     {
-        if (TryGet(new EntityId(entityId), out var entity))
+        var id = new EntityId(entityId);
+        if (TryGet(id, out var entity))
         {
             return entity;
         }
 
-        return CreateEntity();
+        var newEntity = new Entity(id);
+        _entities.Add(id, newEntity);
+        return newEntity;
     }
 }

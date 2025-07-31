@@ -2,6 +2,8 @@ using System.Text;
 using System.Text.Json;
 using Shared.ECS;
 using Shared.Logging;
+using System;
+using System.Linq;
 
 namespace Shared.Networking.Replication;
 
@@ -24,6 +26,12 @@ public class JsonWorldSnapshotConsumer(EntityRegistry entityRegistry, ILogger lo
     /// <param name="snapshot">The snapshot data as a UTF-8 encoded JSON byte array.</param>
     public void ConsumeSnapshot(byte[] snapshot)
     {
+        // If the snapshot is empty, do nothing
+        if (snapshot.Length == 0)
+        {
+            return;
+        }
+        
         var json = Encoding.UTF8.GetString(snapshot);
         var snapshotMsg = JsonSerializer.Deserialize<WorldSnapshotMessage>(json);
         if (snapshotMsg == null)
@@ -34,23 +42,22 @@ public class JsonWorldSnapshotConsumer(EntityRegistry entityRegistry, ILogger lo
         foreach (var snapshotEntity in snapshotMsg.Entities)
         {
             var entity = entityRegistry.GetOrCreate(snapshotEntity.Id);
-
-            foreach (var comp in snapshotEntity.Components)
+            
+            foreach (var component in snapshotEntity.Components)
             {
-                var type = Type.GetType(comp.Type);
-                if (type == null)
+                var componentType = Type.GetType(component.Type);
+                if (componentType == null) 
                 {
-                    logger.Warn($"Component type '{comp.Type}' not found for entity {entity.Id}. Skipping.");
                     continue;
                 }
-                
-                var deserialized = (IComponent)JsonSerializer.Deserialize(comp.Json, type)!;
-                entity.AddOrReplaceComponent(deserialized);
+
+                var componentInstance = JsonSerializer.Deserialize(component.Json, componentType);
+                if (componentInstance != null)
+                {
+                    entity.AddOrReplaceComponent((IComponent)componentInstance);
+                }
             }
         }
-
-        // Optionally: remove stale entities not present in snapshot
-        PruneStaleEntities(snapshotMsg.Entities.Select(e => new EntityId(e.Id)));
     }
 
     /// <summary>

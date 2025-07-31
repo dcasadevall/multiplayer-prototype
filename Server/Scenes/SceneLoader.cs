@@ -1,11 +1,15 @@
 using System.Text.Json;
+using System.Text.Json.Serialization;
 using Shared.Networking.Replication;
 
 namespace Server.Scenes;
 
 public class EntityDescription
 {
+    [JsonPropertyName("components")]
     public Dictionary<string, JsonElement> Components { get; set; } = new();
+    
+    [JsonPropertyName("tags")]
     public List<string> Tags { get; set; } = new();
 }
 
@@ -27,11 +31,14 @@ public class SceneLoader(IWorldSnapshotConsumer snapshotConsumer)
             {
                 var entityId = Guid.NewGuid();
                 var components = desc.Components.Select(kvp =>
-                    new SnapshotComponent
+                {
+                    var componentType = GetComponentTypeName(kvp.Key);
+                    return new SnapshotComponent
                     {
-                        Type = GetComponentTypeName(kvp.Key),
+                        Type = componentType,
                         Json = kvp.Value.GetRawText()
-                    }).ToList();
+                    };
+                }).ToList();
 
                 return new SnapshotEntity
                 {

@@ -41,6 +41,7 @@ public class JsonWorldSnapshotProducer : IWorldSnapshotProducer
         foreach (var entity in _entityRegistry.GetAll().Where(e => e.Has<ReplicatedTagComponent>()))
         {
             var components = entity.GetAllComponents()
+                .Where(component => component.GetType() != typeof(ReplicatedTagComponent))
                 .Select(component => new SnapshotComponent
                 {
                     Type = component.GetType().FullName!,
