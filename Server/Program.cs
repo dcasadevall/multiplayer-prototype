@@ -1,8 +1,6 @@
-﻿using System.Net;
-using LiteNetLib;
+﻿using LiteNetLib;
 using Microsoft.Extensions.DependencyInjection;
 using Server.Logging;
-using Server.Networking;
 using Server.Networking.Replication;
 using Server.PlayerSpawn;
 using Server.Scenes;
@@ -52,7 +50,7 @@ var eventListener = serviceProvider.GetRequiredService<EventBasedNetListener>();
 // This is fine for a simple server, but in a real game you would want to handle this more robustly
 eventListener.ConnectionRequestEvent += request =>
 {
-    request.Accept();
+    request.AcceptIfKey(SharedConstants.NetSecret);
 };
 
 
@@ -62,9 +60,9 @@ var spawnHandler = serviceProvider.GetRequiredService<PlayerSpawnHandler>();
 // TODO: More robust scene loading eventually
 sceneLoader.Load("Server/Scenes/basic_scene.json");
 
-// Create a fixed timestep world running at 30Hz
+// Create a fixed timestep world running at the specified frequency
 // Add all the systems registered in the service provider
-var worldBuilder = new WorldBuilder(entityRegistry, scheduler).WithFrequency(30); 
+var worldBuilder = new WorldBuilder(entityRegistry, scheduler).WithFrequency(SharedConstants.WorldTickRate); 
 var systems = serviceProvider.GetServices<ISystem>().ToList();
 systems.ForEach(x => worldBuilder.AddSystem(x));
 var world = worldBuilder.Build();
@@ -72,7 +70,7 @@ var world = worldBuilder.Build();
 Console.WriteLine("Starting fixed timestep world at 30Hz...");
 world.Start();
 
-netManager.Start(9050);
+netManager.Start(SharedConstants.ServerPort);
 Console.WriteLine("Server started on port 9050...");
 
 // --- The Server Loop ---
