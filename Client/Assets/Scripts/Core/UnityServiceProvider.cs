@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using Core.Logging;
 using Core.Scheduling;
 using LiteNetLib;
 using Microsoft.Extensions.DependencyInjection;

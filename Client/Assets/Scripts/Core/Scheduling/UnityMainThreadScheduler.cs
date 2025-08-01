@@ -51,6 +51,11 @@ namespace Core.Scheduling
 
             public void Dispose()
             {
+                if (_coroutine == null)
+                {
+                    return;
+                }
+                
                 _linkedSource.Cancel();
                 _linkedSource.Dispose();
                 _coroutineRunner?.StopCoroutine(_coroutine);

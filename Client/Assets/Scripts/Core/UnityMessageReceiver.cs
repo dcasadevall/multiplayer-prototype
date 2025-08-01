@@ -66,7 +66,6 @@ namespace Core
             var messageType = (MessageType)reader.GetByte();
             var data = reader.GetRemainingBytes();
             OnMessageReceived?.Invoke(messageType, data);
-            Debug.Log($"UnityMessageReceiver: Received message type {messageType} with {data.Length} bytes");
         }
 
         /// <summary>

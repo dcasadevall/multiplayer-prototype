@@ -1,7 +1,6 @@
-using System;
 using ILogger = Shared.Logging.ILogger;
 
-namespace Core
+namespace Core.Logging
 {
     /// <summary>
     /// Unity implementation of ILogger that uses Unity's Debug.Log system.
@@ -21,6 +20,11 @@ namespace Core
         /// <param name="args">Optional structured arguments for formatting or context.</param>
         public void Debug(string message, params object[] args)
         {
+            if (!LogSettings.ShouldLog(LogLevel.Debug))
+            {
+                return;
+            }
+            
             var formattedMessage = args != null && args.Length > 0 
                 ? string.Format(message, args) 
                 : message;
@@ -34,6 +38,11 @@ namespace Core
         /// <param name="args">Optional structured arguments for formatting or context.</param>
         public void Info(string message, params object[] args)
         {
+            if (!LogSettings.ShouldLog(LogLevel.Info))
+            {
+                return;
+            }
+            
             var formattedMessage = args != null && args.Length > 0 
                 ? string.Format(message, args) 
                 : message;
@@ -47,6 +56,11 @@ namespace Core
         /// <param name="args">Optional structured arguments for formatting or context.</param>
         public void Warn(string message, params object[] args)
         {
+            if (!LogSettings.ShouldLog(LogLevel.Warn))
+            {
+                return;
+            }
+            
             var formattedMessage = args != null && args.Length > 0 
                 ? string.Format(message, args) 
                 : message;
@@ -60,6 +74,11 @@ namespace Core
         /// <param name="args">Optional structured arguments for formatting or context.</param>
         public void Error(string message, params object[] args)
         {
+            if (!LogSettings.ShouldLog(LogLevel.Error))
+            {
+                return;
+            }
+            
             var formattedMessage = args != null && args.Length > 0 
                 ? string.Format(message, args) 
                 : message;
@@ -73,6 +92,11 @@ namespace Core
         /// <param name="args">Optional structured arguments for formatting or context.</param>
         public void Fatal(string message, params object[] args)
         {
+            if (!LogSettings.ShouldLog(LogLevel.Fatal))
+            {
+                return;
+            }
+            
             var formattedMessage = args != null && args.Length > 0 
                 ? string.Format(message, args) 
                 : message;

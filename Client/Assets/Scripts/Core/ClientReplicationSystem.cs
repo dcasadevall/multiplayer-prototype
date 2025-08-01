@@ -57,7 +57,6 @@ namespace Core
         {
             if (messageType == MessageType.Snapshot)
             {
-                Debug.Log($"ClientReplicationSystem: Received snapshot of {data.Length} bytes");
                 _worldSnapshotConsumer.ConsumeSnapshot(data);
             }
         }
