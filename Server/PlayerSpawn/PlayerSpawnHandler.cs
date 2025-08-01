@@ -77,6 +77,12 @@ namespace Server.PlayerSpawn
                     PeerName = name
                 });
 
+                // Add a name component for display purposes
+                playerEntity.AddComponent(new NameComponent
+                {
+                    Name = name,
+                });
+
                 // Mark as replicated so it gets sent to clients
                 playerEntity.AddComponent(new ReplicatedTagComponent());
 

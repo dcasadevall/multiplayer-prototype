@@ -96,7 +96,15 @@ namespace Core
             // Create a simple GameObject for now
             // In a real implementation, you might load prefabs based on entity tags or components
             var view = GameObject.CreatePrimitive(PrimitiveType.Cube);
+            
+#if UNITY_EDITOR
             view.name = $"Entity_{entityId}";
+
+            if (entity.TryGet<NameComponent>(out var nameComponent))
+            {
+                view.name = nameComponent.Name;
+            }
+#endif
             view.transform.SetParent(_worldRoot);
             
             // Set initial position
