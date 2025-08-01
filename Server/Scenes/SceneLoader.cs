@@ -23,6 +23,11 @@ namespace Server.Scenes
         {
             var json = File.ReadAllText(path);
             var entityDescriptions = JsonSerializer.Deserialize<List<EntityDescription>>(json);
+            
+            if (entityDescriptions == null)
+            {
+                throw new InvalidOperationException($"Failed to deserialize scene from {path}");
+            }
 
             // Convert EntityDescription list to WorldSnapshotMessage
             var snapshotMsg = new WorldSnapshotMessage

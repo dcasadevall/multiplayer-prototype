@@ -1,9 +1,7 @@
 using LiteNetLib;
-using Server.Networking;
 using Shared.ECS;
 using Shared.ECS.Components;
 using Shared.Logging;
-using Shared.Networking.Messages;
 using Shared.Networking.Replication;
 
 namespace Server.PlayerSpawn
@@ -13,13 +11,13 @@ namespace Server.PlayerSpawn
     /// </summary>
     public class PlayerSpawnHandler : IDisposable
     {
-        private readonly NetEventBroadcaster _netEventBroadcaster;
+        private readonly EventBasedNetListener _netEventBroadcaster;
         private readonly EntityRegistry _entityRegistry;
         private readonly ILogger _logger;
         
-        private Dictionary<int, EntityId> _peerEntityMap = new();
+        private readonly Dictionary<int, EntityId> _peerEntityMap = new();
 
-        public PlayerSpawnHandler(NetEventBroadcaster netEventBroadcaster, 
+        public PlayerSpawnHandler(EventBasedNetListener netEventBroadcaster, 
             EntityRegistry entityRegistry, 
             ILogger logger)
         {
@@ -27,14 +25,14 @@ namespace Server.PlayerSpawn
             _entityRegistry = entityRegistry;
             _logger = logger;
             
-            netEventBroadcaster.PeerConnected += OnPeerConnected;
-            netEventBroadcaster.PeerDisconnected += OnPeerDisconnected;
+            netEventBroadcaster.PeerConnectedEvent += OnPeerConnected;
+            netEventBroadcaster.PeerDisconnectedEvent += OnPeerDisconnected;
         }
 
         public void Dispose()
         {
-            _netEventBroadcaster.PeerConnected -= OnPeerConnected;
-            _netEventBroadcaster.PeerDisconnected -= OnPeerDisconnected;
+            _netEventBroadcaster.PeerConnectedEvent -= OnPeerConnected;
+            _netEventBroadcaster.PeerDisconnectedEvent -= OnPeerDisconnected;
         }
 
         private void OnPeerConnected(NetPeer peer)

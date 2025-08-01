@@ -1,7 +1,7 @@
 using System;
 using System.Collections.Generic;
 
-namespace Shared.ECS
+namespace Shared.ECS.Entities
 {
     /// <summary>
     /// Represents a single entity in the ECS world.
@@ -44,7 +44,7 @@ namespace Shared.ECS
         /// <typeparam name="T">The type of the component to get.</typeparam>
         /// <param name="component">The component to get.</param>
         /// <returns>True if the component was found, false otherwise.</returns>
-        public bool TryGet<T>(out T component) where T : class, IComponent
+        public bool TryGet<T>(out T? component) where T : class, IComponent
         {
             if (_components.TryGetValue(typeof(T), out var value))
             {
@@ -63,7 +63,7 @@ namespace Shared.ECS
         /// <returns>The component of the given type, or null if not found.</returns>
         public T? Get<T>() where T : class, IComponent
         {
-            if (TryGet(out T component))
+            if (TryGet(out T? component))
             {
                 return component;
             }

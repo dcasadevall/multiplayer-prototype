@@ -1,4 +1,7 @@
 using System;
+using System.Threading;
+using LiteNetLib;
+using LiteNetLib.Utils;
 using Shared.Networking;
 using UnityEngine;
 
@@ -87,6 +90,38 @@ namespace Core
             // TODO: Implement connection logic
             // This is where you would establish a connection to the server
             // using your chosen networking library
+            EventBasedNetListener listener = new EventBasedNetListener();
+            NetManager client = new NetManager(listener);
+            client.Start();
+            
+            // Connect to the server
+            Console.WriteLine("Connecting to localhost:9050...");
+            client.Connect("localhost", 9050, "MySecretGameKey");
+            
+            // --- The Client Loop ---
+            try
+            {
+                // Send a message every second
+                while (true)
+                {
+                    client.PollEvents();
+                
+                    // If connected, send a message
+                    if (client.FirstPeer != null && client.FirstPeer.ConnectionState == ConnectionState.Connected)
+                    {
+                        var writer = new NetDataWriter();
+                        writer.Put($"Hello Server! Time is {DateTime.UtcNow:T}");
+                        client.FirstPeer.Send(writer, DeliveryMethod.ReliableOrdered);
+                        Console.WriteLine("Sent message.");
+                    }
+                
+                    Thread.Sleep(1000); // Wait 1 second
+                }
+            }
+            finally
+            {
+                client.Stop();
+            }
         }
         
         /// <summary>

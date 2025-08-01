@@ -4,6 +4,7 @@ using NSubstitute;
 using Server.Scenes;
 using Shared.ECS;
 using Shared.ECS.Components;
+using Shared.ECS.Entities;
 using Shared.Networking.Replication;
 using Shared.Logging;
 using Xunit;
@@ -60,11 +61,11 @@ namespace ServerUnitTests
                 Assert.True(entity.Has<HealthComponent>());
 
                 entity.TryGet<PositionComponent>(out var position);
-                Assert.Equal(new Vector3(1, 2, 3), position.Value);
+                Assert.Equal(new Vector3(1, 2, 3), position?.Value);
 
                 entity.TryGet<HealthComponent>(out var health);
-                Assert.Equal(100, health.MaxHealth);
-                Assert.Equal(100, health.CurrentHealth);
+                Assert.Equal(100, health?.MaxHealth);
+                Assert.Equal(100, health?.CurrentHealth);
             }
             finally
             {
@@ -122,7 +123,7 @@ namespace ServerUnitTests
                 Assert.False(entity1.Has<HealthComponent>());
 
                 entity1.TryGet<PositionComponent>(out var position1);
-                Assert.Equal(Vector3.Zero, position1.Value);
+                Assert.Equal(Vector3.Zero, position1?.Value);
 
                 // Second entity should have both position and health
                 var entity2 = entities[1];
@@ -130,10 +131,10 @@ namespace ServerUnitTests
                 Assert.True(entity2.Has<HealthComponent>());
 
                 entity2.TryGet<PositionComponent>(out var position2);
-                Assert.Equal(new Vector3(10, 20, 30), position2.Value);
+                Assert.Equal(new Vector3(10, 20, 30), position2?.Value);
 
                 entity2.TryGet<HealthComponent>(out var health2);
-                Assert.Equal(50, health2.MaxHealth);
+                Assert.Equal(50, health2?.MaxHealth);
             }
             finally
             {
@@ -204,7 +205,7 @@ namespace ServerUnitTests
                 Assert.False(entity.Has<HealthComponent>());
 
                 entity.TryGet<PositionComponent>(out var position);
-                Assert.Equal(new Vector3(5.5f, 10.5f, 15.5f), position.Value);
+                Assert.Equal(new Vector3(5.5f, 10.5f, 15.5f), position?.Value);
             }
             finally
             {
@@ -246,8 +247,8 @@ namespace ServerUnitTests
                 Assert.True(entity.Has<HealthComponent>());
 
                 entity.TryGet<HealthComponent>(out var health);
-                Assert.Equal(200, health.MaxHealth);
-                Assert.Equal(200, health.CurrentHealth);
+                Assert.Equal(200, health?.MaxHealth);
+                Assert.Equal(200, health?.CurrentHealth);
             }
             finally
             {

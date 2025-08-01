@@ -37,8 +37,8 @@ services.AddSingleton<PlayerSpawnHandler>();
 services.RegisterSharedTypes();
 
 // Server proxies events with NetEventBroadcaster
-services.AddSingleton<NetEventBroadcaster>();
-services.AddSingleton<INetEventListener>(sp => sp.GetRequiredService<NetEventBroadcaster>());
+services.AddSingleton<EventBasedNetListener>();
+services.AddSingleton<INetEventListener>(sp => sp.GetRequiredService<EventBasedNetListener>());
 services.AddSingleton<NetManager>();
 
 var serviceProvider = services.BuildServiceProvider();
