@@ -250,6 +250,7 @@ namespace SharedUnitTests.Networking.Replication
                 Assert.Equal(typeof(PositionComponent).FullName, component.Type);
 
                 var deserializedPosition = JsonSerializer.Deserialize<PositionComponent>(component.Json);
+                Assert.NotNull(deserializedPosition);
                 Assert.Equal(i, deserializedPosition.Value.X);
                 Assert.Equal(i, deserializedPosition.Value.Y);
                 Assert.Equal(i, deserializedPosition.Value.Z);

@@ -44,15 +44,16 @@ namespace Shared.ECS.Entities
         /// <typeparam name="T">The type of the component to get.</typeparam>
         /// <param name="component">The component to get.</param>
         /// <returns>True if the component was found, false otherwise.</returns>
-        public bool TryGet<T>(out T? component) where T : class, IComponent
+        public bool TryGet<T>(out T component) where T : class, IComponent
         {
             if (_components.TryGetValue(typeof(T), out var value))
             {
-                component = value as T;
+                component = (value as T)!;
                 return true;
             }
 
-            component = null;
+            // Ok to suppress nullability warning here because we return false if not found
+            component = null!;
             return false;
         }
     
@@ -63,7 +64,7 @@ namespace Shared.ECS.Entities
         /// <returns>The component of the given type, or null if not found.</returns>
         public T? Get<T>() where T : class, IComponent
         {
-            if (TryGet(out T? component))
+            if (TryGet(out T component))
             {
                 return component;
             }

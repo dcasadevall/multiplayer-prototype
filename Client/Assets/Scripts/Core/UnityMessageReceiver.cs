@@ -96,7 +96,7 @@ namespace Core
             
             // Connect to the server
             Console.WriteLine("Connecting to localhost:9050...");
-            client.Connect("localhost", 9050, "MySecretGameKey");
+            client.Connect("localhost", 9050, "");
             
             // --- The Client Loop ---
             try
