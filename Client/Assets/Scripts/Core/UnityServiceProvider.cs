@@ -1,10 +1,13 @@
 using System;
 using System.Collections.Generic;
+using Core.Scheduling;
 using LiteNetLib;
 using Microsoft.Extensions.DependencyInjection;
 using Shared;
 using Shared.ECS;
 using Shared.Networking;
+using Shared.Networking.Replication;
+using Shared.Scheduling;
 using UnityEngine;
 using ILogger = Shared.Logging.ILogger;
 
@@ -26,6 +29,9 @@ namespace Core
         
         [SerializeField]
         private UnityMessageReceiver _messageReceiver;
+        
+        [SerializeField]
+        private UnityMainThreadScheduler _mainThreadScheduler;
         
         /// <summary>
         /// Initializes the service collection and builds the service provider.
@@ -49,8 +55,11 @@ namespace Core
             _services.AddSingleton<ISystem, ClientReplicationSystem>();
             _services.AddSingleton<ISystem, EntityViewSystem>();
             
-            // Register shared services (Networking, Scheduling, etc.)
-            _services.RegisterSharedTypes();
+            // Register scheduler to use unity main thread
+            _services.AddSingleton<IScheduler>(_mainThreadScheduler);
+            
+            // Register the son replication types
+            _services.RegisterJsonReplicationTypes();
             
             // Register Networking classes
             _services.AddSingleton<IMessageReceiver>(_messageReceiver);
