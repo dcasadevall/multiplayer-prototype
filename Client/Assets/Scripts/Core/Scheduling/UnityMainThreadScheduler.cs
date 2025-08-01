@@ -17,7 +17,7 @@ namespace Core.Scheduling
         {
             private readonly Action _task;
             private readonly float _periodSeconds;
-            private readonly CancellationToken _cancellationToken;
+            private readonly CancellationTokenSource _linkedSource;
             private readonly MonoBehaviour _coroutineRunner;
             private Coroutine _coroutine;
 
@@ -25,8 +25,8 @@ namespace Core.Scheduling
             {
                 _task = task;
                 _periodSeconds = periodSeconds;
-                _cancellationToken = cancellationToken;
                 _coroutineRunner = coroutineRunner;
+                _linkedSource = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
                 
                 // Start the coroutine immediately
                 _coroutine = _coroutineRunner.StartCoroutine(RunTaskPeriodically());
@@ -34,7 +34,7 @@ namespace Core.Scheduling
 
             private IEnumerator RunTaskPeriodically()
             {
-                while (!_cancellationToken.IsCancellationRequested && _coroutine != null)
+                while (!_linkedSource.IsCancellationRequested)
                 {
                     try
                     {
@@ -51,6 +51,8 @@ namespace Core.Scheduling
 
             public void Dispose()
             {
+                _linkedSource.Cancel();
+                _linkedSource.Dispose();
                 _coroutineRunner?.StopCoroutine(_coroutine);
                 _coroutine = null;
             }
