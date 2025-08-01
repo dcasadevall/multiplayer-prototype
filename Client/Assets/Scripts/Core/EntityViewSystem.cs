@@ -2,6 +2,7 @@ using System.Collections.Generic;
 using Core.MathUtils;
 using Shared.ECS;
 using Shared.ECS.Components;
+using Shared.ECS.Entities;
 using Shared.ECS.Simulation;
 using UnityEngine;
 using Vector3 = System.Numerics.Vector3;

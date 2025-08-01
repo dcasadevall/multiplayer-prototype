@@ -46,6 +46,15 @@ var entityRegistry = serviceProvider.GetRequiredService<EntityRegistry>();
 var scheduler = serviceProvider.GetRequiredService<IScheduler>();
 var sceneLoader = serviceProvider.GetRequiredService<SceneLoader>();
 var netManager = serviceProvider.GetRequiredService<NetManager>();
+var eventListener = serviceProvider.GetRequiredService<EventBasedNetListener>();
+
+// Auto accept connection requests
+// This is fine for a simple server, but in a real game you would want to handle this more robustly
+eventListener.ConnectionRequestEvent += request =>
+{
+    request.Accept();
+};
+
 
 // TODO: IInitializable / IDisposable and auto lifecycle management
 var spawnHandler = serviceProvider.GetRequiredService<PlayerSpawnHandler>();
