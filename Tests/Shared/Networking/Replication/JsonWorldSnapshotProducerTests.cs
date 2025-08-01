@@ -1,6 +1,8 @@
 using System.Text.Json;
+using NSubstitute;
 using Shared.ECS;
 using Shared.ECS.Components;
+using Shared.Logging;
 using Shared.Networking.Replication;
 using Xunit;
 
@@ -13,8 +15,9 @@ namespace SharedUnitTests.Networking.Replication
 
         public JsonWorldSnapshotProducerTests()
         {
+            var logger = NSubstitute.Substitute.For<ILogger>();
             _registry = new EntityRegistry();
-            _producer = new JsonWorldSnapshotProducer(_registry);
+            _producer = new JsonWorldSnapshotProducer(_registry, logger);
         }
 
         [Fact]

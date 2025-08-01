@@ -3,6 +3,7 @@ using System.Linq;
 using System.Text;
 using System.Text.Json;
 using Shared.ECS;
+using Shared.Logging;
 
 namespace Shared.Networking.Replication
 {
@@ -13,14 +14,17 @@ namespace Shared.Networking.Replication
     public class JsonWorldSnapshotProducer : IWorldSnapshotProducer
     {
         private readonly EntityRegistry _entityRegistry;
+        private readonly ILogger _logger;
 
         /// <summary>
         /// Constructs a new <see cref="JsonWorldSnapshotProducer"/> for the given entity registry.
         /// </summary>
         /// <param name="entityRegistry">The entity registry to replicate entities from.</param>
-        public JsonWorldSnapshotProducer(EntityRegistry entityRegistry)
+        /// <param name="logger">Logger for debugging serialization issues.</param>
+        public JsonWorldSnapshotProducer(EntityRegistry entityRegistry, ILogger logger)
         {
             _entityRegistry = entityRegistry;
+            _logger = logger;
         }
 
         /// <summary>
@@ -39,17 +43,24 @@ namespace Shared.Networking.Replication
         public byte[] ProduceSnapshot()
         {
             var snapshot = new WorldSnapshotMessage();
+            var replicatedEntities = _entityRegistry.GetAll().Where(e => e.Has<ReplicatedTagComponent>()).ToList();
+            _logger.Debug("Found {0} entities to replicate", replicatedEntities.Count);
 
-            foreach (var entity in _entityRegistry.GetAll().Where(e => e.Has<ReplicatedTagComponent>()))
+            foreach (var entity in replicatedEntities)
             {
                 var components = entity.GetAllComponents()
                     .Where(component => component.GetType() != typeof(ReplicatedTagComponent))
                     .Select(component => new SnapshotComponent
                     {
                         Type = component.GetType().FullName!,
-                        Json = JsonSerializer.Serialize(component, component.GetType())
+                        Json = JsonSerializer.Serialize(component, component.GetType(), new JsonSerializerOptions
+                        {
+                            PropertyNamingPolicy = JsonNamingPolicy.CamelCase
+                        })
                     })
                     .ToList();
+
+                _logger.Debug("Entity {0} has {1} components to replicate", entity.Id, components.Count);
 
                 snapshot.Entities.Add(new SnapshotEntity
                 {
@@ -58,7 +69,16 @@ namespace Shared.Networking.Replication
                 });
             }
 
-            return Encoding.UTF8.GetBytes(JsonSerializer.Serialize(snapshot));
+            var options = new JsonSerializerOptions
+            {
+                PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
+                WriteIndented = true // Makes debugging easier
+            };
+
+            var json = JsonSerializer.Serialize(snapshot, options);
+            _logger.Debug("Produced snapshot JSON: {0}", json);
+
+            return Encoding.UTF8.GetBytes(json);
         }
     }
 }

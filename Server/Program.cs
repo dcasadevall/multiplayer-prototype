@@ -64,8 +64,8 @@ eventListener.NetworkReceiveEvent += (peer, reader, channel, method) =>
 // TODO: IInitializable / IDisposable and auto lifecycle management
 var spawnHandler = serviceProvider.GetRequiredService<PlayerSpawnHandler>();
 
-// TODO: More robust scene loading eventually
-sceneLoader.Load("Server/Scenes/basic_scene.json");
+var path = Path.Combine(AppContext.BaseDirectory, "Scenes", "basic_scene.json");
+sceneLoader.Load(path);
 
 // Create a fixed timestep world running at the specified frequency
 // Add all the systems registered in the service provider

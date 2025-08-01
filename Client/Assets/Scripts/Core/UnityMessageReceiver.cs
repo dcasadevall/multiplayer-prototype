@@ -65,8 +65,8 @@ namespace Core
         {
             var messageType = (MessageType)reader.GetByte();
             var data = reader.GetRemainingBytes();
-            Debug.Log($"UnityMessageReceiver: Received {messageType} message of {data.Length} bytes");
             OnMessageReceived?.Invoke(messageType, data);
+            Debug.Log($"UnityMessageReceiver: Received message type {messageType} with {data.Length} bytes");
         }
 
         /// <summary>
@@ -109,9 +109,28 @@ namespace Core
         /// <param name="messageData">The message data to send.</param>
         public void SendToServer(byte[] messageData)
         {
-            // TODO: Implement sending logic
-            // This is where you would send the message to the server
-            // using your chosen networking library
+            var client = _serviceProvider.GetService<NetManager>();
+            if (!client.IsRunning)
+            {
+                Debug.LogWarning("UnityMessageReceiver: Cannot send message - client not running");
+                return;
+            }
+
+            var peer = client.FirstPeer;
+            if (peer == null)
+            {
+                Debug.LogWarning("UnityMessageReceiver: Cannot send message - no server connection");
+                return;
+            }
+
+            // Create a writer and write the message type and data
+            var writer = new NetDataWriter();
+            writer.Put((byte)MessageType.Snapshot); // TODO: Add more message types as needed
+            writer.Put(messageData);
+
+            // Send to server
+            peer.Send(writer, DeliveryMethod.ReliableOrdered);
+            Debug.Log($"UnityMessageReceiver: Sent {messageData.Length} bytes to server");
         }
         
         private void OnDestroy()

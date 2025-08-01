@@ -43,11 +43,31 @@ namespace Shared.Networking.Replication
             }
         
             var json = Encoding.UTF8.GetString(snapshot);
-            var snapshotMsg = JsonSerializer.Deserialize<WorldSnapshotMessage>(json);
-            if (snapshotMsg == null)
+            _logger.Debug("Attempting to deserialize JSON: {0}", json);
+
+            var options = new JsonSerializerOptions
             {
+                PropertyNamingPolicy = JsonNamingPolicy.CamelCase
+            };
+
+            WorldSnapshotMessage? snapshotMsg;
+            try
+            {
+                snapshotMsg = JsonSerializer.Deserialize<WorldSnapshotMessage>(json, options);
+            }
+            catch (Exception e)
+            {
+                _logger.Error("Failed to deserialize snapshot: {0}", e.Message);
                 return;
             }
+
+            if (snapshotMsg == null)
+            {
+                _logger.Error("Failed to deserialize snapshot - result was null");
+                return;
+            }
+
+            _logger.Debug("Successfully deserialized snapshot with {0} entities", snapshotMsg.Entities.Count);
 
             foreach (var snapshotEntity in snapshotMsg.Entities)
             {

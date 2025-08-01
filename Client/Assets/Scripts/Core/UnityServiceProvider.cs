@@ -55,7 +55,7 @@ namespace Core
             // Register Networking classes
             _services.AddSingleton<IMessageReceiver>(_messageReceiver);
             _services.AddSingleton<EventBasedNetListener>();
-            _services.AddSingleton<INetEventListener, EventBasedNetListener>();
+            _services.AddSingleton<INetEventListener>(sp => sp.GetRequiredService<EventBasedNetListener>());
             _services.AddSingleton<NetManager>();
             
             // Build the service provider

@@ -55,13 +55,9 @@ namespace Core
         
         private void Start()
         {
-            // Connect to the server asynchronously
-            Task.Run(() =>
-            {
-                // Start listening for network messages
-                var messageReceiver = _serviceProvider.GetService<IMessageReceiver>();
-                messageReceiver?.StartListening();
-            });
+            // Start listening for network messages
+            var messageReceiver = _serviceProvider.GetService<IMessageReceiver>();
+            messageReceiver?.StartListening();
             
             // Start the world (similar to server)
             Debug.Log("Starting fixed timestep world...");

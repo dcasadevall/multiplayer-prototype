@@ -21,6 +21,7 @@ namespace Shared.ECS.Components
             }
         }
     
+        [JsonPropertyName("currentHealth")]
         public int CurrentHealth 
         { 
             get => _currentHealth;
