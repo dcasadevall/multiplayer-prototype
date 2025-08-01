@@ -53,6 +53,13 @@ eventListener.ConnectionRequestEvent += request =>
     request.AcceptIfKey(SharedConstants.NetSecret);
 };
 
+eventListener.NetworkReceiveEvent += (peer, reader, channel, method) =>
+{
+    // Log incoming messages. For now, convert the message to a string for simplicity.
+    var message = reader.GetString();
+    Console.WriteLine($"Received message from {peer.Address}: {message}");
+};
+
 
 // TODO: IInitializable / IDisposable and auto lifecycle management
 var spawnHandler = serviceProvider.GetRequiredService<PlayerSpawnHandler>();

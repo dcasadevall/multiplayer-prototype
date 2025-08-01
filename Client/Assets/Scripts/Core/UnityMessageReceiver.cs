@@ -20,15 +20,22 @@ namespace Core
     /// </summary>
     public class UnityMessageReceiver : MonoBehaviour, IMessageReceiver
     {
+        [SerializeField] 
+        private UnityServiceProvider _serviceProvider;
+        
         public event Action<MessageType, byte[]> OnMessageReceived;
         
         private CancellationTokenSource _cancellationTokenSource;
-        
+
         /// <summary>
         /// Starts listening for incoming network messages.
         /// </summary>
         public void StartListening()
         {
+            Debug.Log("UnityMessageReceiver: Started listening for network messages");
+            var eventListener = _serviceProvider.GetService<EventBasedNetListener>();
+            eventListener.NetworkReceiveEvent += HandleMessageReceived;
+            
             // Connect to the server asynchronously
             _cancellationTokenSource = new CancellationTokenSource();
             Task.Run(() => ConnectToServer(_cancellationTokenSource.Token), _cancellationTokenSource.Token);
@@ -40,6 +47,9 @@ namespace Core
         public void StopListening()
         {
             Debug.Log("UnityMessageReceiver: Stopped listening for network messages");
+            var eventListener = _serviceProvider.GetService<EventBasedNetListener>();
+            eventListener.NetworkReceiveEvent -= HandleMessageReceived;
+            
             _cancellationTokenSource?.Cancel();
             _cancellationTokenSource?.Dispose();
         }
@@ -48,10 +58,13 @@ namespace Core
         /// Internal method to trigger message received events.
         /// This would typically be called by the networking library's message handler.
         /// </summary>
-        /// <param name="messageType">The type of message received.</param>
-        /// <param name="data">The message data.</param>
-        private void HandleMessageReceived(MessageType messageType, byte[] data)
+        private void HandleMessageReceived(NetPeer peer, 
+            NetPacketReader reader, 
+            byte channel, 
+            DeliveryMethod deliveryMethod)
         {
+            var messageType = (MessageType)reader.GetByte();
+            var data = reader.GetRemainingBytes();
             Debug.Log($"UnityMessageReceiver: Received {messageType} message of {data.Length} bytes");
             OnMessageReceived?.Invoke(messageType, data);
         }
@@ -65,12 +78,8 @@ namespace Core
             var serverAddress = SharedConstants.ServerAddress;
             var port = SharedConstants.ServerPort;
             Debug.Log($"UnityMessageReceiver: Connecting to server at {serverAddress}:{port}");
-            
-            // TODO: Implement connection logic
-            // This is where you would establish a connection to the server
-            // using your chosen networking library
-            EventBasedNetListener listener = new EventBasedNetListener();
-            NetManager client = new NetManager(listener);
+
+            var client = _serviceProvider.GetService<NetManager>();
             client.Start();
             
             // Connect to the server
@@ -85,33 +94,13 @@ namespace Core
                 {
                     client.PollEvents();
                 
-                    // If connected, send a message
-                    if (client.FirstPeer != null && client.FirstPeer.ConnectionState == ConnectionState.Connected)
-                    {
-                        var writer = new NetDataWriter();
-                        writer.Put($"Hello Server! Time is {DateTime.UtcNow:T}");
-                        client.FirstPeer.Send(writer, DeliveryMethod.ReliableOrdered);
-                        Console.WriteLine("Sent message.");
-                    }
-                
-                    Thread.Sleep(1000); // Wait 1 second
+                    Thread.Sleep(10); // Wait 10ms
                 }
             }
             finally
             {
                 client.Stop();
             }
-        }
-        
-        /// <summary>
-        /// Disconnects from the server.
-        /// </summary>
-        public void DisconnectFromServer()
-        {
-            Debug.Log("UnityMessageReceiver: Disconnecting from server");
-            
-            // TODO: Implement disconnection logic
-            // This is where you would cleanly disconnect from the server
         }
         
         /// <summary>

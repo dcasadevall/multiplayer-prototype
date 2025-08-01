@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using LiteNetLib;
 using Microsoft.Extensions.DependencyInjection;
 using Shared;
 using Shared.ECS;
@@ -51,8 +52,11 @@ namespace Core
             // Register shared services (Networking, Scheduling, etc.)
             _services.RegisterSharedTypes();
             
-            // Register UnityMessageReceiver as the IMessageReceiver implementation
+            // Register Networking classes
             _services.AddSingleton<IMessageReceiver>(_messageReceiver);
+            _services.AddSingleton<EventBasedNetListener>();
+            _services.AddSingleton<INetEventListener, EventBasedNetListener>();
+            _services.AddSingleton<NetManager>();
             
             // Build the service provider
             _serviceProvider = _services.BuildServiceProvider();
@@ -67,12 +71,7 @@ namespace Core
         /// <returns>The service instance.</returns>
         public T GetService<T>() where T : class
         {
-            if (_serviceProvider == null)
-            {
-                throw new InvalidOperationException("Service provider not initialized. Call Initialize() first.");
-            }
-            
-            return _serviceProvider.GetRequiredService<T>();
+            return _serviceProvider?.GetRequiredService<T>();
         }
         
         /// <summary>
@@ -82,12 +81,7 @@ namespace Core
         /// <returns>All service instances of the specified type.</returns>
         public IEnumerable<T> GetServices<T>() where T : class
         {
-            if (_serviceProvider == null)
-            {
-                throw new InvalidOperationException("Service provider not initialized. Call Initialize() first.");
-            }
-            
-            return _serviceProvider.GetServices<T>();
+            return _serviceProvider?.GetServices<T>();
         }
         
         /// <summary>

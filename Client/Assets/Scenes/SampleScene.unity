@@ -461,9 +461,6 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   _inputListener: {fileID: 963194229}
-  _serverAddress: localhost
-  _serverPort: 9050
-  _clientWorldManager: {fileID: 963194234}
 --- !u!114 &963194232
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -476,6 +473,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 152142024e54546aab3a4cb672448a51, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  _serviceProvider: {fileID: 963194233}
 --- !u!114 &963194233
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -501,7 +499,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 0960d954de77f4dbf83c6bde4b280f0a, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  _ticksPerSecond: 30
   _serviceProvider: {fileID: 963194233}
 --- !u!1001 &7249682971234189977
 PrefabInstance:
