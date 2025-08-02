@@ -3,10 +3,8 @@ using Shared.ECS;
 using Shared.ECS.Replication;
 using Shared.ECS.Simulation;
 using Shared.Networking;
-using Shared.Networking.Replication;
-using UnityEngine;
 
-namespace Core
+namespace Core.ECS.Replication
 {
     /// <summary>
     /// ECS system responsible for consuming world snapshots received from the server.
@@ -27,7 +25,7 @@ namespace Core
     /// </para>
     /// </summary>
     [TickInterval(1)] // Process snapshots as frequently as possible
-    public class ClientReplicationSystem : ISystem
+    public class ClientReplicationSystem : ISystem, IDisposable
     {
         private readonly IWorldSnapshotConsumer _worldSnapshotConsumer;
         private readonly IMessageReceiver _messageReceiver;
@@ -62,7 +60,7 @@ namespace Core
 
         private void HandleMessageReceived(WorldSnapshotMessage msg)
         {
-            _worldSnapshotConsumer.ConsumeSnapshot(data);
+            _worldSnapshotConsumer.ConsumeSnapshot(msg);
         }
 
         /// <summary>

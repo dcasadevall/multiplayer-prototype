@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 using System.Text.Json;
 using Shared.Logging;
 
@@ -10,7 +9,7 @@ namespace Shared.ECS.Replication
     /// <summary>
     /// JSON Implementation of <see cref="IWorldSnapshotConsumer"/>.
     /// <para>
-    /// Deserializes a world snapshot (in JSON format) and applies it to the provided <see cref="EntityRegistry"/>.
+    /// Deserializes a world snapshot and applies it to the provided <see cref="EntityRegistry"/>.
     /// For each entity in the snapshot, components are deserialized and added or replaced in the registry.
     /// Entities not present in the snapshot are pruned from the registry to maintain consistency with the server.
     /// </para>
@@ -29,46 +28,10 @@ namespace Shared.ECS.Replication
             _logger = logger;
         }
 
-        /// <summary>
-        /// Consumes a JSON-encoded world snapshot and updates the local entity registry.
-        /// </summary>
-        /// <param name="snapshot">The snapshot data as a UTF-8 encoded JSON byte array.</param>
-        public void ConsumeSnapshot(byte[] snapshot)
+        /// <inheritdoc />
+        public void ConsumeSnapshot(WorldSnapshotMessage snapshot)
         {
-            // If the snapshot is empty, do nothing
-            if (snapshot.Length == 0)
-            {
-                return;
-            }
-
-            var json = Encoding.UTF8.GetString(snapshot);
-            _logger.Debug("Attempting to deserialize JSON: {0}", json);
-
-            var options = new JsonSerializerOptions
-            {
-                PropertyNamingPolicy = JsonNamingPolicy.CamelCase
-            };
-
-            WorldSnapshotMessage? snapshotMsg;
-            try
-            {
-                snapshotMsg = JsonSerializer.Deserialize<WorldSnapshotMessage>(json, options);
-            }
-            catch (Exception e)
-            {
-                _logger.Error("Failed to deserialize snapshot: {0}", e.Message);
-                return;
-            }
-
-            if (snapshotMsg == null)
-            {
-                _logger.Error("Failed to deserialize snapshot - result was null");
-                return;
-            }
-
-            _logger.Debug("Successfully deserialized snapshot with {0} entities", snapshotMsg.Entities.Count);
-
-            foreach (var snapshotEntity in snapshotMsg.Entities)
+            foreach (var snapshotEntity in snapshot.Entities)
             {
                 var entity = _entityRegistry.GetOrCreate(snapshotEntity.Id);
 
@@ -87,6 +50,9 @@ namespace Shared.ECS.Replication
                     }
                 }
             }
+
+            // Prune entities that are not in the snapshot
+            PruneStaleEntities(snapshot.Entities.Select(e => new EntityId(e.Id)));
         }
 
         /// <summary>

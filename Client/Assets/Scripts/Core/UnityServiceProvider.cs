@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using Core.ECS.Rendering;
+using Core.ECS.Replication;
 using Core.Logging;
 using Core.Scheduling;
 using Microsoft.Extensions.DependencyInjection;
@@ -47,10 +48,14 @@ namespace Core
             services.AddSingleton<ILogger, UnityLogger>();
             
             // Register client systems
-            services.AddSingleton<ISystem, ClientReplicationSystem>();
-            services.AddSingleton<ISystem, EntityViewSystem>();
-            services.AddSingleton<IEntityViewRegistry>(sp => sp.GetService<EntityViewSystem>());
+            services.AddSingleton<ClientReplicationSystem>();
+            services.AddSingleton<ISystem>(sp => sp.GetRequiredService<ClientReplicationSystem>());
+            services.AddSingleton<IDisposable>(sp => sp.GetRequiredService<ClientReplicationSystem>());
+            
+            services.AddSingleton<EntityViewSystem>();
+            services.AddSingleton<ISystem>(sp => sp.GetService<EntityViewSystem>());
             services.AddSingleton<IDisposable>(sp => sp.GetService<EntityViewSystem>());
+            services.AddSingleton<IEntityViewRegistry>(sp => sp.GetService<EntityViewSystem>());
             
             // Register scheduler and lifecycle management
             // The IScheduler implementation is client-specific

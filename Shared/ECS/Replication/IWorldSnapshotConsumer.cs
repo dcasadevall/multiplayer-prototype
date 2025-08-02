@@ -13,7 +13,7 @@ namespace Shared.ECS.Replication
         /// <summary>
         /// Consumes a serialized world snapshot and applies it to the local entity registry.
         /// </summary>
-        /// <param name="snapshot">The serialized snapshot data (e.g., JSON or binary).</param>
-        void ConsumeSnapshot(byte[] snapshot);
+        /// <param name="snapshot">The serialized snapshot message.</param>
+        void ConsumeSnapshot(WorldSnapshotMessage snapshot);
     }
 }

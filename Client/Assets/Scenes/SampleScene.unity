@@ -337,7 +337,6 @@ GameObject:
   - component: {fileID: 963194227}
   - component: {fileID: 963194226}
   - component: {fileID: 963194231}
-  - component: {fileID: 963194232}
   - component: {fileID: 963194233}
   - component: {fileID: 963194234}
   - component: {fileID: 963194235}
@@ -435,19 +434,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 7ef275a84d0e434d91f098f894a39537, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
---- !u!114 &963194232
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 963194225}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 152142024e54546aab3a4cb672448a51, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  _serviceProvider: {fileID: 963194233}
 --- !u!114 &963194233
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -460,7 +446,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: cf415408da1fe45eea884688da35ec9e, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  _messageReceiver: {fileID: 963194232}
   _mainThreadScheduler: {fileID: 963194235}
 --- !u!114 &963194234
 MonoBehaviour:

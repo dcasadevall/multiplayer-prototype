@@ -14,17 +14,17 @@ namespace Shared.Networking
         /// Broadcasts a message to all connected peers.
         /// </summary>
         /// <param name="type">The type of the message.</param>
-        /// <param name="data">The message payload.</param>
+        /// <param name="message">The message to send.</param>
         /// <param name="channel">The channel type (reliable/unreliable).</param>
-        void BroadcastMessage(MessageType type, byte[] data, ChannelType channel = ChannelType.Unreliable);
+        void BroadcastMessage<TMessage>(MessageType type, TMessage message, ChannelType channel = ChannelType.Unreliable);
 
         /// <summary>
         /// Sends a message to a specific peer by peer ID.
         /// </summary>
         /// <param name="peerId">The ID of the peer to send the message to.</param>
         /// <param name="type">The type of the message.</param>
-        /// <param name="data">The message payload.</param>
+        /// <param name="message">The message to send.</param>
         /// <param name="channel">The channel type (reliable/unreliable).</param>
-        void SendMessage(int peerId, MessageType type, byte[] data, ChannelType channel = ChannelType.Unreliable);
+        void SendMessage<TMessage>(int peerId, MessageType type, TMessage message, ChannelType channel = ChannelType.Unreliable);
     }
 }

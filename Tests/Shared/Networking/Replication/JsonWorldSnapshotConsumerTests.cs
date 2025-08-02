@@ -148,7 +148,7 @@ namespace SharedUnitTests.Networking.Replication
             var initialCount = _registry.GetAll().Count();
 
             // Act & Assert - Should not throw exception
-            var exception = Record.Exception(() => _consumer.ConsumeSnapshot(new byte[0]));
+            var exception = Record.Exception(() => _consumer.ConsumeSnapshot(new WorldSnapshotMessage()));
             Assert.Null(exception);
 
             // Assert
@@ -178,12 +178,12 @@ namespace SharedUnitTests.Networking.Replication
             Assert.Equal(5.0f, position.Value.Z);
         }
 
-        private byte[] CreateSnapshotWithPositionComponent(Guid entityId, float x, float y, float z)
+        private WorldSnapshotMessage CreateSnapshotWithPositionComponent(Guid entityId, float x, float y, float z)
         {
             var positionComponent = new PositionComponent(new System.Numerics.Vector3(x, y, z));
             var positionJson = JsonSerializer.Serialize(positionComponent);
 
-            var snapshot = new WorldSnapshotMessage
+            return new WorldSnapshotMessage
             {
                 Entities =
                 {
@@ -201,13 +201,11 @@ namespace SharedUnitTests.Networking.Replication
                     }
                 }
             };
-
-            return System.Text.Encoding.UTF8.GetBytes(JsonSerializer.Serialize(snapshot));
         }
 
-        private byte[] CreateSnapshotWithHealthComponent(Guid entityId, int maxHealth)
+        private WorldSnapshotMessage CreateSnapshotWithHealthComponent(Guid entityId, int maxHealth)
         {
-            var snapshot = new WorldSnapshotMessage
+            return new WorldSnapshotMessage
             {
                 Entities =
                 {
@@ -225,13 +223,12 @@ namespace SharedUnitTests.Networking.Replication
                     }
                 }
             };
-
-            return System.Text.Encoding.UTF8.GetBytes(JsonSerializer.Serialize(snapshot));
         }
 
-        private byte[] CreateSnapshotWithMultipleComponents(Guid entityId, float x, float y, float z, int maxHealth)
+        private WorldSnapshotMessage CreateSnapshotWithMultipleComponents(Guid entityId, float x, float y, float z,
+            int maxHealth)
         {
-            var snapshot = new WorldSnapshotMessage
+            return new WorldSnapshotMessage
             {
                 Entities =
                 {
@@ -255,13 +252,11 @@ namespace SharedUnitTests.Networking.Replication
                     }
                 }
             };
-
-            return System.Text.Encoding.UTF8.GetBytes(JsonSerializer.Serialize(snapshot));
         }
 
-        private byte[] CreateSnapshotWithMultipleEntities(Guid entityId1, Guid entityId2)
+        private WorldSnapshotMessage CreateSnapshotWithMultipleEntities(Guid entityId1, Guid entityId2)
         {
-            var snapshot = new WorldSnapshotMessage
+            return new WorldSnapshotMessage
             {
                 Entities =
                 {
@@ -292,13 +287,11 @@ namespace SharedUnitTests.Networking.Replication
                     }
                 }
             };
-
-            return System.Text.Encoding.UTF8.GetBytes(JsonSerializer.Serialize(snapshot));
         }
 
-        private byte[] CreateSnapshotWithInvalidComponentType(Guid entityId)
+        private WorldSnapshotMessage CreateSnapshotWithInvalidComponentType(Guid entityId)
         {
-            var snapshot = new WorldSnapshotMessage
+            return new WorldSnapshotMessage
             {
                 Entities =
                 {
@@ -316,8 +309,6 @@ namespace SharedUnitTests.Networking.Replication
                     }
                 }
             };
-
-            return System.Text.Encoding.UTF8.GetBytes(JsonSerializer.Serialize(snapshot));
         }
     }
 }

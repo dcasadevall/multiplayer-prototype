@@ -9,9 +9,6 @@ namespace Adapters
 {
     public class GameManager : MonoBehaviour
     {
-        [Header("ECS Integration")]
-        [SerializeField] private InputListener _inputListener;
-
         private List<IProjectile> _projectiles = new();
         
         private void HandleShoot(Vector3 position, Vector3 direction)

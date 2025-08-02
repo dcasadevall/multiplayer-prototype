@@ -1,3 +1,5 @@
+using System;
+using System.Text.Json;
 using LiteNetLib;
 using LiteNetLib.Utils;
 using Shared.Logging;
@@ -6,6 +8,7 @@ namespace Shared.Networking
 {
     /// <summary>
     /// Provides an implementation of <see cref="IMessageSender"/> using LiteNetLib for network communication.
+    /// Messages are serialized to JSON format before being sent over the network.
     /// <para>
     /// Responsible for sending and broadcasting messages to peers over the network, supporting different message types and channels.
     /// Utilizes <see cref="ILogger"/> for structured logging of network events and errors.
@@ -15,29 +18,41 @@ namespace Shared.Networking
     /// If a peer is not found, a warning is logged.
     /// </para>
     /// </summary>
-    public class NetLibMessageSender : IMessageSender
+    public class NetLibJsonMessageSender : IMessageSender
     {
         private readonly NetManager _netManager;
         private readonly ILogger _logger;
 
-        public NetLibMessageSender(NetManager netManager, ILogger logger)
+        public NetLibJsonMessageSender(NetManager netManager, ILogger logger)
         {
             _netManager = netManager;
             _logger = logger;
         }
 
         /// <inheritdoc />
-        public void BroadcastMessage(MessageType type, byte[] data, ChannelType channel = ChannelType.Unreliable)
+        public void BroadcastMessage<TMessage>(MessageType type, TMessage message, ChannelType channel = ChannelType.Unreliable)
         {
-            _netManager.ConnectedPeerList.ForEach(peer => SendMessage(peer.Id, type, data, channel));
+            _netManager.ConnectedPeerList.ForEach(peer => SendMessage(peer.Id, type, message, channel));
         }
 
         /// <inheritdoc />
-        public void SendMessage(int peerId, MessageType type, byte[] data, ChannelType channel = ChannelType.Unreliable)
+        public void SendMessage<TMessage>(int peerId, MessageType type, TMessage message, ChannelType channel = ChannelType.Unreliable)
         {
             NetDataWriter writer = new NetDataWriter();
             writer.Put((byte)type);
-            writer.Put(data);
+
+            // Serialize the data via Json
+            try
+            {
+                var json = JsonSerializer.Serialize(message);
+                var data = System.Text.Encoding.UTF8.GetBytes(json);
+                writer.Put(data);
+            }
+            catch (Exception ex)
+            {
+                _logger.Error($"Failed to serialize message of type {typeof(TMessage).Name} to JSON: {ex.Message}");
+                return;
+            }
 
             NetPeer? peer = _netManager.GetPeerById(peerId);
             if (peer == null)
@@ -45,7 +60,7 @@ namespace Shared.Networking
                 _logger.Warn($"Failed to send message to peer {peerId}: Peer not found.");
                 return;
             }
-        
+
             peer.Send(writer, channel.ToDeliveryMethod());
         }
     }

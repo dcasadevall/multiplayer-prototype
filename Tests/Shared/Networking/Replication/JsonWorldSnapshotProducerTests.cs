@@ -28,10 +28,9 @@ namespace SharedUnitTests.Networking.Replication
             entity.AddComponent(new PositionComponent(new System.Numerics.Vector3(1.0f, 2.0f, 3.0f)));
 
             // Act
-            var snapshotBytes = _producer.ProduceSnapshot();
+            var snapshot = _producer.ProduceSnapshot();
 
             // Assert
-            var snapshot = DeserializeSnapshot(snapshotBytes);
             Assert.Empty(snapshot.Entities);
         }
 
@@ -44,10 +43,9 @@ namespace SharedUnitTests.Networking.Replication
             entity.AddComponent(new PositionComponent(new System.Numerics.Vector3(1.0f, 2.0f, 3.0f)));
 
             // Act
-            var snapshotBytes = _producer.ProduceSnapshot();
+            var snapshot = _producer.ProduceSnapshot();
 
             // Assert
-            var snapshot = DeserializeSnapshot(snapshotBytes);
             Assert.Single(snapshot.Entities);
 
             var snapshotEntity = snapshot.Entities.First();
@@ -68,10 +66,9 @@ namespace SharedUnitTests.Networking.Replication
             entity.AddComponent(new HealthComponent(150));
 
             // Act
-            var snapshotBytes = _producer.ProduceSnapshot();
+            var snapshot = _producer.ProduceSnapshot();
 
             // Assert
-            var snapshot = DeserializeSnapshot(snapshotBytes);
             Assert.Single(snapshot.Entities);
 
             var snapshotEntity = snapshot.Entities.First();
@@ -95,10 +92,9 @@ namespace SharedUnitTests.Networking.Replication
             entity2.AddComponent(new HealthComponent(200));
 
             // Act
-            var snapshotBytes = _producer.ProduceSnapshot();
+            var snapshot = _producer.ProduceSnapshot();
 
             // Assert
-            var snapshot = DeserializeSnapshot(snapshotBytes);
             Assert.Equal(2, snapshot.Entities.Count);
 
             var entityIds = snapshot.Entities.Select(e => e.Id).ToList();
@@ -118,10 +114,9 @@ namespace SharedUnitTests.Networking.Replication
             nonReplicatedEntity.AddComponent(new PositionComponent(new System.Numerics.Vector3(4.0f, 5.0f, 6.0f)));
 
             // Act
-            var snapshotBytes = _producer.ProduceSnapshot();
+            var snapshot = _producer.ProduceSnapshot();
 
             // Assert
-            var snapshot = DeserializeSnapshot(snapshotBytes);
             Assert.Single(snapshot.Entities);
 
             var snapshotEntity = snapshot.Entities.First();
@@ -137,10 +132,9 @@ namespace SharedUnitTests.Networking.Replication
             entity.AddComponent(new PositionComponent(new System.Numerics.Vector3(1.5f, 2.5f, 3.5f)));
 
             // Act
-            var snapshotBytes = _producer.ProduceSnapshot();
+            var snapshot = _producer.ProduceSnapshot();
 
             // Assert
-            var snapshot = DeserializeSnapshot(snapshotBytes);
             var snapshotEntity = snapshot.Entities.First();
             var positionComponent = snapshotEntity.Components.First(c => c.Type == typeof(PositionComponent).FullName);
 
@@ -160,10 +154,9 @@ namespace SharedUnitTests.Networking.Replication
             entity.AddComponent(new HealthComponent(175));
 
             // Act
-            var snapshotBytes = _producer.ProduceSnapshot();
+            var snapshot = _producer.ProduceSnapshot();
 
             // Assert
-            var snapshot = DeserializeSnapshot(snapshotBytes);
             var snapshotEntity = snapshot.Entities.First();
             var healthComponent = snapshotEntity.Components.First(c => c.Type == typeof(HealthComponent).FullName);
 
@@ -177,10 +170,9 @@ namespace SharedUnitTests.Networking.Replication
         public void ProduceSnapshot_WithEmptyRegistry_ReturnsEmptySnapshot()
         {
             // Act
-            var snapshotBytes = _producer.ProduceSnapshot();
+            var snapshot = _producer.ProduceSnapshot();
 
             // Assert
-            var snapshot = DeserializeSnapshot(snapshotBytes);
             Assert.Empty(snapshot.Entities);
         }
 
@@ -192,10 +184,9 @@ namespace SharedUnitTests.Networking.Replication
             entity.AddComponent(new ReplicatedTagComponent());
 
             // Act
-            var snapshotBytes = _producer.ProduceSnapshot();
+            var snapshot = _producer.ProduceSnapshot();
 
             // Assert
-            var snapshot = DeserializeSnapshot(snapshotBytes);
             Assert.Single(snapshot.Entities);
 
             var snapshotEntity = snapshot.Entities.First();
@@ -213,10 +204,9 @@ namespace SharedUnitTests.Networking.Replication
             entity.AddComponent(new VelocityComponent { Value = new System.Numerics.Vector3(0.1f, 0.2f, 0.3f) });
 
             // Act
-            var snapshotBytes = _producer.ProduceSnapshot();
+            var snapshot = _producer.ProduceSnapshot();
 
             // Assert
-            var snapshot = DeserializeSnapshot(snapshotBytes);
             var snapshotEntity = snapshot.Entities.First();
 
             // Should only include components that are serializable
@@ -238,10 +228,9 @@ namespace SharedUnitTests.Networking.Replication
             }
 
             // Act
-            var snapshotBytes = _producer.ProduceSnapshot();
+            var snapshot = _producer.ProduceSnapshot();
 
             // Assert
-            var snapshot = DeserializeSnapshot(snapshotBytes);
             Assert.Equal(entityCount, snapshot.Entities.Count);
 
             for (int i = 0; i < entityCount; i++)
@@ -258,14 +247,6 @@ namespace SharedUnitTests.Networking.Replication
                 Assert.Equal(i, deserializedPosition.Value.Y);
                 Assert.Equal(i, deserializedPosition.Value.Z);
             }
-        }
-
-        private WorldSnapshotMessage DeserializeSnapshot(byte[] snapshotBytes)
-        {
-            var json = System.Text.Encoding.UTF8.GetString(snapshotBytes);
-            var result = JsonSerializer.Deserialize<WorldSnapshotMessage>(json);
-            Assert.NotNull(result);
-            return result;
         }
     }
 }

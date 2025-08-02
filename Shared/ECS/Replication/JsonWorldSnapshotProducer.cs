@@ -26,7 +26,7 @@ namespace Shared.ECS.Replication
         }
 
         /// <summary>
-        /// Creates a binary snapshot of all entities with <see cref="ReplicatedTagComponent"/>,
+        /// Creates a snapshot of all entities with <see cref="ReplicatedTagComponent"/>,
         /// including all components.
         /// Internally, uses JSON serialization to convert component states into a format suitable for network transmission.
         /// 
@@ -37,8 +37,8 @@ namespace Shared.ECS.Replication
         /// NOTE: This implementation does not scale well for large worlds or many entities.
         /// We should consider moving off of dynamic typing and JSON serialization as needed.
         /// </summary>
-        /// <returns>A byte array containing the serialized snapshot.</returns>
-        public byte[] ProduceSnapshot()
+        /// <returns>The snapshot message containing all entities in the world</returns>
+        public WorldSnapshotMessage ProduceSnapshot()
         {
             var snapshot = new WorldSnapshotMessage();
             var replicatedEntities = _entityRegistry.GetAll().Where(e => e.Has<ReplicatedTagComponent>()).ToList();
@@ -67,16 +67,7 @@ namespace Shared.ECS.Replication
                 });
             }
 
-            var options = new JsonSerializerOptions
-            {
-                PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
-                WriteIndented = true // Makes debugging easier
-            };
-
-            var json = JsonSerializer.Serialize(snapshot, options);
-            _logger.Debug("Produced snapshot JSON: {0}", json);
-
-            return Encoding.UTF8.GetBytes(json);
+            return snapshot;
         }
     }
 }

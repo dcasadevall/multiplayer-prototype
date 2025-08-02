@@ -1,11 +1,9 @@
-using System;
 using System.Text.Json;
-using System.Text.Json.Serialization;
 using Shared.ECS.Replication;
 using Xunit;
 using Xunit.Abstractions;
 
-namespace Tests.Shared.Networking.Replication
+namespace SharedUnitTests.Networking.Replication
 {
     public class WorldSnapshotMessageTests
     {

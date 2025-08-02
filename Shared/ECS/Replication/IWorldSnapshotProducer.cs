@@ -16,10 +16,10 @@ namespace Shared.ECS.Replication
     public interface IWorldSnapshotProducer
     {
         /// <summary>
-        /// Creates a binary snapshot of all entities with <see cref="ReplicatedTagComponent"/>,
+        /// Creates a snapshot of all entities with <see cref="ReplicatedTagComponent"/>,
         /// including all components.
         /// </summary>
-        /// <returns>A byte array containing the serialized snapshot.</returns>
-        byte[] ProduceSnapshot();
+        /// <returns>A message containing the serialized snapshot.</returns>
+        WorldSnapshotMessage ProduceSnapshot();
     }
 }

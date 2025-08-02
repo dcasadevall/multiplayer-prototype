@@ -51,9 +51,8 @@ namespace Server.Scenes
                 }).ToList()
             };
 
-            // Serialize WorldSnapshotMessage to JSON and apply via consumer
-            var snapshotJson = JsonSerializer.Serialize(snapshotMsg);
-            snapshotConsumer.ConsumeSnapshot(System.Text.Encoding.UTF8.GetBytes(snapshotJson));
+            // Apply the snapshot to the registry
+            snapshotConsumer.ConsumeSnapshot(snapshotMsg);
         }
 
         private static string GetComponentTypeName(string key)

@@ -1,7 +1,6 @@
 using Shared.ECS;
 using Shared.ECS.Replication;
 using Shared.ECS.Simulation;
-using Shared.Logging;
 using Shared.Networking;
 
 namespace Server.Networking.Replication
@@ -25,7 +24,6 @@ namespace Server.Networking.Replication
     public class ReplicationSystem : ISystem
     {
         private readonly IMessageSender _messageSender;
-        private readonly ILogger _logger;
         private readonly IWorldSnapshotProducer _worldSnapshotProducer;
 
         /// <summary>
@@ -33,12 +31,8 @@ namespace Server.Networking.Replication
         /// </summary>
         /// <param name="messageSender">Sender used for sending network messages.</param>
         /// <param name="worldSnapshotProducer"></param>
-        /// <param name="logger">Logger for debug output.</param>
-        public ReplicationSystem(IMessageSender messageSender,
-            IWorldSnapshotProducer worldSnapshotProducer,
-            ILogger logger)
+        public ReplicationSystem(IMessageSender messageSender, IWorldSnapshotProducer worldSnapshotProducer)
         {
-            _logger = logger;
             _messageSender = messageSender;
             _worldSnapshotProducer = worldSnapshotProducer;
         }
