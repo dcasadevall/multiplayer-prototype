@@ -1,16 +1,14 @@
 using System.Text.Json;
 using System.Text.Json.Serialization;
-using Shared.Networking.Replication;
+using Shared.ECS.Replication;
 
 namespace Server.Scenes
 {
     public class EntityDescription
     {
-        [JsonPropertyName("components")]
-        public Dictionary<string, JsonElement> Components { get; set; } = new();
-    
-        [JsonPropertyName("tags")]
-        public List<string> Tags { get; set; } = new();
+        [JsonPropertyName("components")] public Dictionary<string, JsonElement> Components { get; set; } = new();
+
+        [JsonPropertyName("tags")] public List<string> Tags { get; set; } = new();
     }
 
     public class SceneLoader(IWorldSnapshotConsumer snapshotConsumer)
@@ -23,7 +21,7 @@ namespace Server.Scenes
         {
             var json = File.ReadAllText(path);
             var entityDescriptions = JsonSerializer.Deserialize<List<EntityDescription>>(json);
-            
+
             if (entityDescriptions == null)
             {
                 throw new InvalidOperationException($"Failed to deserialize scene from {path}");

@@ -2,8 +2,8 @@ using System.Text.Json;
 using NSubstitute;
 using Shared.ECS;
 using Shared.ECS.Components;
+using Shared.ECS.Replication;
 using Shared.Logging;
-using Shared.Networking.Replication;
 using Xunit;
 
 namespace SharedUnitTests.Networking.Replication
@@ -182,7 +182,7 @@ namespace SharedUnitTests.Networking.Replication
         {
             var positionComponent = new PositionComponent(new System.Numerics.Vector3(x, y, z));
             var positionJson = JsonSerializer.Serialize(positionComponent);
-        
+
             var snapshot = new WorldSnapshotMessage
             {
                 Entities =
@@ -243,7 +243,8 @@ namespace SharedUnitTests.Networking.Replication
                             new SnapshotComponent
                             {
                                 Type = typeof(PositionComponent).FullName!,
-                                Json = JsonSerializer.Serialize(new PositionComponent(new System.Numerics.Vector3(x, y, z)))
+                                Json = JsonSerializer.Serialize(
+                                    new PositionComponent(new System.Numerics.Vector3(x, y, z)))
                             },
                             new SnapshotComponent
                             {
@@ -272,7 +273,8 @@ namespace SharedUnitTests.Networking.Replication
                             new SnapshotComponent
                             {
                                 Type = typeof(PositionComponent).FullName!,
-                                Json = JsonSerializer.Serialize(new PositionComponent(new System.Numerics.Vector3(1.0f, 2.0f, 3.0f)))
+                                Json = JsonSerializer.Serialize(
+                                    new PositionComponent(new System.Numerics.Vector3(1.0f, 2.0f, 3.0f)))
                             }
                         }
                     },
@@ -318,4 +320,4 @@ namespace SharedUnitTests.Networking.Replication
             return System.Text.Encoding.UTF8.GetBytes(JsonSerializer.Serialize(snapshot));
         }
     }
-} 
+}

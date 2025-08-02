@@ -4,12 +4,9 @@ using System.Linq;
 using Core.ECS.Rendering;
 using Core.Logging;
 using Core.Scheduling;
-using LiteNetLib;
 using Microsoft.Extensions.DependencyInjection;
 using Shared;
 using Shared.ECS;
-using Shared.Networking;
-using Shared.Networking.Replication;
 using Shared.Scheduling;
 using UnityEngine;
 using ILogger = Shared.Logging.ILogger;
@@ -30,9 +27,6 @@ namespace Core
     public class UnityServiceProvider : MonoBehaviour
     {
         private IServiceProvider _serviceProvider;
-        
-        [SerializeField]
-        private MessageReceiver _messageReceiver;
         
         [SerializeField]
         private UnityMainThreadScheduler _mainThreadScheduler;
@@ -64,13 +58,6 @@ namespace Core
             
             // Registers Json serialization, NetLib and shared scheduling types
             services.RegisterSharedTypes();
-            
-            // Register Networking classes
-            services.AddSingleton<IMessageSender, NetLibMessageSender>();
-            services.AddSingleton<IMessageReceiver>(_messageReceiver);
-            services.AddSingleton<EventBasedNetListener>();
-            services.AddSingleton<INetEventListener>(sp => sp.GetRequiredService<EventBasedNetListener>());
-            services.AddSingleton<NetManager>();
             
             _serviceProvider = services.BuildServiceProvider();
             

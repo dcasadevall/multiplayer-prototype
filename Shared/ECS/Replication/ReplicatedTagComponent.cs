@@ -1,6 +1,4 @@
-using Shared.ECS;
-
-namespace Shared.Networking.Replication
+namespace Shared.ECS.Replication
 {
     /// <summary>
     /// Entities holding this component will be replicated to clients.

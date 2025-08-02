@@ -2,8 +2,8 @@ using NSubstitute;
 using Shared.ECS;
 using Shared.ECS.Components;
 using Shared.ECS.Entities;
+using Shared.ECS.Replication;
 using Shared.Logging;
-using Shared.Networking.Replication;
 using Xunit;
 
 namespace SharedUnitTests.Networking.Replication
@@ -35,7 +35,7 @@ namespace SharedUnitTests.Networking.Replication
             foreach (var sourceEntity in sourceEntities)
             {
                 var targetEntity = targetRegistry.GetOrCreate(sourceEntity.Id.Value);
-                
+
                 // Check position component
                 if (sourceEntity.Has<PositionComponent>())
                 {
@@ -100,7 +100,7 @@ namespace SharedUnitTests.Networking.Replication
             // Arrange
             var sourceRegistry = new EntityRegistry();
             var targetRegistry = new EntityRegistry();
-            
+
             // Create one replicated and one non-replicated entity
             var replicatedEntity = sourceRegistry.CreateEntity();
             replicatedEntity.AddComponent(new PositionComponent { X = 1, Y = 2, Z = 3 });

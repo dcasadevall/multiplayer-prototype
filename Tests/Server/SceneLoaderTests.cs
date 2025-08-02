@@ -5,7 +5,7 @@ using Server.Scenes;
 using Shared.ECS;
 using Shared.ECS.Components;
 using Shared.ECS.Entities;
-using Shared.Networking.Replication;
+using Shared.ECS.Replication;
 using Shared.Logging;
 using Xunit;
 
@@ -20,7 +20,7 @@ namespace ServerUnitTests
             var consumer = new JsonWorldSnapshotConsumer(registry, logger);
             return new SceneLoader(consumer);
         }
-    
+
         [Fact]
         public void Load_WithValidJson_ShouldCreateEntities()
         {
@@ -200,7 +200,7 @@ namespace ServerUnitTests
                 Assert.Single(entities);
 
                 var entity = entities.First();
-            
+
                 Assert.True(entity.Has<PositionComponent>());
                 Assert.False(entity.Has<HealthComponent>());
 

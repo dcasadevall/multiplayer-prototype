@@ -9,13 +9,14 @@ using Shared.ECS;
 using Shared.ECS.Simulation;
 using Shared.ECS.Systems;
 using Shared.Logging;
+using Shared.Networking;
 using Shared.Scheduling;
 
 var services = new ServiceCollection();
 
 // Register ECS core
 services.AddSingleton<EntityRegistry>();
-    
+
 // Server side logging
 services.AddSingleton<ILogger, ConsoleLogger>();
 
@@ -37,32 +38,13 @@ services.RegisterSharedTypes();
 // The scheduler is server specific (client will use a different scheduler)
 services.AddSingleton<IScheduler, TimerScheduler>();
 
-// Server proxies events with NetEventBroadcaster
-services.AddSingleton<EventBasedNetListener>();
-services.AddSingleton<INetEventListener>(sp => sp.GetRequiredService<EventBasedNetListener>());
-services.AddSingleton<NetManager>();
+// Register the networking server abstraction
+services.AddSingleton<INetworkingServer, NetLibNetworkingServer>();
 
 var serviceProvider = services.BuildServiceProvider();
 var entityRegistry = serviceProvider.GetRequiredService<EntityRegistry>();
 var scheduler = serviceProvider.GetRequiredService<IScheduler>();
 var sceneLoader = serviceProvider.GetRequiredService<SceneLoader>();
-var netManager = serviceProvider.GetRequiredService<NetManager>();
-var eventListener = serviceProvider.GetRequiredService<EventBasedNetListener>();
-
-// Auto accept connection requests
-// This is fine for a simple server, but in a real game you would want to handle this more robustly
-eventListener.ConnectionRequestEvent += request =>
-{
-    request.AcceptIfKey(SharedConstants.NetSecret);
-};
-
-eventListener.NetworkReceiveEvent += (peer, reader, channel, method) =>
-{
-    // Log incoming messages. For now, convert the message to a string for simplicity.
-    var message = reader.GetString();
-    Console.WriteLine($"Received message from {peer.Address}: {message}");
-};
-
 
 // TODO: IInitializable / IDisposable and auto lifecycle management
 var spawnHandler = serviceProvider.GetRequiredService<PlayerSpawnHandler>();
@@ -72,7 +54,7 @@ sceneLoader.Load(path);
 
 // Create a fixed timestep world running at the specified frequency
 // Add all the systems registered in the service provider
-var worldBuilder = new WorldBuilder(entityRegistry, scheduler).WithFrequency(SharedConstants.WorldTickRate); 
+var worldBuilder = new WorldBuilder(entityRegistry, scheduler).WithFrequency(SharedConstants.WorldTickRate);
 var systems = serviceProvider.GetServices<ISystem>().ToList();
 systems.ForEach(x => worldBuilder.AddSystem(x));
 var world = worldBuilder.Build();
@@ -80,24 +62,22 @@ var world = worldBuilder.Build();
 Console.WriteLine("Starting fixed timestep world at 30Hz...");
 world.Start();
 
-netManager.Start(SharedConstants.ServerPort);
-Console.WriteLine("Server started on port 9050...");
+// Start the networking server using the abstraction
+var networkingServer = serviceProvider.GetRequiredService<INetworkingServer>();
+var serverHandle = networkingServer.StartServer(SharedConstants.ServerAddress,
+    SharedConstants.ServerPort,
+    SharedConstants.NetSecret);
 
-// --- The Server Loop ---
 try
 {
-    while (true)
-    {
-        // Poll for new events
-        netManager.PollEvents();
-        // Sleep to prevent high CPU usage
-        Thread.Sleep(15);
-    }
+    // Wait for exit (could be a signal, keypress, etc.)
+    Console.WriteLine("Press Ctrl+C to exit...");
+    Thread.Sleep(Timeout.Infinite);
 }
 finally
 {
     // Ensure the server is stopped when the loop exits
-    netManager.Stop();
+    serverHandle.Dispose();
     world.Dispose();
     spawnHandler.Dispose();
 }

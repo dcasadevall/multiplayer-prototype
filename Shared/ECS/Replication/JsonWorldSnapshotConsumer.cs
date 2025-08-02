@@ -3,10 +3,9 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Text.Json;
-using Shared.ECS;
 using Shared.Logging;
 
-namespace Shared.Networking.Replication
+namespace Shared.ECS.Replication
 {
     /// <summary>
     /// JSON Implementation of <see cref="IWorldSnapshotConsumer"/>.
@@ -41,7 +40,7 @@ namespace Shared.Networking.Replication
             {
                 return;
             }
-        
+
             var json = Encoding.UTF8.GetString(snapshot);
             _logger.Debug("Attempting to deserialize JSON: {0}", json);
 
@@ -72,11 +71,11 @@ namespace Shared.Networking.Replication
             foreach (var snapshotEntity in snapshotMsg.Entities)
             {
                 var entity = _entityRegistry.GetOrCreate(snapshotEntity.Id);
-            
+
                 foreach (var component in snapshotEntity.Components)
                 {
                     var componentType = Type.GetType(component.Type);
-                    if (componentType == null) 
+                    if (componentType == null)
                     {
                         continue;
                     }

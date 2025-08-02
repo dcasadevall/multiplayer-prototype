@@ -1,4 +1,4 @@
-namespace Shared.Networking.Replication
+namespace Shared.ECS.Replication
 {
     /// <summary>
     /// Handles serialization of ECS entities and their components.

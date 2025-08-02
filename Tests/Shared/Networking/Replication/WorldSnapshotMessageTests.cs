@@ -1,7 +1,7 @@
 using System;
 using System.Text.Json;
 using System.Text.Json.Serialization;
-using Shared.Networking.Replication;
+using Shared.ECS.Replication;
 using Xunit;
 using Xunit.Abstractions;
 
@@ -22,7 +22,7 @@ namespace Tests.Shared.Networking.Replication
             // Arrange
             var snapshot = new WorldSnapshotMessage();
             var entityId = Guid.NewGuid();
-            
+
             snapshot.Entities.Add(new SnapshotEntity
             {
                 Id = entityId,
@@ -42,7 +42,7 @@ namespace Tests.Shared.Networking.Replication
                 PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
                 WriteIndented = true // Makes the JSON readable for debugging
             };
-            
+
             var json = JsonSerializer.Serialize(snapshot, options);
             _output.WriteLine("Serialized JSON:");
             _output.WriteLine(json);
@@ -53,11 +53,11 @@ namespace Tests.Shared.Networking.Replication
             // Assert
             Assert.NotNull(deserialized);
             Assert.Single(deserialized.Entities);
-            
+
             var entity = deserialized.Entities[0];
             Assert.Equal(entityId, entity.Id);
             Assert.Single(entity.Components);
-            
+
             var component = entity.Components[0];
             Assert.Equal("Shared.ECS.Components.PositionComponent", component.Type);
             Assert.Contains("\"x\":1.5", component.Json);
@@ -71,7 +71,7 @@ namespace Tests.Shared.Networking.Replication
             // Arrange - Create a snapshot message
             var snapshot = new WorldSnapshotMessage();
             var entityId = Guid.NewGuid();
-            
+
             snapshot.Entities.Add(new SnapshotEntity
             {
                 Id = entityId,
@@ -90,10 +90,10 @@ namespace Tests.Shared.Networking.Replication
             {
                 PropertyNamingPolicy = JsonNamingPolicy.CamelCase
             };
-            
+
             var json = JsonSerializer.Serialize(snapshot, options);
             var bytes = System.Text.Encoding.UTF8.GetBytes(json);
-            
+
             // Log the raw bytes and string representation
             _output.WriteLine($"Raw bytes length: {bytes.Length}");
             _output.WriteLine($"UTF8 string: {System.Text.Encoding.UTF8.GetString(bytes)}");
@@ -105,11 +105,11 @@ namespace Tests.Shared.Networking.Replication
             // Assert
             Assert.NotNull(deserialized);
             Assert.Single(deserialized.Entities);
-            
+
             var entity = deserialized.Entities[0];
             Assert.Equal(entityId, entity.Id);
             Assert.Single(entity.Components);
-            
+
             var component = entity.Components[0];
             Assert.Equal("Shared.ECS.Components.PositionComponent", component.Type);
             Assert.Contains("\"x\":1.5", component.Json);

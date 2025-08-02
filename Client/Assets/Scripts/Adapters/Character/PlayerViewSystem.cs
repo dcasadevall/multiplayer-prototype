@@ -1,13 +1,11 @@
 using System.Collections.Generic;
 using System.Linq;
-using Adapters.Input;
 using Core.ECS.Rendering;
 using Core.Input;
 using Core.Player;
 using LiteNetLib;
 using Shared.ECS;
 using Shared.ECS.Components;
-using UnityEngine;
 
 namespace Adapters.Character
 {
@@ -17,7 +15,6 @@ namespace Adapters.Character
     public class PlayerViewSystem : ISystem
     {
         private readonly Dictionary<EntityId, int> _players = new();
-        private readonly NetManager _netManager;
         private readonly IInputListener _inputListener;
         private readonly IEntityViewRegistry _entityViewRegistry;
         private readonly int _localPlayerId;
@@ -27,7 +24,6 @@ namespace Adapters.Character
             IInputListener inputListener, 
             IEntityViewRegistry entityViewRegistry)
         {
-            _netManager = netManager;
             _inputListener = inputListener;
             _entityViewRegistry = entityViewRegistry;
         }

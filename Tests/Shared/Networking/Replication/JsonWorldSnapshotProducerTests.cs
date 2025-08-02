@@ -2,8 +2,8 @@ using System.Text.Json;
 using NSubstitute;
 using Shared.ECS;
 using Shared.ECS.Components;
+using Shared.ECS.Replication;
 using Shared.Logging;
-using Shared.Networking.Replication;
 using Xunit;
 
 namespace SharedUnitTests.Networking.Replication
@@ -15,7 +15,7 @@ namespace SharedUnitTests.Networking.Replication
 
         public JsonWorldSnapshotProducerTests()
         {
-            var logger = NSubstitute.Substitute.For<ILogger>();
+            var logger = Substitute.For<ILogger>();
             _registry = new EntityRegistry();
             _producer = new JsonWorldSnapshotProducer(_registry, logger);
         }
@@ -218,7 +218,7 @@ namespace SharedUnitTests.Networking.Replication
             // Assert
             var snapshot = DeserializeSnapshot(snapshotBytes);
             var snapshotEntity = snapshot.Entities.First();
-        
+
             // Should only include components that are serializable
             var componentTypes = snapshotEntity.Components.Select(c => c.Type).ToList();
             Assert.Contains(typeof(PositionComponent).FullName, componentTypes);
@@ -268,4 +268,4 @@ namespace SharedUnitTests.Networking.Replication
             return result;
         }
     }
-} 
+}

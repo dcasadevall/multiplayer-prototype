@@ -1,8 +1,8 @@
 using LiteNetLib;
 using Shared.ECS;
 using Shared.ECS.Components;
+using Shared.ECS.Replication;
 using Shared.Logging;
-using Shared.Networking.Replication;
 
 namespace Server.PlayerSpawn
 {
@@ -14,17 +14,17 @@ namespace Server.PlayerSpawn
         private readonly EventBasedNetListener _netEventBroadcaster;
         private readonly EntityRegistry _entityRegistry;
         private readonly ILogger _logger;
-        
+
         private readonly Dictionary<int, EntityId> _peerEntityMap = new();
 
-        public PlayerSpawnHandler(EventBasedNetListener netEventBroadcaster, 
-            EntityRegistry entityRegistry, 
+        public PlayerSpawnHandler(EventBasedNetListener netEventBroadcaster,
+            EntityRegistry entityRegistry,
             ILogger logger)
         {
             _netEventBroadcaster = netEventBroadcaster;
             _entityRegistry = entityRegistry;
             _logger = logger;
-            
+
             netEventBroadcaster.PeerConnectedEvent += OnPeerConnected;
             netEventBroadcaster.PeerDisconnectedEvent += OnPeerDisconnected;
         }
@@ -44,7 +44,7 @@ namespace Server.PlayerSpawn
             var x = Random.Shared.Next(-10, 10);
             var y = 0; // Ground level
             var z = Random.Shared.Next(-10, 10);
-            
+
             try
             {
                 // Create a new player entity
@@ -82,7 +82,7 @@ namespace Server.PlayerSpawn
                 {
                     Name = name,
                 });
-                
+
                 // Add a prefab component to link to the player prefab
                 // A hardcoded prefab name is fine for this example,
                 // but in a real game we might want to load this dynamically
@@ -96,7 +96,7 @@ namespace Server.PlayerSpawn
                 playerEntity.AddComponent(new ReplicatedTagComponent());
 
                 _logger.Info("Created player entity {0} for peer {1}", playerEntity.Id, peer.Id);
-                
+
                 // Store the mapping of peer ID to entity ID
                 _peerEntityMap[peer.Id] = playerEntity.Id;
             }
@@ -113,13 +113,13 @@ namespace Server.PlayerSpawn
                 _logger.Warn("No player entity found for disconnected peer {0}", peer.Id);
                 return;
             }
-            
+
             // Remove the player entity from the registry
             _entityRegistry.DestroyEntity(entityId);
             _logger.Info("Removed player entity {0} for peer {1}", entityId, peer.Id);
-            
+
             // Remove the mapping
             _peerEntityMap.Remove(peer.Id);
         }
     }
-} 
+}

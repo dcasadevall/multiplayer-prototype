@@ -1,8 +1,8 @@
 using Shared.ECS;
+using Shared.ECS.Replication;
 using Shared.ECS.Simulation;
 using Shared.Logging;
 using Shared.Networking;
-using Shared.Networking.Replication;
 
 namespace Server.Networking.Replication
 {
@@ -34,7 +34,7 @@ namespace Server.Networking.Replication
         /// <param name="messageSender">Sender used for sending network messages.</param>
         /// <param name="worldSnapshotProducer"></param>
         /// <param name="logger">Logger for debug output.</param>
-        public ReplicationSystem(IMessageSender messageSender, 
+        public ReplicationSystem(IMessageSender messageSender,
             IWorldSnapshotProducer worldSnapshotProducer,
             ILogger logger)
         {
@@ -54,7 +54,7 @@ namespace Server.Networking.Replication
         {
             // _logger.Debug("ReplicationSystem: Sending snapshot to all clients...");
             var snapshot = _worldSnapshotProducer.ProduceSnapshot();
-        
+
             // Broadcast the snapshot to all connected clients
             // We use the unreliable channel for snapshot delivery
             // since the snapshot is a full state for simplicity.

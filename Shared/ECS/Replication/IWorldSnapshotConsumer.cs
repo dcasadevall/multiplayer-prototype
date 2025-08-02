@@ -1,6 +1,4 @@
-using Shared.ECS;
-
-namespace Shared.Networking.Replication
+namespace Shared.ECS.Replication
 {
     /// <summary>
     /// Consumes and applies world state snapshots received from the network.

@@ -1,11 +1,8 @@
 using Shared.ECS;
 using Shared.ECS.Simulation;
-using Shared.Networking;
 using Shared.Scheduling;
-using Shared.Networking.Replication;
 using UnityEngine;
 using System.Linq;
-using System.Threading.Tasks;
 using Shared;
 
 namespace Core
@@ -49,28 +46,23 @@ namespace Core
             Debug.Log($"ClientWorldManager: ECS world initialized with {SharedConstants.WorldTickRate} ticks per second and {systems.Count} systems");
         }
         
+        /// <summary>
+        /// Starts the ECS world, similar to how a server would start its world.
+        /// </summary>
         private void Start()
         {
-            // Start listening for network messages
-            var messageReceiver = _serviceProvider.GetService<IMessageReceiver>();
-            messageReceiver?.StartListening();
-            
-            // Start the world (similar to server)
-            Debug.Log("Starting fixed timestep world...");
+            Debug.Log("Starting ECS world...");
             _world.Start();
+            Debug.Log("ECS world started successfully");
         }
 
+        /// <summary>
+        /// Destroys the ECS world and cleans up resources.
+        /// </summary>
         private void OnDestroy()
         {
             Debug.Log("ClientWorldManager: Cleaning up world...");
-            
-            // Stop listening for network messages
-            var messageReceiver = _serviceProvider.GetService<IMessageReceiver>();
-            messageReceiver?.StopListening();
-            
-            // Dispose of the world
             _world?.Dispose();
-            
             Debug.Log("ClientWorldManager: World cleanup completed");
         }
     }

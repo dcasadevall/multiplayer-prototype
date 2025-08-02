@@ -11,18 +11,18 @@ namespace Shared.Scheduling
     {
         private readonly IEnumerable<ITickable> _tickables;
         private readonly IScheduler _scheduler;
-        private CancellationTokenSource _cancellationTokenSource;
+        private readonly CancellationTokenSource _cancellationTokenSource;
 
         public TickableScheduler(IEnumerable<ITickable> tickables, IScheduler scheduler)
         {
             _tickables = tickables;
             _scheduler = scheduler;
+            _cancellationTokenSource = new CancellationTokenSource();
         }
 
         public void Initialize()
         {
             // Schedule the Tick method to be called every frame
-            _cancellationTokenSource = new CancellationTokenSource();
             _scheduler.ScheduleAtFixedRate(Tick, 
                 TimeSpan.Zero,
                 TimeSpan.FromSeconds(1.0f / 60.0f), // 60 FPS

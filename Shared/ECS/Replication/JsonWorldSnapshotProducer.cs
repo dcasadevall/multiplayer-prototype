@@ -1,11 +1,9 @@
-using System;
 using System.Linq;
 using System.Text;
 using System.Text.Json;
-using Shared.ECS;
 using Shared.Logging;
 
-namespace Shared.Networking.Replication
+namespace Shared.ECS.Replication
 {
     /// <summary>
     /// WorldSnapshotProducer is responsible for creating a snapshot of the ECS world.

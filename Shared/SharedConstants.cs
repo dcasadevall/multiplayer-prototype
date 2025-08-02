@@ -9,20 +9,21 @@ namespace Shared
         /// Server address for the game server.
         /// In a real application, this would be configurable and not hardcoded (or shared).
         /// </summary>
-        public static string ServerAddress { get; } = "localhost";
-        
+        public static string ServerAddress { get; } = "0.0.0.0";
+
         /// <summary>
         /// Port number for the server to listen on.
         /// In a real application, this should be configurable and not hardcoded,
         /// but for simplicity, we use a constant here.
         /// </summary>
         public static int ServerPort { get; } = 9050;
+
         /// <summary>
         /// Secret key used to connect to the server.
         /// This would be stored as a deployment secret in a real application.
         /// </summary>
-        public static string NetSecret { get ; } = "your-secret-key";
-        
+        public static string NetSecret { get; } = "your-secret-key";
+
         /// <summary>
         /// Tick rate for the world simulation.
         /// This defines how often the world updates its state.

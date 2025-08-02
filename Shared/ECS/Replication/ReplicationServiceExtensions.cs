@@ -1,6 +1,6 @@
 using Microsoft.Extensions.DependencyInjection;
 
-namespace Shared.Networking.Replication
+namespace Shared.ECS.Replication
 {
     public static class ReplicationServiceExtensions
     {

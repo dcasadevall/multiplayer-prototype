@@ -1,4 +1,6 @@
+using System;
 using Shared.ECS;
+using Shared.ECS.Replication;
 using Shared.ECS.Simulation;
 using Shared.Networking;
 using Shared.Networking.Replication;
@@ -29,6 +31,7 @@ namespace Core
     {
         private readonly IWorldSnapshotConsumer _worldSnapshotConsumer;
         private readonly IMessageReceiver _messageReceiver;
+        private readonly IDisposable _subscription;
 
         /// <summary>
         /// Constructs a new ClientReplicationSystem using dependency injection.
@@ -42,7 +45,7 @@ namespace Core
             _messageReceiver = messageReceiver;
             
             // Subscribe to snapshot messages
-            _messageReceiver.OnMessageReceived += HandleMessageReceived;
+            _subscription = _messageReceiver.RegisterMessageHandler<WorldSnapshotMessage>("ReplicationSystem", HandleMessageReceived);
         }
 
         /// <summary>
@@ -57,12 +60,9 @@ namespace Core
             // This method is called every tick to ensure we process messages promptly
         }
 
-        private void HandleMessageReceived(MessageType messageType, byte[] data)
+        private void HandleMessageReceived(WorldSnapshotMessage msg)
         {
-            if (messageType == MessageType.Snapshot)
-            {
-                _worldSnapshotConsumer.ConsumeSnapshot(data);
-            }
+            _worldSnapshotConsumer.ConsumeSnapshot(data);
         }
 
         /// <summary>
@@ -70,10 +70,7 @@ namespace Core
         /// </summary>
         public void Dispose()
         {
-            if (_messageReceiver != null)
-            {
-                _messageReceiver.OnMessageReceived -= HandleMessageReceived;
-            }
+            _subscription.Dispose();
         }
     }
 } 
