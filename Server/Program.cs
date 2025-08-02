@@ -34,6 +34,9 @@ services.AddSingleton<PlayerSpawnHandler>();
 // Register all shared services (Networking, Scheduling, etc.)
 services.RegisterSharedTypes();
 
+// The scheduler is server specific (client will use a different scheduler)
+services.AddSingleton<IScheduler, TimerScheduler>();
+
 // Server proxies events with NetEventBroadcaster
 services.AddSingleton<EventBasedNetListener>();
 services.AddSingleton<INetEventListener>(sp => sp.GetRequiredService<EventBasedNetListener>());

@@ -19,6 +19,10 @@ namespace Core
     /// The ClientReplicationSystem manages an IWorldSnapshotConsumer, which deserializes
     /// incoming snapshots and updates the local entity registry with the latest server state.
     /// </para>
+    ///
+    /// <para>
+    /// One can assume that this system is always the first system to run on the client
+    /// </para>
     /// </summary>
     [TickInterval(1)] // Process snapshots as frequently as possible
     public class ClientReplicationSystem : ISystem

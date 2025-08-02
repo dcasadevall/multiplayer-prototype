@@ -1,6 +1,7 @@
 using System;
 using LiteNetLib;
 using Microsoft.Extensions.DependencyInjection;
+using Shared.Scheduling;
 
 namespace Shared.Networking
 {
@@ -21,6 +22,12 @@ namespace Shared.Networking
             // NetManager must be registered by the application.
             // Server will want to use the listener for incoming connections and clients will use it to connect.
             services.AddSingleton<IMessageSender, NetLibMessageSender>();
+            
+            // Register NetLibMessageSender and its lifecycle interfaces
+            services.AddSingleton<NetLibMessageReceiver>();
+            services.AddSingleton<IMessageReceiver>(sp => sp.GetRequiredService<NetLibMessageReceiver>());
+            services.AddSingleton<IDisposable>(sp => sp.GetRequiredService<NetLibMessageReceiver>());
+            services.AddSingleton<IInitializable>(sp => sp.GetRequiredService<NetLibMessageReceiver>());
         }
     }
 }

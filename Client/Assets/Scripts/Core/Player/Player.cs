@@ -16,13 +16,11 @@ namespace Core.Player
         private readonly IInputListener _inputListener;
         private Vector3 _lastMovementDirection;
 
-        public string Id { get; }
         public Vector3 Position { get; private set; } = new(0, 1, 0);
         public Quaternion Rotation { get; private set; }
 
-        public Player(string id, IInputListener inputListener)
+        public Player(IInputListener inputListener)
         {
-            Id = id;
             _inputListener = inputListener;
             _inputListener.OnShoot += HandleShoot;
         }

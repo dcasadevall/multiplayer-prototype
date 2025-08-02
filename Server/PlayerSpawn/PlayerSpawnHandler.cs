@@ -82,6 +82,15 @@ namespace Server.PlayerSpawn
                 {
                     Name = name,
                 });
+                
+                // Add a prefab component to link to the player prefab
+                // A hardcoded prefab name is fine for this example,
+                // but in a real game we might want to load this dynamically
+                // from a manifest or configuration file.
+                playerEntity.AddComponent(new PrefabComponent
+                {
+                    PrefabName = "Player",
+                });
 
                 // Mark as replicated so it gets sent to clients
                 playerEntity.AddComponent(new ReplicatedTagComponent());

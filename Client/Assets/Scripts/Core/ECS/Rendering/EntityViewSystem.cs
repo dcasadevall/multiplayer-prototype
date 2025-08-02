@@ -1,10 +1,13 @@
+using System;
 using System.Collections.Generic;
+using Core.ECS.Rendering;
 using Core.MathUtils;
 using Shared.ECS;
 using Shared.ECS.Components;
 using Shared.ECS.Entities;
 using Shared.ECS.Simulation;
 using UnityEngine;
+using Object = UnityEngine.Object;
 using Vector3 = System.Numerics.Vector3;
 
 namespace Core
@@ -17,9 +20,14 @@ namespace Core
     /// It creates, updates, and destroys Unity GameObjects based on the entities in the
     /// ECS world, ensuring that the visual representation stays in sync with the game logic.
     /// </para>
+    ///
+    /// <para>
+    /// It should be assumed that this system runs after the replication system,
+    /// but before any other systems that might modify entity components.
+    /// </para>
     /// </summary>
     [TickInterval(1)] // Update every frame
-    public class EntityViewSystem : ISystem
+    public class EntityViewSystem : ISystem, IEntityViewRegistry, IDisposable
     {
         private readonly Dictionary<EntityId, GameObject> _entityViews = new();
         private readonly Transform _worldRoot;
@@ -30,6 +38,25 @@ namespace Core
         public EntityViewSystem()
         {
             _worldRoot = new GameObject("ECS World Root").transform;
+        }
+
+        /// <inheritdoc />
+        public bool TryGetEntityView(EntityId entityId, out Transform view)
+        {
+            if (_entityViews.TryGetValue(entityId, out var gameObject))
+            {
+                view = gameObject.transform;
+                return view;
+            }
+            
+            view = null;
+            return false;
+        }
+        
+        /// <inheritdoc />
+        public Transform GetEntityView(EntityId entityId)
+        {
+            return _entityViews[entityId]?.transform;
         }
         
         /// <summary>
@@ -65,7 +92,7 @@ namespace Core
             // Create view if it doesn't exist
             if (!_entityViews.ContainsKey(entityId))
             {
-                CreateEntityView(entity, registry);
+                CreateEntityView(entity);
             }
             
             // Update the view's position
@@ -73,14 +100,6 @@ namespace Core
             {
                 var positionComponent = entity.Get<PositionComponent>();
                 view.transform.position = (positionComponent?.Value ?? Vector3.Zero).ToUnityVector3();
-                
-                // Update velocity if present
-                if (entity.Has<VelocityComponent>())
-                {
-                    var velocityComponent = entity.Get<VelocityComponent>();
-                    // You could add visual effects based on velocity here
-                    // For example, particle trails, rotation, etc.
-                }
             }
         }
         
@@ -88,15 +107,25 @@ namespace Core
         /// Creates a Unity GameObject for a given entity.
         /// </summary>
         /// <param name="entity">The entity to create a view for.</param>
-        /// <param name="registry">The entity registry.</param>
-        private void CreateEntityView(Entity entity, EntityRegistry registry)
+        private void CreateEntityView(Entity entity)
         {
             var entityId = entity.Id;
-            
-            // Create a simple GameObject for now
-            // In a real implementation, you might load prefabs based on entity tags or components
-            var view = GameObject.CreatePrimitive(PrimitiveType.Cube);
-            
+
+            // Load the prefab or create a default primitive
+            GameObject view;
+            if (entity.TryGet<PrefabComponent>(out var prefabComponent))
+            {
+                // Resources.Load is fine for this sample, but in a real game
+                // we might want to use a more robust asset management system.
+                // We also could use pooling here for performance.
+                var prefab = Resources.Load<GameObject>(prefabComponent.PrefabName);
+                view = Object.Instantiate(prefab);
+            }
+            else
+            {
+                view = GameObject.CreatePrimitive(PrimitiveType.Cube);
+            }
+
 #if UNITY_EDITOR
             view.name = $"Entity_{entityId}";
 
@@ -153,19 +182,9 @@ namespace Core
         }
         
         /// <summary>
-        /// Gets the Unity GameObject for a given entity ID.
-        /// </summary>
-        /// <param name="entityId">The entity ID.</param>
-        /// <returns>The Unity GameObject, or null if not found.</returns>
-        public GameObject GetEntityView(EntityId entityId)
-        {
-            return _entityViews.TryGetValue(entityId, out var view) ? view : null;
-        }
-        
-        /// <summary>
         /// Cleans up all entity views.
         /// </summary>
-        public void Cleanup()
+        public void Dispose()
         {
             foreach (var view in _entityViews.Values)
             {

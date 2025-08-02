@@ -17,7 +17,6 @@ namespace Core
     /// This class is responsible for:
     /// - Creating and managing the local ECS world
     /// - Setting up the replication system to receive server snapshots
-    /// - Coordinating between Unity's update loop and the ECS world
     /// - Managing the lifecycle of the client world
     /// </para>
     /// </summary>
@@ -28,20 +27,17 @@ namespace Core
         
         private World _world;
         
-        // Unity lifecycle
         private void Awake()
         {
             Debug.Log("ClientWorldManager: Initializing ECS world with DI...");
-            
-            // Initialize the service provider
-            _serviceProvider.Initialize();
             
             // Get services from DI container
             var entityRegistry = _serviceProvider.GetService<EntityRegistry>();
             var scheduler = _serviceProvider.GetService<IScheduler>();
             
             // Create a world using the WorldBuilder pattern (like the server)
-            var worldBuilder = new WorldBuilder(entityRegistry, scheduler).WithFrequency(SharedConstants.WorldTickRate);
+            var worldBuilder = new WorldBuilder(entityRegistry, scheduler)
+                .WithFrequency(SharedConstants.WorldTickRate);
             
             // Add all registered systems to the world
             var systems = _serviceProvider.GetServices<ISystem>().ToList();
@@ -74,9 +70,6 @@ namespace Core
             
             // Dispose of the world
             _world?.Dispose();
-            
-            // Dispose of the service provider
-            _serviceProvider?.Dispose();
             
             Debug.Log("ClientWorldManager: World cleanup completed");
         }

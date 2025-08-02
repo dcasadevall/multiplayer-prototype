@@ -5,12 +5,13 @@ using LiteNetLib;
 using LiteNetLib.Utils;
 using Shared;
 using Shared.Networking;
+using Shared.Scheduling;
 using UnityEngine;
 
 namespace Core
 {
     /// <summary>
-    /// Unity-specific implementation of IMessageReceiver for handling network messages.
+    /// Implementation of IMessageReceiver for handling network messages.
     /// 
     /// <para>
     /// This class provides a bridge between Unity and the networking layer, allowing
@@ -18,14 +19,25 @@ namespace Core
     /// with various networking libraries like LiteNetLib.
     /// </para>
     /// </summary>
-    public class UnityMessageReceiver : MonoBehaviour, IMessageReceiver
+    public class MessageReceiver : IMessageReceiver, IInitializable, IDisposable
     {
-        [SerializeField] 
-        private UnityServiceProvider _serviceProvider;
-        
+        private readonly EventBasedNetListener _netListener;
         public event Action<MessageType, byte[]> OnMessageReceived;
         
         private CancellationTokenSource _cancellationTokenSource;
+
+        public MessageReceiver(EventBasedNetListener netListener)
+        {
+            _netListener = netListener;
+        }
+
+        public void Initialize()
+        {
+        }
+
+        public void Dispose()
+        {
+        }
 
         /// <summary>
         /// Starts listening for incoming network messages.

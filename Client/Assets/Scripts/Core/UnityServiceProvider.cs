@@ -1,5 +1,7 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
+using Core.ECS.Rendering;
 using Core.Logging;
 using Core.Scheduling;
 using LiteNetLib;
@@ -16,6 +18,8 @@ namespace Core
 {
     /// <summary>
     /// Unity-compatible service provider that manages dependency injection for the client.
+    /// The game / adapter should use the <see cref="UnityServiceProvider"/> to initialize
+    /// the core services, and then add any game-specific services.
     /// 
     /// <para>
     /// This class provides a bridge between Unity's MonoBehaviour lifecycle and the
@@ -26,54 +30,80 @@ namespace Core
     public class UnityServiceProvider : MonoBehaviour
     {
         private IServiceProvider _serviceProvider;
-        private IServiceCollection _services;
         
         [SerializeField]
-        private UnityMessageReceiver _messageReceiver;
+        private MessageReceiver _messageReceiver;
         
         [SerializeField]
         private UnityMainThreadScheduler _mainThreadScheduler;
         
         /// <summary>
-        /// Initializes the service collection and builds the service provider.
+        /// Adds the core services to the provided service collection and builds the service provider.
+        /// This method should be called during the initialization phase of the application,
+        /// passing in the game specific service collection.
         /// </summary>
-        public void Initialize()
+        public void RegisterCoreServices(IServiceCollection services)
         {
-            Debug.Log("UnityServiceProvider: Initializing dependency injection...");
-            
-            _services = new ServiceCollection();
-            
+            Debug.Log("CoreServiceProvider: Initializing core dependency injection...");
+
             // Register ECS core
-            _services.AddSingleton<EntityRegistry>();
+            services.AddSingleton<EntityRegistry>();
             
-            // Unity specific services
-            _services.AddSingleton<ILogger, UnityLogger>();
-            
-            // Register Unity-specific services
-            _services.AddSingleton<MonoBehaviour>(this);
+            // Logging
+            services.AddSingleton<ILogger, UnityLogger>();
             
             // Register client systems
-            _services.AddSingleton<ISystem, ClientReplicationSystem>();
-            _services.AddSingleton<ISystem, EntityViewSystem>();
+            services.AddSingleton<ISystem, ClientReplicationSystem>();
+            services.AddSingleton<ISystem, EntityViewSystem>();
+            services.AddSingleton<IEntityViewRegistry>(sp => sp.GetService<EntityViewSystem>());
+            services.AddSingleton<IDisposable>(sp => sp.GetService<EntityViewSystem>());
             
-            // Register scheduler to use unity main thread
-            _services.AddSingleton<IScheduler>(_mainThreadScheduler);
+            // Register scheduler and lifecycle management
+            // The IScheduler implementation is client-specific
+            services.AddSingleton<IScheduler>(_mainThreadScheduler);
             
-            // Register the son replication types
-            _services.RegisterJsonReplicationTypes();
+            // Registers Json serialization, NetLib and shared scheduling types
+            services.RegisterSharedTypes();
             
             // Register Networking classes
-            _services.AddSingleton<IMessageReceiver>(_messageReceiver);
-            _services.AddSingleton<EventBasedNetListener>();
-            _services.AddSingleton<INetEventListener>(sp => sp.GetRequiredService<EventBasedNetListener>());
-            _services.AddSingleton<NetManager>();
+            services.AddSingleton<IMessageSender, NetLibMessageSender>();
+            services.AddSingleton<IMessageReceiver>(_messageReceiver);
+            services.AddSingleton<EventBasedNetListener>();
+            services.AddSingleton<INetEventListener>(sp => sp.GetRequiredService<EventBasedNetListener>());
+            services.AddSingleton<NetManager>();
             
-            // Build the service provider
-            _serviceProvider = _services.BuildServiceProvider();
+            _serviceProvider = services.BuildServiceProvider();
             
-            Debug.Log("UnityServiceProvider: Dependency injection initialized successfully");
+            Debug.Log("UnityServiceProvider: Core Dependency injection initialized successfully");
+        }
+
+        /// <summary>
+        /// Start is used to initialize all services that implement <see cref="IInitializable"/>.
+        /// </summary>
+        private void Start()
+        {
+            var initializables = _serviceProvider.GetServices<IInitializable>();
+            initializables.ToList().ForEach(x => x.Initialize()); 
         }
         
+        /// <summary>
+        /// Disposes of the service provider and cleans up resources.
+        /// Calls Dispose on all registered IDisposable services.
+        /// </summary>
+        private void OnDestroy()
+        {
+            var disposables = _serviceProvider.GetServices<IDisposable>();
+            disposables.ToList().ForEach(x => x.Dispose());
+            
+            if (_serviceProvider is IDisposable disposable)
+            {
+                disposable.Dispose();
+            }
+            
+            _serviceProvider = null;
+            Debug.Log("UnityServiceProvider: Disposed successfully");
+        }
+                
         /// <summary>
         /// Gets a service of the specified type.
         /// </summary>
@@ -92,27 +122,6 @@ namespace Core
         public IEnumerable<T> GetServices<T>() where T : class
         {
             return _serviceProvider?.GetServices<T>();
-        }
-        
-        /// <summary>
-        /// Disposes of the service provider and cleans up resources.
-        /// </summary>
-        public void Dispose()
-        {
-            if (_serviceProvider is IDisposable disposable)
-            {
-                disposable.Dispose();
-            }
-            
-            _serviceProvider = null;
-            _services = null;
-            
-            Debug.Log("UnityServiceProvider: Disposed successfully");
-        }
-        
-        private void OnDestroy()
-        {
-            Dispose();
         }
     }
 } 
