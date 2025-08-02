@@ -336,9 +336,7 @@ GameObject:
   - component: {fileID: 963194228}
   - component: {fileID: 963194227}
   - component: {fileID: 963194226}
-  - component: {fileID: 963194231}
   - component: {fileID: 963194233}
-  - component: {fileID: 963194234}
   - component: {fileID: 963194235}
   - component: {fileID: 963194236}
   m_Layer: 0
@@ -422,18 +420,6 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &963194231
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 963194225}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 7ef275a84d0e434d91f098f894a39537, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
 --- !u!114 &963194233
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -447,19 +433,6 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   _mainThreadScheduler: {fileID: 963194235}
---- !u!114 &963194234
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 963194225}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 0960d954de77f4dbf83c6bde4b280f0a, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  _serviceProvider: {fileID: 963194233}
 --- !u!114 &963194235
 MonoBehaviour:
   m_ObjectHideFlags: 0

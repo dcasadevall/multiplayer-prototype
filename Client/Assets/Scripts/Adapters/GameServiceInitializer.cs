@@ -2,6 +2,7 @@ using System;
 using Adapters.Character;
 using Adapters.Input;
 using Core;
+using Core.ECS.Simulation;
 using Core.Input;
 using Microsoft.Extensions.DependencyInjection;
 using Shared;
@@ -38,14 +39,21 @@ namespace Adapters
             serviceCollection.AddSingleton<IInputListener>(sp => sp.GetRequiredService<InputListener>());
             serviceCollection.AddSingleton<ITickable>(sp => sp.GetRequiredService<InputListener>());
             
+            // World
+            serviceCollection.AddSingleton<ClientWorldManager>();
+            serviceCollection.AddSingleton<IInitializable>(sp => sp.GetRequiredService<ClientWorldManager>());
+            serviceCollection.AddSingleton<IDisposable>(sp => sp.GetRequiredService<ClientWorldManager>());
+            
             // Core dependencies 
             serviceProvider.RegisterCoreServices(serviceCollection);
         }
 
-        private void Start()
+        private async void Start()
         {
             var client = serviceProvider.GetService<INetworkingClient>();
-            _connection = client.ConnectAsync(SharedConstants.ServerAddress, SharedConstants.ServerPort, SharedConstants.NetSecret);
+            Debug.Log($"Starting {nameof(GameServiceInitializer)}");
+            _connection = await client.ConnectAsync(SharedConstants.ServerAddress, SharedConstants.ServerPort, SharedConstants.NetSecret);
+            Debug.Log($"Connected to {SharedConstants.ServerAddress}:{SharedConstants.ServerPort}");
         }
         
         private void OnDestroy()
