@@ -37,7 +37,7 @@ namespace Shared.Networking
         /// </summary>
         /// <param name="eventBasedNetListener">The LiteNetLib event listener to subscribe to.</param>
         /// <param name="logger">Logger for structured logging of message events and errors.</param>
-        internal NetLibJsonMessageReceiver(EventBasedNetListener eventBasedNetListener, ILogger logger)
+        public NetLibJsonMessageReceiver(EventBasedNetListener eventBasedNetListener, ILogger logger)
         {
             _logger = logger;
             _eventBasedNetListener = eventBasedNetListener;
@@ -81,7 +81,6 @@ namespace Shared.Networking
             var data = reader.GetRemainingBytes();
             if (!_handlers.TryGetValue(messageTypeClass, out var handlers))
             {
-                _logger.Warn("No handlers registered for message type: {0}", messageTypeClass.Name);
                 return;
             }
 

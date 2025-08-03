@@ -1,0 +1,45 @@
+using System;
+using Core.ECS.Rendering;
+using Core.ECS.Replication;
+using Microsoft.Extensions.DependencyInjection;
+using Shared.ECS;
+using Shared.ECS.Replication;
+
+namespace Core.ECS
+{
+    /// <summary>
+    /// Provides dependency injection registration for ECS-related services only.
+    /// 
+    /// <para>
+    /// <c>EcsExtensions</c> is responsible for registering and managing only the
+    /// core ECS (Entity Component System) services required by the client. It does not
+    /// handle general game or adapter services, but focuses exclusively on ECS systems,
+    /// entity registries, and ECS replication.
+    /// </para>
+    /// </summary>
+    public static class EcsExtensions
+    {
+        /// <summary>
+        /// Registers ECS core services into the provided service collection.
+        /// This should be called during initialization to add ECS-specific dependencies.
+        /// </summary>
+        public static void RegisterEcsServices(this IServiceCollection services)
+        {
+            // Register Entity Registry
+            services.AddSingleton<EntityRegistry>();
+            
+            // Register core client systems
+            services.AddSingleton<ClientReplicationSystem>();
+            services.AddSingleton<ISystem>(sp => sp.GetRequiredService<ClientReplicationSystem>());
+            services.AddSingleton<IDisposable>(sp => sp.GetRequiredService<ClientReplicationSystem>());
+            
+            services.AddSingleton<EntityViewSystem>();
+            services.AddSingleton<ISystem>(sp => sp.GetService<EntityViewSystem>());
+            services.AddSingleton<IDisposable>(sp => sp.GetService<EntityViewSystem>());
+            services.AddSingleton<IEntityViewRegistry>(sp => sp.GetService<EntityViewSystem>());
+            
+            // Register json replication types
+            services.RegisterJsonReplicationTypes();
+        }
+    }
+}

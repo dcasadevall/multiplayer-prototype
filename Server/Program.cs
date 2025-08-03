@@ -35,6 +35,12 @@ services.AddSingleton<PlayerSpawnHandler>();
 // Register all shared services (Networking, Scheduling, etc.)
 services.RegisterSharedTypes();
 
+// Register message sender and receiver, as the server
+// does not have a stateful connection object like the client.
+services.AddSingleton<IMessageSender, NetLibJsonMessageSender>();
+services.AddSingleton<NetLibJsonMessageReceiver>();
+services.AddSingleton<IMessageReceiver>(sp => sp.GetRequiredService<NetLibJsonMessageReceiver>());
+
 // The scheduler is server specific (client will use a different scheduler)
 services.AddSingleton<IScheduler, TimerScheduler>();
 
@@ -45,6 +51,7 @@ var serviceProvider = services.BuildServiceProvider();
 var entityRegistry = serviceProvider.GetRequiredService<EntityRegistry>();
 var scheduler = serviceProvider.GetRequiredService<IScheduler>();
 var sceneLoader = serviceProvider.GetRequiredService<SceneLoader>();
+var messageReceiver = serviceProvider.GetRequiredService<NetLibJsonMessageReceiver>();
 
 // TODO: IInitializable / IDisposable and auto lifecycle management
 var spawnHandler = serviceProvider.GetRequiredService<PlayerSpawnHandler>();
@@ -60,6 +67,7 @@ systems.ForEach(x => worldBuilder.AddSystem(x));
 var world = worldBuilder.Build();
 
 Console.WriteLine("Starting fixed timestep world at 30Hz...");
+messageReceiver.Initialize();
 world.Start();
 
 // Start the networking server using the abstraction
@@ -80,4 +88,5 @@ finally
     serverHandle.Dispose();
     world.Dispose();
     spawnHandler.Dispose();
+    messageReceiver.Dispose();
 }
