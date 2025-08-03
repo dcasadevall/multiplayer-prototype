@@ -17,7 +17,7 @@ namespace Shared.Networking
         private readonly NetManager _netManager;
         private readonly EventBasedNetListener _listener;
         private readonly CancellationTokenSource _cts = new();
-        private readonly Task _pollTask;
+        private Task? _pollTask;
 
         /// <summary>
         /// Constructs a new <see cref="NetLibNetworkingClient"/>.
@@ -30,8 +30,6 @@ namespace Shared.Networking
             _logger = logger;
             _netManager = netManager;
             _listener = listener;
-            _netManager.Start();
-            _pollTask = Task.Run(PollLoop, _cts.Token);
         }
 
         /// <summary>
@@ -47,6 +45,12 @@ namespace Shared.Networking
         public async Task<IDisposable> ConnectAsync(string address, int port, string netSecret = "",
             int timeoutSeconds = 10)
         {
+            if (_pollTask == null)
+            {
+                _netManager.Start();
+                _pollTask = Task.Run(PollLoop, _cts.Token);
+            }
+
             var tcs = new TaskCompletionSource<IDisposable>(TaskCreationOptions.RunContinuationsAsynchronously);
             var connectionAttempt = _netManager.Connect(address, port, netSecret);
 
@@ -111,7 +115,7 @@ namespace Shared.Networking
             if (_cts.IsCancellationRequested) return;
 
             _cts.Cancel();
-            _pollTask.Wait(); // Note: This blocks until the polling task finishes.
+            _pollTask?.Wait(); // Note: This blocks until the polling task finishes.
             _netManager.Stop();
             _cts.Dispose();
         }

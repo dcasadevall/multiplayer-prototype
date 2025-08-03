@@ -88,11 +88,6 @@ namespace Core
             var disposables = _serviceProvider.GetServices<IDisposable>();
             disposables.ToList().ForEach(x => x.Dispose());
             
-            if (_serviceProvider is IDisposable disposable)
-            {
-                disposable.Dispose();
-            }
-            
             _serviceProvider = null;
             Debug.Log("UnityServiceProvider: Disposed successfully");
         }
