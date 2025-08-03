@@ -1,6 +1,7 @@
 using System;
 using Adapters.Character;
 using Adapters.Input;
+using Adapters.Networking;
 using Core;
 using Core.ECS.Simulation;
 using Core.Input;
@@ -20,12 +21,13 @@ namespace Adapters
     ///
     /// Additionally, it connects to the server at startup.
     /// </summary>
-    public class GameServiceInitializer : MonoBehaviour
+    public class GameServiceProvider : MonoBehaviour
     {
         [SerializeField] 
-        private UnityServiceProvider serviceProvider;
+        private CoreServiceProvider serviceProvider;
 
         private IDisposable _connection;
+        private IServiceProvider _provider;
         
         private void Awake()
         {
@@ -44,16 +46,13 @@ namespace Adapters
             serviceCollection.AddSingleton<IInitializable>(sp => sp.GetRequiredService<ClientWorldManager>());
             serviceCollection.AddSingleton<IDisposable>(sp => sp.GetRequiredService<ClientWorldManager>());
             
+            // Networking
+            serviceCollection.AddSingleton<NetworkConnector>();
+            serviceCollection.AddSingleton<IInitializable>(sp => sp.GetRequiredService<NetworkConnector>());
+            serviceCollection.AddSingleton<IDisposable>(sp => sp.GetRequiredService<NetworkConnector>());
+            
             // Core dependencies 
-            serviceProvider.RegisterCoreServices(serviceCollection);
-        }
-
-        private async void Start()
-        {
-            var client = serviceProvider.GetService<INetworkingClient>();
-            Debug.Log($"Starting {nameof(GameServiceInitializer)}");
-            _connection = await client.ConnectAsync(SharedConstants.ServerAddress, SharedConstants.ServerPort, SharedConstants.NetSecret);
-            Debug.Log($"Connected to {SharedConstants.ServerAddress}:{SharedConstants.ServerPort}");
+            _provider = serviceProvider.RegisterCoreServices(serviceCollection);
         }
         
         private void OnDestroy()

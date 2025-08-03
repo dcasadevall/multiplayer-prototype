@@ -16,7 +16,7 @@ namespace Core
 {
     /// <summary>
     /// Unity-compatible service provider that manages dependency injection for the client.
-    /// The game / adapter should use the <see cref="UnityServiceProvider"/> to initialize
+    /// The game / adapter should use the <see cref="CoreServiceProvider"/> to initialize
     /// the core services, and then add any game-specific services.
     /// 
     /// <para>
@@ -25,7 +25,7 @@ namespace Core
     /// disposal of services, ensuring proper resource management.
     /// </para>
     /// </summary>
-    public class UnityServiceProvider : MonoBehaviour
+    public class CoreServiceProvider : MonoBehaviour
     {
         private IServiceProvider _serviceProvider;
         
@@ -37,7 +37,7 @@ namespace Core
         /// This method should be called during the initialization phase of the application,
         /// passing in the game specific service collection.
         /// </summary>
-        public void RegisterCoreServices(IServiceCollection services)
+        public IServiceProvider RegisterCoreServices(IServiceCollection services)
         {
             Debug.Log("CoreServiceProvider: Initializing core dependency injection...");
 
@@ -67,6 +67,7 @@ namespace Core
             _serviceProvider = services.BuildServiceProvider();
             
             Debug.Log("UnityServiceProvider: Core Dependency injection initialized successfully");
+            return _serviceProvider;
         }
 
         /// <summary>
@@ -94,26 +95,6 @@ namespace Core
             
             _serviceProvider = null;
             Debug.Log("UnityServiceProvider: Disposed successfully");
-        }
-                
-        /// <summary>
-        /// Gets a service of the specified type.
-        /// </summary>
-        /// <typeparam name="T">The type of service to retrieve.</typeparam>
-        /// <returns>The service instance.</returns>
-        public T GetService<T>() where T : class
-        {
-            return _serviceProvider?.GetRequiredService<T>();
-        }
-        
-        /// <summary>
-        /// Gets all services of the specified type.
-        /// </summary>
-        /// <typeparam name="T">The type of services to retrieve.</typeparam>
-        /// <returns>All service instances of the specified type.</returns>
-        public IEnumerable<T> GetServices<T>() where T : class
-        {
-            return _serviceProvider?.GetServices<T>();
         }
     }
 } 
