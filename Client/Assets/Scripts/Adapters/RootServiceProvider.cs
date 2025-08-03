@@ -13,13 +13,13 @@ using ILogger = Shared.Logging.ILogger;
 namespace Adapters
 {
     /// <summary>
-    /// Provides and configures the services required for the login scene.
+    /// Provides and configures the services required for the root scene.
     /// 
     /// This MonoBehaviour sets up a root service provider with logging, scheduling, and networking dependencies
     /// needed for the login process. It connects to the server, then loads the main game scene and initializes
     /// the <c>GameSceneServiceProvider</c>, which will provide all dependencies for the game scene.
     /// </summary>
-    public class LoginSceneServiceProvider : MonoBehaviour
+    public class RootServiceProvider : MonoBehaviour
     {
         [SerializeField]
         private string _gameSceneName = "GameScene";
