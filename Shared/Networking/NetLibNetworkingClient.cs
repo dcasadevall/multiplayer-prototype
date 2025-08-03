@@ -46,7 +46,7 @@ namespace Shared.Networking
         /// <returns>
         /// A Task that completes with an <see cref="IDisposable"/> connection handle, or throws on failure.
         /// </returns>
-        public async Task<IDisposable> ConnectAsync(string address, int port, string netSecret = "",
+        public async Task<IClientConnection> ConnectAsync(string address, int port, string netSecret = "",
             int timeoutSeconds = 10)
         {
             _cts = new CancellationTokenSource();
@@ -60,14 +60,14 @@ namespace Shared.Networking
             var tcs = new TaskCompletionSource<IDisposable>(TaskCreationOptions.RunContinuationsAsynchronously);
             var connectionAttempt = _netManager.Connect(address, port, netSecret);
 
-            void OnConnected(ClientIdAssignmentMessage msg)
+            void OnConnected(ConnectedMessage msg)
             {
-                _logger.Info($"Connected to server with ClientId: {msg.ClientId}");
+                _logger.Info($"Connected to server with ClientId: {msg.AssignedPeerId}");
                 tcs.TrySetResult(new ClientConnection(connectionAttempt, _logger));
             }
 
             var subscriber =
-                _messageReceiver.RegisterMessageHandler<ClientIdAssignmentMessage>("NetLibNetworkingClient.OnConnected", OnConnected);
+                _messageReceiver.RegisterMessageHandler<ConnectedMessage>("NetLibNetworkingClient.OnConnected", OnConnected);
 
             try
             {
@@ -100,16 +100,29 @@ namespace Shared.Networking
         /// Represents a disposable handle to a single network connection.
         /// Disposing this object will disconnect the specific peer.
         /// </summary>
-        private sealed class ClientConnection : IDisposable
+        private sealed class ClientConnection : IClientConnection
         {
             private readonly NetPeer _peer;
             private bool _disposed;
             private readonly ILogger logger;
 
-            public ClientConnection(NetPeer peer, ILogger logger)
+            public int AssignedPeerId
+            {
+                get { return _peer.Id; }
+            }
+
+            public IMessageSender MessageSender { get; }
+            public IMessageReceiver MessageReceiver { get; }
+
+            public ClientConnection(NetPeer peer,
+                ILogger logger,
+                IMessageSender messageSender,
+                IMessageReceiver messageReceiver)
             {
                 _peer = peer;
                 this.logger = logger;
+                MessageSender = messageSender;
+                MessageReceiver = messageReceiver;
             }
 
             /// <summary>

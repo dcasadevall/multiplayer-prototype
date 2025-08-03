@@ -19,6 +19,6 @@ namespace Shared.Networking
         /// <returns>
         /// A Task that completes with an <see cref="IDisposable"/> connection handle, or throws on failure.
         /// </returns>
-        Task<IDisposable> ConnectAsync(string address, int port, string netSecret = "", int timeoutSeconds = 10);
+        Task<IClientConnection> ConnectAsync(string address, int port, string netSecret = "", int timeoutSeconds = 10);
     }
 }
