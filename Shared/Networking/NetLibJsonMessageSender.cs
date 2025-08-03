@@ -23,7 +23,7 @@ namespace Shared.Networking
         private readonly NetManager _netManager;
         private readonly ILogger _logger;
 
-        public NetLibJsonMessageSender(NetManager netManager, ILogger logger)
+        internal NetLibJsonMessageSender(NetManager netManager, ILogger logger)
         {
             _netManager = netManager;
             _logger = logger;

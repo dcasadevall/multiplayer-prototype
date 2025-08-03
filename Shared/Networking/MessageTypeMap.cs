@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Generic;
 using Shared.ECS.Replication;
-using Shared.Networking.Messages;
 
 namespace Shared.Networking
 {
@@ -14,7 +13,6 @@ namespace Shared.Networking
         private static readonly Dictionary<MessageType, Type> _messageTypeMap = new()
         {
             { MessageType.Snapshot, typeof(WorldSnapshotMessage) },
-            { MessageType.ClientIdAssignment, typeof(ConnectedMessage) },
         };
 
         /// <summary>

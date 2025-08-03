@@ -1,5 +1,4 @@
 using System;
-using Shared.Networking.Messages;
 
 namespace Shared.Networking
 {

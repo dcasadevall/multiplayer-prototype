@@ -1,9 +1,7 @@
 using System;
-using System.Diagnostics;
 using System.Threading;
 using System.Threading.Tasks;
 using LiteNetLib;
-using Shared.Networking.Messages;
 using Shared.Scheduling;
 using ILogger = Shared.Logging.ILogger;
 
@@ -16,7 +14,7 @@ namespace Shared.Networking
     {
         private readonly ILogger _logger;
         private readonly NetManager _netManager;
-        private readonly IMessageReceiver _messageReceiver;
+        private readonly EventBasedNetListener _listener;
         private readonly IScheduler _scheduler;
         private CancellationTokenSource? _cts;
         private IDisposable? _pollHandle;
@@ -26,13 +24,13 @@ namespace Shared.Networking
         /// </summary>
         /// <param name="logger">Logger for diagnostic output.</param>
         /// <param name="netManager">The LiteNetLib NetManager instance to use for networking.</param>
-        /// <param name="messageReceiver">The message receiver for handling incoming messages.</param>
+        /// <param name="listener">The injected event-based listener for handling network events.</param>
         /// <param name="scheduler">Scheduler for polling events.</param>
-        public NetLibNetworkingClient(ILogger logger, NetManager netManager, IMessageReceiver messageReceiver, IScheduler scheduler)
+        public NetLibNetworkingClient(ILogger logger, NetManager netManager, EventBasedNetListener listener, IScheduler scheduler)
         {
             _logger = logger;
             _netManager = netManager;
-            _messageReceiver = messageReceiver;
+            _listener = listener;
             _scheduler = scheduler;
         }
 
@@ -57,29 +55,52 @@ namespace Shared.Networking
                 TimeSpan.FromMilliseconds(15),
                 _cts.Token);
 
-            var tcs = new TaskCompletionSource<IDisposable>(TaskCreationOptions.RunContinuationsAsynchronously);
+            var tcs = new TaskCompletionSource<IClientConnection>(TaskCreationOptions.RunContinuationsAsynchronously);
             var connectionAttempt = _netManager.Connect(address, port, netSecret);
 
-            void OnConnected(ConnectedMessage msg)
+            void OnConnected(NetPeer peer)
             {
-                _logger.Info($"Connected to server with ClientId: {msg.AssignedPeerId}");
-                tcs.TrySetResult(new ClientConnection(connectionAttempt, _logger));
+                if (Equals(peer, connectionAttempt))
+                {
+                    var messageSender = new NetLibJsonMessageSender(_netManager, _logger);
+                    var messageReceiver = new NetLibJsonMessageReceiver(_listener, _logger);
+                    var connection = new ClientConnection(peer, _logger, messageSender, messageReceiver);
+
+                    tcs.TrySetResult(connection);
+                }
             }
 
-            var subscriber =
-                _messageReceiver.RegisterMessageHandler<ConnectedMessage>("NetLibNetworkingClient.OnConnected", OnConnected);
+            void OnDisconnected(NetPeer peer, DisconnectInfo info)
+            {
+                if (Equals(peer, connectionAttempt))
+                {
+                    tcs.TrySetException(new Exception($"Failed to connect: {info.Reason}"));
+                }
+            }
+
+            _listener.PeerConnectedEvent += OnConnected;
+            _listener.PeerDisconnectedEvent += OnDisconnected;
+
+            _logger.Info($"NetLibNetworkingClient: Connecting to server at {address}:{port}");
 
             try
             {
                 using var timeoutCts = new CancellationTokenSource(TimeSpan.FromSeconds(timeoutSeconds));
-                await using (timeoutCts.Token.Register(() => tcs.TrySetCanceled()))
+                var completedTask = await Task.WhenAny(tcs.Task, Task.Delay(Timeout.Infinite, timeoutCts.Token)).ConfigureAwait(false);
+
+                if (completedTask == tcs.Task)
                 {
                     return await tcs.Task.ConfigureAwait(false);
+                }
+                else
+                {
+                    throw new TimeoutException("Connection attempt timed out.");
                 }
             }
             finally
             {
-                subscriber.Dispose();
+                _listener.PeerConnectedEvent -= OnConnected;
+                _listener.PeerDisconnectedEvent -= OnDisconnected;
             }
         }
 
@@ -106,23 +127,24 @@ namespace Shared.Networking
             private bool _disposed;
             private readonly ILogger logger;
 
-            public int AssignedPeerId
-            {
-                get { return _peer.Id; }
-            }
-
+            public int AssignedPeerId => _peer.Id;
             public IMessageSender MessageSender { get; }
-            public IMessageReceiver MessageReceiver { get; }
+            public IMessageReceiver MessageReceiver => _jsonMessageReceiver;
+            private readonly NetLibJsonMessageReceiver _jsonMessageReceiver;
 
             public ClientConnection(NetPeer peer,
                 ILogger logger,
                 IMessageSender messageSender,
-                IMessageReceiver messageReceiver)
+                NetLibJsonMessageReceiver messageReceiver)
             {
                 _peer = peer;
                 this.logger = logger;
                 MessageSender = messageSender;
-                MessageReceiver = messageReceiver;
+
+                // We store the concrete implementation as we need
+                // to manage its lifecycle as part of this connection.
+                _jsonMessageReceiver = messageReceiver;
+                _jsonMessageReceiver.Initialize();
             }
 
             /// <summary>
@@ -131,10 +153,13 @@ namespace Shared.Networking
             public void Dispose()
             {
                 if (_disposed || _peer.ConnectionState != ConnectionState.Connected)
+                {
                     return;
+                }
 
                 logger.Info("Disconnecting from server...");
                 _peer.Disconnect();
+                _jsonMessageReceiver.Dispose();
                 _disposed = true;
             }
         }

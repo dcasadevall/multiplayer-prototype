@@ -3,7 +3,6 @@ using System.Net;
 using System.Threading;
 using LiteNetLib;
 using Shared.Logging;
-using Shared.Networking.Messages;
 using Shared.Scheduling;
 
 namespace Shared.Networking
@@ -24,7 +23,6 @@ namespace Shared.Networking
     {
         private readonly NetManager _netManager;
         private readonly EventBasedNetListener _eventListener;
-        private readonly IMessageSender _messageSender;
         private readonly ILogger _logger;
         private readonly IScheduler _scheduler;
         private IDisposable? _pollHandle;
@@ -37,19 +35,16 @@ namespace Shared.Networking
         /// </summary>
         /// <param name="netManager">The LiteNetLib NetManager instance to use for networking. Must be constructed with an EventBasedNetListener.</param>
         /// <param name="eventListener">The injected eventBasedNetListener</param>
-        /// <param name="messageSender">The message sender for sending messages to connected clients.</param>
         /// <param name="logger">Logger for structured logging of network events.</param>
         /// <param name="scheduler">Scheduler for polling events.</param>
         /// <exception cref="ArgumentException">Thrown if the NetManager does not use an EventBasedNetListener.</exception>
         public NetLibNetworkingServer(NetManager netManager,
             EventBasedNetListener eventListener,
-            IMessageSender messageSender,
             ILogger logger,
             IScheduler scheduler)
         {
             _netManager = netManager;
             _eventListener = eventListener;
-            _messageSender = messageSender;
             _logger = logger;
             _scheduler = scheduler;
         }
@@ -93,35 +88,11 @@ namespace Shared.Networking
 
         private void OnConnectionRequest(ConnectionRequest request)
         {
-            NetPeer? peer = null;
-            if (_netSecret == "")
-            {
-                peer = request.Accept();
-            }
-            else
-            {
-                peer = request.AcceptIfKey(_netSecret);
-            }
-
+            var peer = _netSecret == "" ? request.Accept() : request.AcceptIfKey(_netSecret);
             if (peer == null)
             {
                 _logger.Warn("Connection request from {0} rejected.", request.RemoteEndPoint);
-                return;
             }
-
-            // Send AssignedClientId message back to the client
-            // This is part of our connection "Protocol"
-            // Since clients don't know their own ClientId until they receive this message
-            _logger.Info("Accepted connection request from {0}", request.RemoteEndPoint);
-            var assignedClientId = new ConnectedMessage
-            {
-                AssignedPeerId = peer.Id
-            };
-
-            _messageSender.SendMessage(peer.Id,
-                MessageType.ClientIdAssignment,
-                assignedClientId,
-                ChannelType.ReliableOrdered);
         }
 
         private void OnNetworkReceive(NetPeer peer, NetPacketReader reader, byte channel, DeliveryMethod method)

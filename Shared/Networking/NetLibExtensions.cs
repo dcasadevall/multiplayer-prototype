@@ -19,15 +19,6 @@ namespace Shared.Networking
 
         public static void RegisterNetLibTypes(this IServiceCollection services)
         {
-            // Register NetLibMessageSender as the default IMessageSender
-            services.AddSingleton<IMessageSender, NetLibJsonMessageSender>();
-
-            // Register NetLibMessageSender and its lifecycle interfaces
-            services.AddSingleton<NetLibJsonMessageReceiver>();
-            services.AddSingleton<IMessageReceiver>(sp => sp.GetRequiredService<NetLibJsonMessageReceiver>());
-            services.AddSingleton<IDisposable>(sp => sp.GetRequiredService<NetLibJsonMessageReceiver>());
-            services.AddSingleton<IInitializable>(sp => sp.GetRequiredService<NetLibJsonMessageReceiver>());
-
             // Register Networking Client and Server abstractions
             services.AddSingleton<NetLibNetworkingClient>();
             services.AddSingleton<INetworkingClient>(sp => sp.GetRequiredService<NetLibNetworkingClient>());

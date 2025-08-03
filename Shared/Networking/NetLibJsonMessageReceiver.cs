@@ -35,9 +35,9 @@ namespace Shared.Networking
         /// <summary>
         /// Constructs a new <see cref="NetLibJsonMessageReceiver"/>.
         /// </summary>
-        /// <param name="logger">Logger for structured logging of message events and errors.</param>
         /// <param name="eventBasedNetListener">The LiteNetLib event listener to subscribe to.</param>
-        public NetLibJsonMessageReceiver(ILogger logger, EventBasedNetListener eventBasedNetListener)
+        /// <param name="logger">Logger for structured logging of message events and errors.</param>
+        internal NetLibJsonMessageReceiver(EventBasedNetListener eventBasedNetListener, ILogger logger)
         {
             _logger = logger;
             _eventBasedNetListener = eventBasedNetListener;
