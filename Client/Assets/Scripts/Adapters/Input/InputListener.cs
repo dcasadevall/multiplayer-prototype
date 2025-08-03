@@ -1,16 +1,17 @@
 using System;
 using Core.Input;
+using Shared.Scheduling;
 using UnityEngine;
 
 namespace Adapters.Input
 {
-    public class InputListener : MonoBehaviour, IInputListener
+    public class InputListener : IInputListener, ITickable
     {
         public event Action OnShoot;
 
         public Vector2 Movement { get; private set; }
 
-        private void Update ()
+        public void Tick()
         {
             if (UnityEngine.Input.GetKeyUp(KeyCode.Space))
             {
