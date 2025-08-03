@@ -66,6 +66,9 @@ namespace Shared.Networking
             DeliveryMethod deliveryMethod)
         {
             // Read the message type from the packet
+            _logger.Debug("Received message from peer {0} on channel {1} with delivery method {2}",
+                peer.Id, channel, deliveryMethod);
+
             var messageType = (MessageType)reader.GetByte();
             var messageTypeClass = MessageTypeMap.GetMessageType(messageType);
             if (messageTypeClass == null)
@@ -82,8 +85,20 @@ namespace Shared.Networking
                 return;
             }
 
+            object? message = null;
             var json = Encoding.UTF8.GetString(data);
-            var message = JsonSerializer.Deserialize(json, messageTypeClass);
+            try
+            {
+                // Deserialize the JSON data into the appropriate message type
+                _logger.Debug("Deserializing message of type {0}: {1}", messageTypeClass.Name, json);
+                message = JsonSerializer.Deserialize(json, messageTypeClass);
+            }
+            catch (Exception ex)
+            {
+                _logger.Error("Failed to deserialize message of type {0}: {1}", messageTypeClass.Name, ex.Message);
+                return;
+            }
+
             if (message == null)
             {
                 _logger.Error("Unable to deserialize message type {0}", json, messageTypeClass.Name);
@@ -95,6 +110,7 @@ namespace Shared.Networking
             {
                 try
                 {
+                    _logger.Debug("Invoking handler for message type {0}", messageTypeClass.Name);
                     handler(message);
                 }
                 catch (Exception ex)

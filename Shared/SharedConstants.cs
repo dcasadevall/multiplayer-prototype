@@ -9,7 +9,7 @@ namespace Shared
         /// Server address for the game server.
         /// In a real application, this would be configurable and not hardcoded (or shared).
         /// </summary>
-        public static string ServerAddress { get; } = "0.0.0.0";
+        public static string ServerAddress { get; } = "localhost";
 
         /// <summary>
         /// Port number for the server to listen on.

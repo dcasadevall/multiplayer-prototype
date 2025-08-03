@@ -46,6 +46,7 @@ namespace Shared.Networking
             {
                 var json = JsonSerializer.Serialize(message);
                 var data = System.Text.Encoding.UTF8.GetBytes(json);
+                _logger.Debug($"Sending message of type {type} to peer {peerId}: {json}");
                 writer.Put(data);
             }
             catch (Exception ex)

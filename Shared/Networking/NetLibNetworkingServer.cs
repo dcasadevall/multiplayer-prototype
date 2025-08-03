@@ -3,6 +3,7 @@ using System.Net;
 using System.Threading;
 using LiteNetLib;
 using Shared.Logging;
+using Shared.Scheduling;
 
 namespace Shared.Networking
 {
@@ -21,7 +22,9 @@ namespace Shared.Networking
         private readonly NetManager _netManager;
         private readonly EventBasedNetListener _eventListener;
         private readonly ILogger _logger;
-        private Thread? _serverThread;
+        private readonly IScheduler _scheduler;
+        private IDisposable? _pollHandle;
+        private CancellationTokenSource? _cts;
         private volatile bool _running;
         private string _netSecret = "";
 
@@ -31,12 +34,14 @@ namespace Shared.Networking
         /// <param name="netManager">The LiteNetLib NetManager instance to use for networking. Must be constructed with an EventBasedNetListener.</param>
         /// <param name="eventListener">The injected eventBasedNetListener</param>
         /// <param name="logger">Logger for structured logging of network events.</param>
+        /// <param name="scheduler">Scheduler for polling events.</param>
         /// <exception cref="ArgumentException">Thrown if the NetManager does not use an EventBasedNetListener.</exception>
-        public NetLibNetworkingServer(NetManager netManager, EventBasedNetListener eventListener, ILogger logger)
+        public NetLibNetworkingServer(NetManager netManager, EventBasedNetListener eventListener, ILogger logger, IScheduler scheduler)
         {
             _netManager = netManager;
             _eventListener = eventListener;
             _logger = logger;
+            _scheduler = scheduler;
         }
 
         /// <inheritdoc />
@@ -66,8 +71,12 @@ namespace Shared.Networking
 
             _logger.Info("Server started on {0}:{1}...", address, port);
 
-            _serverThread = new Thread(ServerLoop) { IsBackground = true };
-            _serverThread.Start();
+            _cts = new CancellationTokenSource();
+            _pollHandle = _scheduler.ScheduleAtFixedRate(
+                () => _netManager.PollEvents(),
+                TimeSpan.Zero,
+                TimeSpan.FromMilliseconds(15),
+                _cts.Token);
 
             return new ServerHandle(this);
         }
@@ -93,34 +102,18 @@ namespace Shared.Networking
             reader.Recycle();
         }
 
-        private void ServerLoop()
-        {
-            try
-            {
-                while (_running)
-                {
-                    _netManager.PollEvents();
-                    Thread.Sleep(15);
-                }
-            }
-            finally
-            {
-                _netManager.Stop();
-                _logger.Info("Server stopped.");
-            }
-        }
-
         private void Stop()
         {
             _running = false;
-            if (_serverThread != null && _serverThread.IsAlive)
-            {
-                _serverThread.Join();
-            }
+            _cts?.Cancel();
+            _pollHandle?.Dispose();
+            _netManager.Stop();
 
             // Unsubscribe event handlers to prevent memory leaks
             _eventListener.ConnectionRequestEvent -= OnConnectionRequest;
             _eventListener.NetworkReceiveEvent -= OnNetworkReceive;
+
+            _logger.Info("Server stopped.");
         }
 
         /// <summary>

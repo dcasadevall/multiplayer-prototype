@@ -1,35 +1,39 @@
 using System;
+using System.Diagnostics;
 using System.Threading;
 using System.Threading.Tasks;
 using LiteNetLib;
+using Shared.Networking.Messages;
+using Shared.Scheduling;
 using ILogger = Shared.Logging.ILogger;
 
 namespace Shared.Networking
 {
     /// <summary>
-    /// An implementation of <see cref="INetworkingClient"/> using LiteNetLib for networking.
-    /// This client is reusable for multiple connection attempts. Each successful connection
-    /// returns a disposable handle to manage the connection's lifecycle.
+    /// Simple LiteNetLib-based networking client.
     /// </summary>
     public class NetLibNetworkingClient : INetworkingClient, IDisposable
     {
         private readonly ILogger _logger;
         private readonly NetManager _netManager;
-        private readonly EventBasedNetListener _listener;
-        private readonly CancellationTokenSource _cts = new();
-        private Task? _pollTask;
+        private readonly IMessageReceiver _messageReceiver;
+        private readonly IScheduler _scheduler;
+        private CancellationTokenSource? _cts;
+        private IDisposable? _pollHandle;
 
         /// <summary>
         /// Constructs a new <see cref="NetLibNetworkingClient"/>.
         /// </summary>
         /// <param name="logger">Logger for diagnostic output.</param>
         /// <param name="netManager">The LiteNetLib NetManager instance to use for networking.</param>
-        /// <param name="listener">The injected EventBasedNetListener for handling network events.</param>
-        public NetLibNetworkingClient(ILogger logger, NetManager netManager, EventBasedNetListener listener)
+        /// <param name="messageReceiver">The message receiver for handling incoming messages.</param>
+        /// <param name="scheduler">Scheduler for polling events.</param>
+        public NetLibNetworkingClient(ILogger logger, NetManager netManager, IMessageReceiver messageReceiver, IScheduler scheduler)
         {
             _logger = logger;
             _netManager = netManager;
-            _listener = listener;
+            _messageReceiver = messageReceiver;
+            _scheduler = scheduler;
         }
 
         /// <summary>
@@ -45,36 +49,25 @@ namespace Shared.Networking
         public async Task<IDisposable> ConnectAsync(string address, int port, string netSecret = "",
             int timeoutSeconds = 10)
         {
-            if (_pollTask == null)
-            {
-                _netManager.Start();
-                _pollTask = Task.Run(PollLoop, _cts.Token);
-            }
+            _cts = new CancellationTokenSource();
+            _netManager.Start();
+            _pollHandle = _scheduler.ScheduleAtFixedRate(
+                () => _netManager.PollEvents(),
+                TimeSpan.Zero,
+                TimeSpan.FromMilliseconds(15),
+                _cts.Token);
 
             var tcs = new TaskCompletionSource<IDisposable>(TaskCreationOptions.RunContinuationsAsynchronously);
             var connectionAttempt = _netManager.Connect(address, port, netSecret);
 
-            void OnConnected(NetPeer peer)
+            void OnConnected(ClientIdAssignmentMessage msg)
             {
-                // On success, wrap the peer in our disposable handle.
-                if (Equals(peer, connectionAttempt))
-                {
-                    tcs.TrySetResult(new ClientConnection(peer));
-                }
+                _logger.Info($"Connected to server with ClientId: {msg.ClientId}");
+                tcs.TrySetResult(new ClientConnection(connectionAttempt, _logger));
             }
 
-            void OnDisconnected(NetPeer peer, DisconnectInfo info)
-            {
-                if (Equals(peer, connectionAttempt))
-                {
-                    tcs.TrySetException(new Exception($"Failed to connect: {info.Reason}"));
-                }
-            }
-
-            _listener.PeerConnectedEvent += OnConnected;
-            _listener.PeerDisconnectedEvent += OnDisconnected;
-
-            _logger.Info($"NetLibNetworkingClient: Connecting to server at {address}:{port}");
+            var subscriber =
+                _messageReceiver.RegisterMessageHandler<ClientIdAssignmentMessage>("NetLibNetworkingClient.OnConnected", OnConnected);
 
             try
             {
@@ -86,24 +79,7 @@ namespace Shared.Networking
             }
             finally
             {
-                _listener.PeerConnectedEvent -= OnConnected;
-                _listener.PeerDisconnectedEvent -= OnDisconnected;
-            }
-        }
-
-        private async Task PollLoop()
-        {
-            try
-            {
-                while (!_cts.IsCancellationRequested)
-                {
-                    _netManager.PollEvents();
-                    await Task.Delay(15, _cts.Token);
-                }
-            }
-            catch (OperationCanceledException)
-            {
-                // Expected when Dispose is called.
+                subscriber.Dispose();
             }
         }
 
@@ -112,12 +88,12 @@ namespace Shared.Networking
         /// </summary>
         public void Dispose()
         {
-            if (_cts.IsCancellationRequested) return;
+            _logger.Debug("Disposing NetLibNetworkingClient...");
 
-            _cts.Cancel();
-            _pollTask?.Wait(); // Note: This blocks until the polling task finishes.
+            _cts?.Cancel();
+            _pollHandle?.Dispose();
             _netManager.Stop();
-            _cts.Dispose();
+            _cts?.Dispose();
         }
 
         /// <summary>
@@ -126,16 +102,14 @@ namespace Shared.Networking
         /// </summary>
         private sealed class ClientConnection : IDisposable
         {
-            /// <summary>
-            /// The underlying LiteNetLib network peer for this connection.
-            /// </summary>
-            private NetPeer Peer { get; }
-
+            private readonly NetPeer _peer;
             private bool _disposed;
+            private readonly ILogger logger;
 
-            public ClientConnection(NetPeer peer)
+            public ClientConnection(NetPeer peer, ILogger logger)
             {
-                Peer = peer;
+                _peer = peer;
+                this.logger = logger;
             }
 
             /// <summary>
@@ -143,12 +117,11 @@ namespace Shared.Networking
             /// </summary>
             public void Dispose()
             {
-                if (_disposed || Peer.ConnectionState != ConnectionState.Connected)
-                {
+                if (_disposed || _peer.ConnectionState != ConnectionState.Connected)
                     return;
-                }
 
-                Peer.Disconnect();
+                logger.Info("Disconnecting from server...");
+                _peer.Disconnect();
                 _disposed = true;
             }
         }
