@@ -28,7 +28,6 @@ namespace Core.ECS.Replication
     public class ClientReplicationSystem : ISystem, IDisposable
     {
         private readonly IWorldSnapshotConsumer _worldSnapshotConsumer;
-        private readonly IMessageReceiver _messageReceiver;
         private readonly IDisposable _subscription;
 
         /// <summary>
@@ -36,14 +35,12 @@ namespace Core.ECS.Replication
         /// </summary>
         /// <param name="worldSnapshotConsumer">Consumer used for processing incoming snapshots.</param>
         /// <param name="messageReceiver">Receiver for network messages.</param>
-        public ClientReplicationSystem(IWorldSnapshotConsumer worldSnapshotConsumer, 
-            IMessageReceiver messageReceiver)
+        public ClientReplicationSystem(IWorldSnapshotConsumer worldSnapshotConsumer, IMessageReceiver messageReceiver)
         {
             _worldSnapshotConsumer = worldSnapshotConsumer;
-            _messageReceiver = messageReceiver;
-            
+
             // Subscribe to snapshot messages
-            _subscription = _messageReceiver.RegisterMessageHandler<WorldSnapshotMessage>("ReplicationSystem", HandleMessageReceived);
+            _subscription = messageReceiver.RegisterMessageHandler<WorldSnapshotMessage>("ReplicationSystem", HandleMessageReceived);
         }
 
         /// <summary>
