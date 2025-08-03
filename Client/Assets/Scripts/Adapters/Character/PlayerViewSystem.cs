@@ -6,6 +6,7 @@ using Core.Player;
 using LiteNetLib;
 using Shared.ECS;
 using Shared.ECS.Components;
+using Shared.Networking;
 
 namespace Adapters.Character
 {
@@ -15,15 +16,16 @@ namespace Adapters.Character
     public class PlayerViewSystem : ISystem
     {
         private readonly Dictionary<EntityId, int> _players = new();
+        private readonly IClientConnection _clientConnection;
         private readonly IInputListener _inputListener;
         private readonly IEntityViewRegistry _entityViewRegistry;
-        private readonly int _localPlayerId;
         private Player _localPlayer;
 
-        public PlayerViewSystem(NetManager netManager, 
+        public PlayerViewSystem(IClientConnection clientConnection, 
             IInputListener inputListener, 
             IEntityViewRegistry entityViewRegistry)
         {
+            _clientConnection = clientConnection;
             _inputListener = inputListener;
             _entityViewRegistry = entityViewRegistry;
         }
@@ -40,15 +42,16 @@ namespace Adapters.Character
                 // Create player view if it doesn't exist
                 if (!_players.ContainsKey(entityId))
                 {
-                    _players[entityId] = peerComponent.PeerId;
-
                     // If this is the local player, associate the Player class
-                    if (peerComponent!.PeerId == _localPlayerId && !_players.ContainsKey(entityId))
+                    if (peerComponent!.PeerId == _clientConnection.AssignedPeerId && 
+                        !_players.ContainsKey(entityId) &&
+                        _entityViewRegistry.TryGetEntityView(entityId, out var playerView))
                     {
                         var player = new Player(_inputListener);
-                        var playerView = _entityViewRegistry.GetEntityView(entityId);
                         playerView.gameObject.AddComponent<PlayerView>().Setup(player);
                     }
+                    
+                    _players[entityId] = peerComponent.PeerId;
                 }
             }
         }

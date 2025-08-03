@@ -89,12 +89,6 @@ namespace Adapters
             // Dispose all registered IDisposable services
             var disposables = _serviceProvider.GetServices<IDisposable>();
             disposables.ToList().ForEach(x => x.Dispose());
-            
-            // Dispose the service provider itself
-            if (_serviceProvider is IDisposable disposableProvider)
-            {
-                disposableProvider.Dispose();
-            }
             _serviceProvider = null;
             
             // Dispose the GameSceneServiceProvider

@@ -60,12 +60,6 @@ namespace Adapters
             // Dispose all services that implement IDisposable
             var disposables = _serviceProvider.GetServices<IDisposable>();
             disposables.ToList().ForEach(x => x.Dispose());
-            
-            // Dispose the service provider itself
-            if (_serviceProvider is IDisposable disposableProvider)
-            {
-                disposableProvider.Dispose();
-            }
             _serviceProvider = null;
         }
     }
