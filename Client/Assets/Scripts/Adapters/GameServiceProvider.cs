@@ -6,9 +6,7 @@ using Core;
 using Core.ECS.Simulation;
 using Core.Input;
 using Microsoft.Extensions.DependencyInjection;
-using Shared;
 using Shared.ECS;
-using Shared.Networking;
 using Shared.Scheduling;
 using UnityEngine;
 
@@ -26,9 +24,6 @@ namespace Adapters
         [SerializeField] 
         private CoreServiceProvider serviceProvider;
 
-        private IDisposable _connection;
-        private IServiceProvider _provider;
-        
         private void Awake()
         {
             var serviceCollection = new ServiceCollection();
@@ -52,14 +47,7 @@ namespace Adapters
             serviceCollection.AddSingleton<IDisposable>(sp => sp.GetRequiredService<NetworkConnector>());
             
             // Core dependencies 
-            _provider = serviceProvider.RegisterCoreServices(serviceCollection);
-        }
-        
-        private void OnDestroy()
-        {
-            // Dispose of the connection when the game object is destroyed
-            _connection?.Dispose();
-            _connection = null;
+            serviceProvider.RegisterCoreServices(serviceCollection);
         }
     }
 }
