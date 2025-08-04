@@ -1,3 +1,5 @@
+using System.Text.Json.Serialization;
+
 namespace Shared.ECS.TickSync
 {
     /// <summary>
@@ -10,6 +12,7 @@ namespace Shared.ECS.TickSync
         /// <summary>
         /// The tick number for the server.
         /// </summary>
+        [JsonPropertyName("tickNumber")]
         public uint TickNumber { get; set; }
     }
 }

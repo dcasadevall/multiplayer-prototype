@@ -52,7 +52,10 @@ namespace Server.Replication
             // Broadcast the snapshot to all connected clients
             // We use the unreliable channel for snapshot delivery
             // since the snapshot is a full state for simplicity.
-            _messageSender.BroadcastMessage(MessageType.Snapshot, snapshot);
+
+            // TODO: We should be sending delta updates and use the unreliable channel.
+            // we should be chunking anything over 1kb
+            _messageSender.BroadcastMessage(MessageType.Snapshot, snapshot, ChannelType.ReliableOrdered);
         }
     }
 }
