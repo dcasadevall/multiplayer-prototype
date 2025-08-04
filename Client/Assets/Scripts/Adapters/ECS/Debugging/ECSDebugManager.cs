@@ -10,13 +10,7 @@ namespace Adapters.ECS.Debugging
     public class EcsDebugManager : MonoBehaviour
     {
         [Header("Debug Components")]
-        [SerializeField] private bool _enableWorldDebugger = true;
         [SerializeField] private bool _enableVisualDebugger = true;
-        [SerializeField] private bool _enableDebugSystem = true;
-        
-        [Header("Settings")]
-        [SerializeField] private bool _showDebugInfoInInspector = true;
-        [SerializeField] private bool _logToConsole = true;
         
         private ECSVisualDebugger _visualDebugger;
         
@@ -51,8 +45,6 @@ namespace Adapters.ECS.Debugging
             }
             
             var debugObject = new GameObject("ECS Debug Manager");
-            var manager = debugObject.AddComponent<EcsDebugManager>();
-            
             UnityEditor.Selection.activeGameObject = debugObject;
             Debug.Log("ECS Debug Manager added to scene. Make sure to register it with your DI container.");
         }

@@ -22,7 +22,6 @@ namespace Adapters.ECS.Debugging
         [SerializeField] private bool _showEntityPositions = true;
         [SerializeField] private bool _showEntityLabels = true;
         [SerializeField] private bool _showComponentInfo = true;
-        [SerializeField] private bool _showEntityConnections = false;
         
         [Header("Display Options")]
         [SerializeField] private float _labelOffset = 1f;
