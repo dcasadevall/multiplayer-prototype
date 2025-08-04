@@ -8,6 +8,11 @@ namespace Shared.Logging
     /// optional contextual data. This enables consistent, filterable, and machine-readable
     /// logging across the application.
     /// </para>
+    /// 
+    /// <para>
+    /// Overloads accepting a <see cref="LoggedFeature"/> allow associating log entries with specific
+    /// subsystems or features, enabling more granular filtering and diagnostics.
+    /// </para>
     /// </summary>
     public interface ILogger
     {
@@ -45,5 +50,45 @@ namespace Shared.Logging
         /// <param name="message">The log message.</param>
         /// <param name="args">Optional structured arguments for formatting or context.</param>
         void Fatal(string message, params object[]? args);
+
+        /// <summary>
+        /// Logs a debug-level message associated with a specific feature or subsystem.
+        /// </summary>
+        /// <param name="feature">The feature or subsystem being logged.</param>
+        /// <param name="message">The log message.</param>
+        /// <param name="args">Optional structured arguments for formatting or context.</param>
+        void Debug(LoggedFeature feature, string message, params object[]? args);
+
+        /// <summary>
+        /// Logs an informational message associated with a specific feature or subsystem.
+        /// </summary>
+        /// <param name="feature">The feature or subsystem being logged.</param>
+        /// <param name="message">The log message.</param>
+        /// <param name="args">Optional structured arguments for formatting or context.</param>
+        void Info(LoggedFeature feature, string message, params object[]? args);
+
+        /// <summary>
+        /// Logs a warning message associated with a specific feature or subsystem.
+        /// </summary>
+        /// <param name="feature">The feature or subsystem being logged.</param>
+        /// <param name="message">The log message.</param>
+        /// <param name="args">Optional structured arguments for formatting or context.</param>
+        void Warn(LoggedFeature feature, string message, params object[]? args);
+
+        /// <summary>
+        /// Logs an error message associated with a specific feature or subsystem.
+        /// </summary>
+        /// <param name="feature">The feature or subsystem being logged.</param>
+        /// <param name="message">The log message.</param>
+        /// <param name="args">Optional structured arguments for formatting or context.</param>
+        void Error(LoggedFeature feature, string message, params object[]? args);
+
+        /// <summary>
+        /// Logs a fatal error message associated with a specific feature or subsystem.
+        /// </summary>
+        /// <param name="feature">The feature or subsystem being logged.</param>
+        /// <param name="message">The log message.</param>
+        /// <param name="args">Optional structured arguments for formatting or context.</param>
+        void Fatal(LoggedFeature feature, string message, params object[]? args);
     }
 }

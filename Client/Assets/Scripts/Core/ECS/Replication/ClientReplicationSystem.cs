@@ -55,7 +55,7 @@ namespace Core.ECS.Replication
             // This method is called every tick to ensure we process messages promptly
         }
 
-        private void HandleMessageReceived(WorldSnapshotMessage msg)
+        private void HandleMessageReceived(int peerId, WorldSnapshotMessage msg)
         {
             _worldSnapshotConsumer.ConsumeSnapshot(msg);
         }

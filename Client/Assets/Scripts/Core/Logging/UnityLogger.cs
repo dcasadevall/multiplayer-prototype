@@ -1,106 +1,68 @@
-using ILogger = Shared.Logging.ILogger;
+using Shared.Logging;
 
 namespace Core.Logging
 {
-    /// <summary>
-    /// Unity implementation of ILogger that uses Unity's Debug.Log system.
-    /// 
-    /// <para>
-    /// This logger bridges the shared ILogger interface with Unity's logging system,
-    /// providing consistent logging across both server and client while leveraging
-    /// Unity's built-in logging capabilities.
-    /// </para>
-    /// </summary>
     public class UnityLogger : ILogger
     {
-        /// <summary>
-        /// Logs a debug-level message using Unity's Debug.Log.
-        /// </summary>
-        /// <param name="message">The log message.</param>
-        /// <param name="args">Optional structured arguments for formatting or context.</param>
-        public void Debug(string message, params object[] args)
+        public void Debug(string message, params object[] args) => Debug(LoggedFeature.General, message, args);
+        public void Info(string message, params object[] args) => Info(LoggedFeature.General, message, args);
+        public void Warn(string message, params object[] args) => Warn(LoggedFeature.General, message, args);
+        public void Error(string message, params object[] args) => Error(LoggedFeature.General, message, args);
+        public void Fatal(string message, params object[] args) => Fatal(LoggedFeature.General, message, args);
+        
+        public void Debug(LoggedFeature feature, string message, params object[] args)
         {
-            if (!LogSettings.ShouldLog(LogLevel.Debug))
-            {
-                return;
-            }
-            
-            var formattedMessage = args != null && args.Length > 0 
-                ? string.Format(message, args) 
-                : message;
-            UnityEngine.Debug.Log($"[DEBUG] {formattedMessage}");
+            if (!LogSettings.ShouldLog(LogLevel.Debug, feature)) return;
+            Log(feature, LogLevel.Debug, message, args);
         }
 
-        /// <summary>
-        /// Logs an informational message using Unity's Debug.Log.
-        /// </summary>
-        /// <param name="message">The log message.</param>
-        /// <param name="args">Optional structured arguments for formatting or context.</param>
-        public void Info(string message, params object[] args)
+        public void Info(LoggedFeature feature, string message, params object[] args)
         {
-            if (!LogSettings.ShouldLog(LogLevel.Info))
-            {
-                return;
-            }
-            
-            var formattedMessage = args != null && args.Length > 0 
-                ? string.Format(message, args) 
-                : message;
-            UnityEngine.Debug.Log($"[INFO] {formattedMessage}");
+            if (!LogSettings.ShouldLog(LogLevel.Info, feature)) return;
+            Log(feature, LogLevel.Info, message, args);
         }
 
-        /// <summary>
-        /// Logs a warning message using Unity's Debug.LogWarning.
-        /// </summary>
-        /// <param name="message">The log message.</param>
-        /// <param name="args">Optional structured arguments for formatting or context.</param>
-        public void Warn(string message, params object[] args)
+        public void Warn(LoggedFeature feature, string message, params object[] args)
         {
-            if (!LogSettings.ShouldLog(LogLevel.Warn))
-            {
-                return;
-            }
-            
-            var formattedMessage = args != null && args.Length > 0 
-                ? string.Format(message, args) 
-                : message;
-            UnityEngine.Debug.LogWarning($"[WARN] {formattedMessage}");
+            if (!LogSettings.ShouldLog(LogLevel.Warn, feature)) return;
+            Log(feature, LogLevel.Warn, message, args);
         }
 
-        /// <summary>
-        /// Logs an error message using Unity's Debug.LogError.
-        /// </summary>
-        /// <param name="message">The log message.</param>
-        /// <param name="args">Optional structured arguments for formatting or context.</param>
-        public void Error(string message, params object[] args)
+        public void Error(LoggedFeature feature, string message, params object[] args)
         {
-            if (!LogSettings.ShouldLog(LogLevel.Error))
-            {
-                return;
-            }
-            
-            var formattedMessage = args != null && args.Length > 0 
-                ? string.Format(message, args) 
-                : message;
-            UnityEngine.Debug.LogError($"[ERROR] {formattedMessage}");
+            if (!LogSettings.ShouldLog(LogLevel.Error, feature)) return;
+            Log(feature, LogLevel.Error, message, args);
         }
 
-        /// <summary>
-        /// Logs a fatal error message using Unity's Debug.LogError.
-        /// </summary>
-        /// <param name="message">The log message.</param>
-        /// <param name="args">Optional structured arguments for formatting or context.</param>
-        public void Fatal(string message, params object[] args)
+        public void Fatal(LoggedFeature feature, string message, params object[] args)
         {
-            if (!LogSettings.ShouldLog(LogLevel.Fatal))
-            {
-                return;
-            }
-            
-            var formattedMessage = args != null && args.Length > 0 
+            if (!LogSettings.ShouldLog(LogLevel.Fatal, feature)) return;
+            Log(feature, LogLevel.Fatal, message, args);
+        }
+
+        private void Log(LoggedFeature feature, LogLevel level, string message, params object[] args)
+        {
+            var formattedMessage = args is { Length: > 0 }
                 ? string.Format(message, args) 
                 : message;
-            UnityEngine.Debug.LogError($"[FATAL] {formattedMessage}");
+
+            var featureColorHex = LogSettings.GetFeatureColorHex(feature);
+            var logString = $"[<color=#{featureColorHex}>{feature}</color>] [{level}] {formattedMessage}";
+
+            switch (level)
+            {
+                case LogLevel.Debug:
+                case LogLevel.Info:
+                    UnityEngine.Debug.Log(logString);
+                    break;
+                case LogLevel.Warn:
+                    UnityEngine.Debug.LogWarning(logString);
+                    break;
+                case LogLevel.Error:
+                case LogLevel.Fatal:
+                    UnityEngine.Debug.LogError(logString);
+                    break;
+            }
         }
     }
-} 
+}

@@ -1,4 +1,4 @@
-namespace Core.Logging
+namespace Shared.Logging
 {
     /// <summary>
     /// Defines the available log levels for the Unity client.

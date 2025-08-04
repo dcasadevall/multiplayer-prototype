@@ -42,7 +42,7 @@ namespace Shared.ECS.Replication
         {
             var snapshot = new WorldSnapshotMessage();
             var replicatedEntities = _entityRegistry.GetAll().Where(e => e.Has<ReplicatedTagComponent>()).ToList();
-            _logger.Debug("Found {0} entities to replicate", replicatedEntities.Count);
+            _logger.Debug(LoggedFeature.Replication, "Found {0} entities to replicate", replicatedEntities.Count);
 
             foreach (var entity in replicatedEntities)
             {
@@ -58,7 +58,7 @@ namespace Shared.ECS.Replication
                     })
                     .ToList();
 
-                _logger.Debug("Entity {0} has {1} components to replicate", entity.Id, components.Count);
+                _logger.Debug(LoggedFeature.Replication, "Entity {0} has {1} components to replicate", entity.Id, components.Count);
 
                 snapshot.Entities.Add(new SnapshotEntity
                 {

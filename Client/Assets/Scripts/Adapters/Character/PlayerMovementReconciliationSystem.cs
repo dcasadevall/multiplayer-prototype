@@ -3,6 +3,7 @@ using System.Numerics;
 using Core.Input;
 using Shared.ECS;
 using Shared.ECS.Components;
+using Shared.ECS.Entities;
 using Shared.ECS.Prediction;
 using Shared.ECS.TickSync;
 using Shared.Logging;
@@ -12,20 +13,20 @@ namespace Adapters.Character
 {
     public class PlayerMovementReconciliationSystem : ISystem
     {
-        private PlayerMovementPredictionSystem _prediction;
-        private IInputListener _input;
+        private readonly PlayerMovementPredictionSystem _prediction;
         private readonly ILogger _logger;
         private readonly TickSync _tickSync;
         private readonly int _localPeerId;
 
-        public PlayerMovementReconciliationSystem(PlayerMovementPredictionSystem prediction, 
+        // Error threshold. If distance is greater than this, we reconcile.
+        private const float ReconciliationThreshold = 0.01f;
+
+        public PlayerMovementReconciliationSystem(PlayerMovementPredictionSystem prediction,
             IClientConnection connection,
-            IInputListener input,
             ILogger logger,
             TickSync tickSync)
         {
             _prediction = prediction;
-            _input = input;
             _logger = logger;
             _tickSync = tickSync;
             _localPeerId = connection.AssignedPeerId;
@@ -33,61 +34,63 @@ namespace Adapters.Character
 
         public void Update(EntityRegistry registry, uint tickNumber, float deltaTime)
         {
-            var localPlayerEntity = registry
-                .GetAll()
-                .Where(x => x.Has<PeerComponent>())
-                .Where(x => x.Has<PlayerTagComponent>())
-                .Where(x => x.Has<PredictedComponent<PositionComponent>>())
-                .FirstOrDefault(x => x.GetRequired<PeerComponent>().PeerId == _localPeerId);
-
+            var localPlayerEntity = GetLocalPlayerEntity(registry);
             if (localPlayerEntity == null)
             {
                 return;
             }
+
+            var serverTick = _tickSync.ServerTick;
             
-            // Get predicted state at server tick
-            if (!_prediction.GetPredictedState(_tickSync.ServerTick, out var predictedState))
+            // We can't reconcile if the server tick is 0 or we have no state for it.
+            if(serverTick == 0) return;
+
+            // 1. Get the server's authoritative position for its last processed tick.
+            var authoritativePositionComponent = localPlayerEntity.GetRequired<PredictedComponent<PositionComponent>>();
+            if (authoritativePositionComponent.ServerValue == null)
             {
-                // _logger.Warn($"Tick {_tickSync.ClientTick}: Predicted state at server tick {_tickSync.ServerTick} not found.");
+                // This can happen if we haven't received a state update from the server yet.
                 return;
             }
-            
-            var authoritativePosition = localPlayerEntity.GetRequired<PredictedComponent<PositionComponent>>();
-            if (authoritativePosition.ServerValue == null)
+            var authoritativePosition = authoritativePositionComponent.ServerValue.Value;
+
+            // 2. Get the client's predicted state for that same tick from our history buffer.
+            if (!_prediction.GetPredictedState(serverTick, out var predictedState))
             {
-                _logger.Warn($"Tick {_tickSync.ClientTick}: ServerValue for authoritative position is null.");
+                // This can happen on startup or if the client is lagging severely.
+                // We don't have a prediction to compare against, so we can't reconcile.
                 return;
             }
-            
-            float error = Vector3.Distance(predictedState.Position, authoritativePosition.ServerValue.Value);
-            if (error > 0.01f)
+
+            // 3. Compare and check for error.
+            float error = Vector3.Distance(predictedState.Position, authoritativePosition);
+            if (error > ReconciliationThreshold)
             {
-                _logger.Debug($"Reconciliation at tick {_tickSync.ServerTick}. Error: {error}");
+                _logger.Debug($"Reconciliation needed at tick {serverTick}. Error: {error}");
 
-                localPlayerEntity.AddOrReplaceComponent(new PositionComponent
+                // 4. Instruct the prediction system to correct its state and re-simulate.
+                _prediction.CorrectStateAndResimulate(serverTick, authoritativePosition);
+                
+                // 5. Get the re-simulated position for the *current* client tick and update the entity.
+                if (_prediction.GetPredictedState(_tickSync.ClientTick, out var newlyPredictedState))
                 {
-                    Value = authoritativePosition.ServerValue.Value
-                });
-
-                // Re-simulate from serverTick to ClientTick
-                var predictedPosition = authoritativePosition.ServerValue.Value;
-                for (uint tick = _tickSync.ServerTick + 1; tick <= _tickSync.ClientTick; tick++)
-                {
-                    if (!_input.TryGetMovementAtTick(tick, out var inputMessage))
+                    localPlayerEntity.AddOrReplaceComponent(new PositionComponent
                     {
-                        _logger.Warn($"Tick {tickNumber}: Movement at tick {tick} failed.");
-                        continue;
-                    }
-                    
-                    predictedPosition += new Vector3(inputMessage.MoveDirection.X, 0, inputMessage.MoveDirection.Y) * 0.1f;
+                        Value = newlyPredictedState.Position
+                    });
                 }
-
-                // Update the local player's position to the predicted position
-                localPlayerEntity.AddOrReplaceComponent(new PositionComponent
-                {
-                    Value = predictedPosition
-                });
             }
+            
+            // 6. Prune the state buffer to prevent memory leaks.
+            _prediction.PruneOldStates(serverTick);
+        }
+        
+        private Entity GetLocalPlayerEntity(EntityRegistry registry)
+        {
+            return registry
+                .GetAll()
+                .Where(x => x.Has<PeerComponent>() && x.Has<PlayerTagComponent>() && x.Has<PredictedComponent<PositionComponent>>())
+                .FirstOrDefault(x => x.GetRequired<PeerComponent>().PeerId == _localPeerId);
         }
     }
 }

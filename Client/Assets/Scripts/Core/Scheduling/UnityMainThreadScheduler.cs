@@ -105,11 +105,6 @@ namespace Core.Scheduling
             yield return new WaitForSeconds((float)delay.TotalSeconds);
             task();
         }
-        
-        private void Awake()
-        {
-            DontDestroyOnLoad(this);
-        }
 
         private void OnDestroy()
         {

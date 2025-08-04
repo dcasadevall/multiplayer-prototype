@@ -100,14 +100,14 @@ namespace Server.PlayerSpawn
                 // Mark as replicated so it gets sent to clients
                 playerEntity.AddComponent<ReplicatedTagComponent>();
 
-                _logger.Info("Created player entity {0} for peer {1}", playerEntity.Id, peer.Id);
+                _logger.Info(LoggedFeature.Networking, "Created player entity {0} for peer {1}", playerEntity.Id, peer.Id);
 
                 // Store the mapping of peer ID to entity ID
                 _peerEntityMap[peer.Id] = playerEntity.Id;
             }
             catch (Exception ex)
             {
-                _logger.Error("Failed to create player entity for client {0}: {1}", peer.Id, ex.Message);
+                _logger.Error(LoggedFeature.Networking, "Failed to create player entity for client {0}: {1}", peer.Id, ex.Message);
             }
         }
 
@@ -115,13 +115,13 @@ namespace Server.PlayerSpawn
         {
             if (!_peerEntityMap.TryGetValue(peer.Id, out var entityId))
             {
-                _logger.Warn("No player entity found for disconnected peer {0}", peer.Id);
+                _logger.Warn(LoggedFeature.Networking, "No player entity found for disconnected peer {0}", peer.Id);
                 return;
             }
 
             // Remove the player entity from the registry
             _entityRegistry.DestroyEntity(entityId);
-            _logger.Info("Removed player entity {0} for peer {1}", entityId, peer.Id);
+            _logger.Info(LoggedFeature.Networking, "Removed player entity {0} for peer {1}", entityId, peer.Id);
 
             // Remove the mapping
             _peerEntityMap.Remove(peer.Id);

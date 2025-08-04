@@ -52,19 +52,20 @@ namespace Shared.Networking
             {
                 var json = JsonSerializer.Serialize(message);
                 var data = System.Text.Encoding.UTF8.GetBytes(json);
-                _logger.Debug($"Sending message of type {type} to peer {peerId}: {json}");
+                _logger.Debug(LoggedFeature.Networking, $"Sending message of type {type} to peer {peerId}: {json}");
                 writer.Put(data);
             }
             catch (Exception ex)
             {
-                _logger.Error($"Failed to serialize message of type {typeof(TMessage).Name} to JSON: {ex.Message}");
+                _logger.Error(LoggedFeature.Networking,
+                    $"Failed to serialize message of type {typeof(TMessage).Name} to JSON: {ex.Message}");
                 return;
             }
 
             NetPeer? peer = _netManager.GetPeerById(peerId);
             if (peer == null)
             {
-                _logger.Warn($"Failed to send message to peer {peerId}: Peer not found.");
+                _logger.Warn(LoggedFeature.Networking, $"Failed to send message to peer {peerId}: Peer not found.");
                 return;
             }
 

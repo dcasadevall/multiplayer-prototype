@@ -1,4 +1,5 @@
 #if UNITY_EDITOR
+using Shared.Logging;
 using UnityEditor;
 
 namespace Core.Logging

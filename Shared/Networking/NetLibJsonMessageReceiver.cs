@@ -30,7 +30,7 @@ namespace Shared.Networking
         private readonly EventBasedNetListener _eventBasedNetListener;
 
         // Maps message type to a dictionary of handlerId -> handler delegate
-        private Dictionary<Type, Dictionary<string, Action<object>>> _handlers = new();
+        private Dictionary<Type, Dictionary<string, MessageHandler<object>>> _handlers = new();
 
         /// <summary>
         /// Constructs a new <see cref="NetLibJsonMessageReceiver"/>.
@@ -110,7 +110,7 @@ namespace Shared.Networking
                 try
                 {
                     _logger.Debug("Invoking handler for message type {0}", messageTypeClass.Name);
-                    handler(message);
+                    handler(peer.Id, message);
                 }
                 catch (Exception ex)
                 {
@@ -120,12 +120,12 @@ namespace Shared.Networking
         }
 
         /// <inheritdoc />
-        public IDisposable RegisterMessageHandler<TMessage>(string handlerId, Action<TMessage> handler)
+        public IDisposable RegisterMessageHandler<TMessage>(string handlerId, MessageHandler<TMessage> handler)
         {
             var type = typeof(TMessage);
             if (!_handlers.ContainsKey(type))
             {
-                _handlers[type] = new Dictionary<string, Action<object>>();
+                _handlers[type] = new Dictionary<string, MessageHandler<object>>();
             }
 
             if (_handlers[type].ContainsKey(handlerId))
@@ -134,7 +134,7 @@ namespace Shared.Networking
                              " Overwriting existing handler.", handlerId, type.Name);
             }
 
-            _handlers[type][handlerId] = message => handler((TMessage)message);
+            _handlers[type][handlerId] = (peerId, message) => handler(peerId, (TMessage)message);
             return new HandlerRegistration(this, type, handlerId);
         }
 

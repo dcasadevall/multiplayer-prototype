@@ -3,6 +3,12 @@ using System;
 namespace Shared.Networking
 {
     /// <summary>
+    /// MessageHandler is a delegate that defines the signature for a method that handles messages received from network peers.
+    /// </summary>
+    /// <typeparam name="TMessage"></typeparam>
+    public delegate void MessageHandler<in TMessage>(int peerId, TMessage message);
+
+    /// <summary>
     /// Defines an abstraction for receiving messages from network peers.
     /// <para>
     /// Implementations of <see cref="IMessageReceiver"/> are responsible for receiving messages from peers,
@@ -24,6 +30,6 @@ namespace Shared.Networking
         /// <returns>
         /// An <see cref="IDisposable"/> that can be used to unregister the handler when it is no longer needed.
         /// </returns>
-        IDisposable RegisterMessageHandler<TMessage>(string handlerId, Action<TMessage> handler);
+        IDisposable RegisterMessageHandler<TMessage>(string handlerId, MessageHandler<TMessage> handler);
     }
 }

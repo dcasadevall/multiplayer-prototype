@@ -8,11 +8,24 @@ using Shared.ECS;
 using Shared.ECS.Simulation;
 using Shared.ECS.Systems;
 using Shared.ECS.TickSync;
+using Shared.Input;
 using Shared.Logging;
 using Shared.Networking;
 using Shared.Scheduling;
+using Microsoft.Extensions.Configuration;
+
+// Add Configuration
+var configuration = new ConfigurationBuilder()
+    .SetBasePath(AppContext.BaseDirectory)
+    .AddJsonFile("appsettings.json", optional: false, reloadOnChange: true)
+    .Build();
 
 var services = new ServiceCollection();
+
+// Configure and register logging settings
+var loggingSettings = new LoggingSettings();
+configuration.GetSection("Logging").Bind(loggingSettings);
+services.AddSingleton(loggingSettings);
 
 // Register ECS core
 services.AddSingleton<EntityRegistry>();
@@ -32,6 +45,7 @@ services.AddSingleton<SceneLoader>();
 
 // Player related services
 services.AddSingleton<PlayerSpawnHandler>();
+services.AddSingleton<IDisposable>(sp => sp.GetRequiredService<PlayerSpawnHandler>());
 
 // Register all shared services (Networking, Scheduling, etc.)
 services.RegisterSharedTypes();
@@ -41,6 +55,8 @@ services.RegisterSharedTypes();
 services.AddSingleton<IMessageSender, NetLibJsonMessageSender>();
 services.AddSingleton<NetLibJsonMessageReceiver>();
 services.AddSingleton<IMessageReceiver>(sp => sp.GetRequiredService<NetLibJsonMessageReceiver>());
+services.AddSingleton<IInitializable>(sp => sp.GetRequiredService<NetLibJsonMessageReceiver>());
+services.AddSingleton<IDisposable>(sp => sp.GetRequiredService<NetLibJsonMessageReceiver>());
 
 // The scheduler is server specific (client will use a different scheduler)
 services.AddSingleton<IScheduler, TimerScheduler>();
@@ -48,15 +64,23 @@ services.AddSingleton<IScheduler, TimerScheduler>();
 // Register the networking server abstraction
 services.AddSingleton<INetworkingServer, NetLibNetworkingServer>();
 
+// Server Input handling
+services.AddSingleton<PlayerMovementListener>();
+services.AddSingleton<IInitializable, PlayerMovementListener>();
+services.AddSingleton<IDisposable, PlayerMovementListener>();
+
 var serviceProvider = services.BuildServiceProvider();
 var entityRegistry = serviceProvider.GetRequiredService<EntityRegistry>();
 var scheduler = serviceProvider.GetRequiredService<IScheduler>();
 var sceneLoader = serviceProvider.GetRequiredService<SceneLoader>();
-var messageReceiver = serviceProvider.GetRequiredService<NetLibJsonMessageReceiver>();
 
-// TODO: IInitializable / IDisposable and auto lifecycle management
-var spawnHandler = serviceProvider.GetRequiredService<PlayerSpawnHandler>();
+// Initialize all initializable services
+foreach (var initializable in serviceProvider.GetServices<IInitializable>())
+{
+    initializable.Initialize();
+}
 
+// Scene / World loading
 var path = Path.Combine(AppContext.BaseDirectory, "Scenes", "basic_scene.json");
 sceneLoader.Load(path);
 
@@ -66,10 +90,9 @@ var worldBuilder = new WorldBuilder(entityRegistry, scheduler).WithFrequency(Sha
 var systems = serviceProvider.GetServices<ISystem>().ToList();
 systems.ForEach(x => worldBuilder.AddSystem(x));
 var world = worldBuilder.Build();
+world.Start();
 
 Console.WriteLine("Starting fixed timestep world at 30Hz...");
-messageReceiver.Initialize();
-world.Start();
 
 // Start the networking server using the abstraction
 var networkingServer = serviceProvider.GetRequiredService<INetworkingServer>();
@@ -88,6 +111,10 @@ finally
     // Ensure the server is stopped when the loop exits
     serverHandle.Dispose();
     world.Dispose();
-    spawnHandler.Dispose();
-    messageReceiver.Dispose();
+
+    // Dispose all services that implement IDisposable
+    foreach (var disposable in serviceProvider.GetServices<IDisposable>())
+    {
+        disposable.Dispose();
+    }
 }
