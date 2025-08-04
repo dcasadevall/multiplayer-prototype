@@ -45,6 +45,7 @@ services.AddSingleton<SceneLoader>();
 
 // Player related services
 services.AddSingleton<PlayerSpawnHandler>();
+services.AddSingleton<IInitializable>(sp => sp.GetRequiredService<PlayerSpawnHandler>());
 services.AddSingleton<IDisposable>(sp => sp.GetRequiredService<PlayerSpawnHandler>());
 
 // Register all shared services (Networking, Scheduling, etc.)

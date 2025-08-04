@@ -71,6 +71,11 @@ namespace Shared.Input
 
             var position = entity.GetRequired<PositionComponent>().Value;
             var movement = new Vector3(msg.MoveDirection.X, 0, msg.MoveDirection.Y) * 0.1f;
+            if (movement != Vector3.Zero)
+            {
+                _logger.Debug(LoggedFeature.Input, "Applying movement {0} to player entity {1}", movement, entity.Id);
+            }
+
             entity.AddOrReplaceComponent(new PositionComponent { Value = position + movement });
         }
 

@@ -4,41 +4,36 @@ using Shared.ECS.Components;
 using Shared.ECS.Prediction;
 using Shared.ECS.Replication;
 using Shared.Logging;
+using Shared.Scheduling;
 
 namespace Server.PlayerSpawn
 {
     /// <summary>
     /// Handles player spawn requests from clients.
     /// </summary>
-    public class PlayerSpawnHandler : IDisposable
+    public class PlayerSpawnHandler(
+        EventBasedNetListener netEventBroadcaster,
+        EntityRegistry entityRegistry,
+        ILogger logger)
+        : IInitializable, IDisposable
     {
-        private readonly EventBasedNetListener _netEventBroadcaster;
-        private readonly EntityRegistry _entityRegistry;
-        private readonly ILogger _logger;
-
         private readonly Dictionary<int, EntityId> _peerEntityMap = new();
 
-        public PlayerSpawnHandler(EventBasedNetListener netEventBroadcaster,
-            EntityRegistry entityRegistry,
-            ILogger logger)
+        public void Initialize()
         {
-            _netEventBroadcaster = netEventBroadcaster;
-            _entityRegistry = entityRegistry;
-            _logger = logger;
-
             netEventBroadcaster.PeerConnectedEvent += OnPeerConnected;
             netEventBroadcaster.PeerDisconnectedEvent += OnPeerDisconnected;
         }
 
         public void Dispose()
         {
-            _netEventBroadcaster.PeerConnectedEvent -= OnPeerConnected;
-            _netEventBroadcaster.PeerDisconnectedEvent -= OnPeerDisconnected;
+            netEventBroadcaster.PeerConnectedEvent -= OnPeerConnected;
+            netEventBroadcaster.PeerDisconnectedEvent -= OnPeerDisconnected;
         }
 
         private void OnPeerConnected(NetPeer peer)
         {
-            _logger.Info("Handling player spawn request from peer {0}", peer.Id);
+            logger.Info("Handling player spawn request from peer {0}", peer.Id);
 
             // Generate a spawn position (this could be more complex in a real game)
             // We can keep it within a radius of 10 units from the origin for simplicity
@@ -49,7 +44,7 @@ namespace Server.PlayerSpawn
             try
             {
                 // Create a new player entity
-                var playerEntity = _entityRegistry.CreateEntity();
+                var playerEntity = entityRegistry.CreateEntity();
 
                 // Add position component.
                 // This will be predicted by the client
@@ -100,14 +95,14 @@ namespace Server.PlayerSpawn
                 // Mark as replicated so it gets sent to clients
                 playerEntity.AddComponent<ReplicatedTagComponent>();
 
-                _logger.Info(LoggedFeature.Networking, "Created player entity {0} for peer {1}", playerEntity.Id, peer.Id);
+                logger.Info(LoggedFeature.Networking, "Created player entity {0} for peer {1}", playerEntity.Id, peer.Id);
 
                 // Store the mapping of peer ID to entity ID
                 _peerEntityMap[peer.Id] = playerEntity.Id;
             }
             catch (Exception ex)
             {
-                _logger.Error(LoggedFeature.Networking, "Failed to create player entity for client {0}: {1}", peer.Id, ex.Message);
+                logger.Error(LoggedFeature.Networking, "Failed to create player entity for client {0}: {1}", peer.Id, ex.Message);
             }
         }
 
@@ -115,13 +110,13 @@ namespace Server.PlayerSpawn
         {
             if (!_peerEntityMap.TryGetValue(peer.Id, out var entityId))
             {
-                _logger.Warn(LoggedFeature.Networking, "No player entity found for disconnected peer {0}", peer.Id);
+                logger.Warn(LoggedFeature.Networking, "No player entity found for disconnected peer {0}", peer.Id);
                 return;
             }
 
             // Remove the player entity from the registry
-            _entityRegistry.DestroyEntity(entityId);
-            _logger.Info(LoggedFeature.Networking, "Removed player entity {0} for peer {1}", entityId, peer.Id);
+            entityRegistry.DestroyEntity(entityId);
+            logger.Info(LoggedFeature.Networking, "Removed player entity {0} for peer {1}", entityId, peer.Id);
 
             // Remove the mapping
             _peerEntityMap.Remove(peer.Id);
