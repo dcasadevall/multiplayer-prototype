@@ -29,6 +29,16 @@ namespace Shared.ECS.Entities
         }
 
         /// <summary>
+        /// Add a new empty component to the entity.
+        /// </summary>
+        /// <typeparam name="T">The type of the component to add.</typeparam>
+        public void AddComponent<T>() where T : IComponent, new()
+        {
+            var component = new T();
+            _components[typeof(T)] = component;
+        }
+
+        /// <summary>
         /// Add a component to the entity.
         /// </summary>
         /// <param name="component">The component to add.</param>

@@ -26,6 +26,9 @@ namespace Adapters
         {
             // Game systems
             serviceCollection.AddSingleton<ISystem, PlayerViewSystem>();
+            serviceCollection.AddSingleton<PlayerMovementPredictionSystem>();
+            serviceCollection.AddSingleton<ISystem, PlayerMovementPredictionSystem>();
+            serviceCollection.AddSingleton<ISystem, PlayerMovementReconciliationSystem>();
             
             // Input
             serviceCollection.AddSingleton<InputListener>();

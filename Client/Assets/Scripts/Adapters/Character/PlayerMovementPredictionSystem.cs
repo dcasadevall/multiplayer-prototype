@@ -5,12 +5,10 @@ using Core.Input;
 using Shared.ECS;
 using Shared.ECS.Components;
 using Shared.ECS.Prediction;
-using Shared.ECS.Replication;
 using Shared.ECS.TickSync;
 using Shared.Networking;
-using UnityEngine.UIElements;
 
-namespace Core.Player
+namespace Adapters.Character
 {
     public struct PredictedState
     {
@@ -25,7 +23,7 @@ namespace Core.Player
         private readonly Dictionary<uint, PredictedState> _stateBuffer = new();
         private readonly int _localPeerId;
 
-        public bool TryGet(uint tick, out PredictedState state) => _stateBuffer.TryGetValue(tick, out state);
+        public bool GetPredictedState(uint tick, out PredictedState state) => _stateBuffer.TryGetValue(tick, out state);
         
         public PlayerMovementPredictionSystem(IInputListener inputListener, IClientConnection connection, TickSync tickSync)
         {

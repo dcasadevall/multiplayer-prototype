@@ -94,8 +94,11 @@ namespace Server.PlayerSpawn
                     PrefabName = "Player",
                 });
 
+                // Add a player tag component to identify this as a player entity
+                playerEntity.AddComponent<PlayerTagComponent>();
+
                 // Mark as replicated so it gets sent to clients
-                playerEntity.AddComponent(new ReplicatedTagComponent());
+                playerEntity.AddComponent<ReplicatedTagComponent>();
 
                 _logger.Info("Created player entity {0} for peer {1}", playerEntity.Id, peer.Id);
 
