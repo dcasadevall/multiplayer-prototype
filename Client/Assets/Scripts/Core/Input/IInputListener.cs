@@ -1,12 +1,9 @@
-using System;
-using UnityEngine;
+using Shared.Input;
 
 namespace Core.Input
 {
     public interface IInputListener
     {
-        event Action OnShoot;
-
-        Vector2 Movement { get; }
+        public bool TryGetMovementAtTick(uint tick, out PlayerMovementMessage input);
     }
 }

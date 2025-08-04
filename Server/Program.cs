@@ -1,13 +1,13 @@
-﻿using LiteNetLib;
-using Microsoft.Extensions.DependencyInjection;
+﻿using Microsoft.Extensions.DependencyInjection;
 using Server.Logging;
-using Server.Networking.Replication;
 using Server.PlayerSpawn;
+using Server.Replication;
 using Server.Scenes;
 using Shared;
 using Shared.ECS;
 using Shared.ECS.Simulation;
 using Shared.ECS.Systems;
+using Shared.ECS.TickSync;
 using Shared.Logging;
 using Shared.Networking;
 using Shared.Scheduling;
@@ -24,6 +24,7 @@ services.AddSingleton<ILogger, ConsoleLogger>();
 services.AddSingleton<ISystem, WorldDiagnosticsSystem>();
 services.AddSingleton<ISystem, MovementSystem>();
 services.AddSingleton<ISystem, HealthSystem>();
+services.AddSingleton<ISystem, ServerTickSystem>();
 services.AddSingleton<ISystem, ReplicationSystem>();
 
 // Scene loading

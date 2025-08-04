@@ -35,6 +35,19 @@ namespace Shared.ECS.Replication
             {
                 var entity = _entityRegistry.GetOrCreate(snapshotEntity.Id);
 
+                // Remove components that are not in the snapshot
+                var currentComponents = entity.GetAllComponents().ToList();
+                var componentSet = snapshotEntity.Components.Select(x => x.Type).ToHashSet();
+                foreach (var component in currentComponents)
+                {
+                    if (!componentSet.Contains(component.GetType().FullName))
+                    {
+                        _logger.Debug("Removing component {0} from entity {1}", component.GetType().Name, entity.Id);
+                        entity.Remove(component.GetType());
+                    }
+                }
+
+                // Add or replace components from the snapshot
                 foreach (var component in snapshotEntity.Components)
                 {
                     var componentType = Type.GetType(component.Type);
@@ -44,9 +57,28 @@ namespace Shared.ECS.Replication
                     }
 
                     var componentInstance = JsonSerializer.Deserialize(component.Json, componentType);
-                    if (componentInstance != null)
+                    if (componentInstance == null)
                     {
-                        entity.AddOrReplaceComponent((IComponent)componentInstance);
+                        continue;
+                    }
+
+                    entity.AddOrReplaceComponent((IComponent)componentInstance);
+
+                    // If the entity has a predicted component of this type, we only
+                    // deserialize the server value.
+                    // We will only deserialize the component value if this is the first time
+                    // we are receiving this component.
+                    if (entity.TrySetServerAuthoritativeValue(componentType, (IComponent)componentInstance))
+                    {
+                        _logger.Debug("Entity {0} has predicted component {1}. Setting server authoritative value.",
+                            entity.Id, componentType.Name);
+
+                        // Only add the predicted component if it doesn't already exist
+                        // This prevents overwriting existing predicted components
+                        if (!entity.Has(componentType))
+                        {
+                            entity.AddComponent((IComponent)componentInstance, componentType);
+                        }
                     }
                 }
             }

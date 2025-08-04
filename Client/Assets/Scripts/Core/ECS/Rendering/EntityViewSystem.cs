@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using Core.ECS.Rendering;
 using Core.MathUtils;
 using Shared.ECS;
 using Shared.ECS.Components;
@@ -10,7 +9,7 @@ using UnityEngine;
 using Object = UnityEngine.Object;
 using Vector3 = System.Numerics.Vector3;
 
-namespace Core
+namespace Core.ECS.Rendering
 {
     /// <summary>
     /// ECS system responsible for rendering entities as Unity GameObjects.
@@ -72,7 +71,7 @@ namespace Core
             {
                 if (entity.Has<PositionComponent>())
                 {
-                    UpdateEntityView(entity, registry);
+                    UpdateEntityView(entity);
                 }
             }
             
@@ -84,8 +83,7 @@ namespace Core
         /// Updates the Unity GameObject for a given entity.
         /// </summary>
         /// <param name="entity">The entity to update.</param>
-        /// <param name="registry">The entity registry.</param>
-        private void UpdateEntityView(Entity entity, EntityRegistry registry)
+        private void UpdateEntityView(Entity entity)
         {
             var entityId = entity.Id;
             

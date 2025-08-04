@@ -50,8 +50,9 @@ namespace Server.PlayerSpawn
                 // Create a new player entity
                 var playerEntity = _entityRegistry.CreateEntity();
 
-                // Add position component
-                playerEntity.AddComponent(new PositionComponent
+                // Add position component.
+                // This will be predicted by the client
+                playerEntity.AddPredictedComponent(new PositionComponent
                 {
                     X = x,
                     Y = y,

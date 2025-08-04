@@ -4,6 +4,7 @@ using Core.ECS.Replication;
 using Microsoft.Extensions.DependencyInjection;
 using Shared.ECS;
 using Shared.ECS.Replication;
+using Shared.ECS.TickSync;
 
 namespace Core.ECS
 {
@@ -29,14 +30,22 @@ namespace Core.ECS
             services.AddSingleton<EntityRegistry>();
             
             // Register core client systems
+            // Client replication must go first
             services.AddSingleton<ClientReplicationSystem>();
             services.AddSingleton<ISystem>(sp => sp.GetRequiredService<ClientReplicationSystem>());
             services.AddSingleton<IDisposable>(sp => sp.GetRequiredService<ClientReplicationSystem>());
             
+            // After replication, register the tick sync system so it's available for the other
+            // systems that need it.
+            services.AddSingleton<TickSync>();
+            services.AddSingleton<ISystem, ClientTickSystem>();
+            
+            // Entity view system creates and manages entity game object creation and destruction
             services.AddSingleton<EntityViewSystem>();
             services.AddSingleton<ISystem>(sp => sp.GetService<EntityViewSystem>());
             services.AddSingleton<IDisposable>(sp => sp.GetService<EntityViewSystem>());
             services.AddSingleton<IEntityViewRegistry>(sp => sp.GetService<EntityViewSystem>());
+            
             
             // Register json replication types
             services.RegisterJsonReplicationTypes();

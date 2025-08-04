@@ -26,5 +26,13 @@ namespace Shared.Networking
         /// <param name="message">The message to send.</param>
         /// <param name="channel">The channel type (reliable/unreliable).</param>
         void SendMessage<TMessage>(int peerId, MessageType type, TMessage message, ChannelType channel = ChannelType.Unreliable);
+
+        /// <summary>
+        /// Sends a message to the server peer.
+        /// </summary>
+        /// <param name="type">The type of the message.</param>
+        /// <param name="message">The message to send.</param>
+        /// <param name="channel">The channel type (reliable/unreliable).</param>
+        void SendMessageToServer<TMessage>(MessageType type, TMessage message, ChannelType channel = ChannelType.Unreliable);
     }
 }

@@ -3,7 +3,6 @@ using System.Linq;
 using Core.ECS.Rendering;
 using Core.Input;
 using Core.Player;
-using LiteNetLib;
 using Shared.ECS;
 using Shared.ECS.Components;
 using Shared.Networking;
@@ -47,13 +46,15 @@ namespace Adapters.Character
                         !_players.ContainsKey(entityId) &&
                         _entityViewRegistry.TryGetEntityView(entityId, out var playerView))
                     {
-                        var player = new Player(_inputListener);
-                        playerView.gameObject.AddComponent<PlayerView>().Setup(player);
+                        _localPlayer = new Player(_inputListener);
+                        playerView.gameObject.AddComponent<PlayerView>().Setup(_localPlayer);
                     }
                     
                     _players[entityId] = peerComponent.PeerId;
                 }
             }
+            
+            _localPlayer?.Tick();
         }
     }
 }

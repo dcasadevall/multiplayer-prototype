@@ -36,6 +36,12 @@ namespace Shared.Networking
         }
 
         /// <inheritdoc />
+        public void SendMessageToServer<TMessage>(MessageType type, TMessage message, ChannelType channel = ChannelType.Unreliable)
+        {
+            SendMessage(_netManager.FirstPeer.Id, type, message, channel);
+        }
+
+        /// <inheritdoc />
         public void SendMessage<TMessage>(int peerId, MessageType type, TMessage message, ChannelType channel = ChannelType.Unreliable)
         {
             NetDataWriter writer = new NetDataWriter();

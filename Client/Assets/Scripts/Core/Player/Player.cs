@@ -22,34 +22,40 @@ namespace Core.Player
         public Player(IInputListener inputListener)
         {
             _inputListener = inputListener;
-            _inputListener.OnShoot += HandleShoot;
         }
 
         private void HandleShoot() => OnShoot?.Invoke(Position, _lastMovementDirection);
 
         public void Tick()
         {
-            Vector2 input = _inputListener.Movement.normalized;
-            Vector3 movement = new Vector3(input.x, 0, input.y) * (MovementSpeed * Time.fixedDeltaTime);
-            Position += movement;
-
-            if (movement == Vector3.zero)
-            {
-                return;
-            }
-
-            _lastMovementDirection = movement;
-
-            Rotation = Quaternion.Slerp(
-                Rotation,
-                Quaternion.LookRotation(movement),
-                RotationSpeed
-            );
+            // Get input
+            // Vector2 input = _inputListener.Movement.normalized;
+        
+            // // Send input to server
+            // var inputCommand = new PlayerInputCommand { Movement = new System.Numerics.Vector2(input.x, input.y) };
+            // _messageSender.SendMessage(0, MessageType.PlayerInput, inputCommand, ChannelType.Unreliable);
+            
+            // Apply movement locally for prediction
+            // Vector3 movement = new Vector3(input.x, 0, input.y) * (MovementSpeed * Time.fixedDeltaTime);
+            // Position += movement;
+            //
+            // if (movement == Vector3.zero)
+            // {
+            //     return;
+            // }
+            //
+            // _lastMovementDirection = movement;
+            //
+            // Rotation = Quaternion.Slerp(
+            //     Rotation,
+            //     Quaternion.LookRotation(movement),
+            //     RotationSpeed
+            // );
         }
 
         public void Dispose()
         {
-            _inputListener.OnShoot -= HandleShoot;
+            // _inputListener.OnShoot -= HandleShoot;
         }
     }
 }

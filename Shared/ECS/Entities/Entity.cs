@@ -9,7 +9,7 @@ namespace Shared.ECS.Entities
     /// </summary>
     public class Entity
     {
-        private readonly Dictionary<Type, IComponent> _components = new Dictionary<Type, IComponent>();
+        private readonly Dictionary<Type, IComponent> _components = new();
 
         public EntityId Id { get; }
 
@@ -26,6 +26,16 @@ namespace Shared.ECS.Entities
         public void AddComponent<T>(T component) where T : IComponent
         {
             _components[typeof(T)] = component;
+        }
+
+        /// <summary>
+        /// Add a component to the entity.
+        /// </summary>
+        /// <param name="component">The component to add.</param>
+        /// <param name="componentType"></param>
+        public void AddComponent(IComponent component, Type componentType)
+        {
+            _components[componentType] = component;
         }
 
         /// <summary>
@@ -56,7 +66,26 @@ namespace Shared.ECS.Entities
             component = null!;
             return false;
         }
-    
+
+        /// <summary>
+        /// Try to get a component from the entity.
+        /// </summary>
+        /// <param name="componentType"> The type of the component to get.</param>
+        /// <param name="component">The component to get.</param>
+        /// <returns>True if the component was found, false otherwise.</returns>
+        public bool TryGet(Type componentType, out IComponent component)
+        {
+            if (_components.TryGetValue(componentType, out var value))
+            {
+                component = value;
+                return true;
+            }
+
+            // Ok to suppress nullability warning here because we return false if not found
+            component = null!;
+            return false;
+        }
+
         /// <summary>
         /// Gets the component of the given type from the entity.
         /// </summary>
@@ -73,6 +102,24 @@ namespace Shared.ECS.Entities
         }
 
         /// <summary>
+        /// Gets the component of the given type from the entity, or throws an exception if not found.
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <returns></returns>
+        /// <exception cref="InvalidOperationException"></exception>
+        public T GetRequired<T>() where T : class, IComponent
+        {
+            if (TryGet(out T component))
+            {
+                return component;
+            }
+
+            // If the component is not found, throw an exception
+            // This is useful for components that are expected to always be present.
+            throw new InvalidOperationException($"Entity {Id} does not have required component of type {typeof(T).Name}");
+        }
+
+        /// <summary>
         /// Check if the entity has a component of the given type.
         /// </summary>
         /// <typeparam name="T">The type of the component to check for.</typeparam>
@@ -83,12 +130,30 @@ namespace Shared.ECS.Entities
         }
 
         /// <summary>
+        /// Check if the entity has a component of the given type.
+        /// </summary>
+        /// <returns>True if the entity has the component, false otherwise.</returns>
+        public bool Has(Type componentType)
+        {
+            return _components.ContainsKey(componentType);
+        }
+
+        /// <summary>
         /// Remove a component from the entity.
         /// </summary>
         /// <typeparam name="T">The type of the component to remove.</typeparam>
         public void Remove<T>() where T : IComponent
         {
             _components.Remove(typeof(T));
+        }
+
+        /// <summary>
+        /// Remove a component from the entity.
+        /// </summary>
+        /// <param name="type">The type of the component to remove.</param>
+        public void Remove(Type type)
+        {
+            _components.Remove(type);
         }
 
         /// <summary>

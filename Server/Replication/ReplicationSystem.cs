@@ -3,7 +3,7 @@ using Shared.ECS.Replication;
 using Shared.ECS.Simulation;
 using Shared.Networking;
 
-namespace Server.Networking.Replication
+namespace Server.Replication
 {
     /// <summary>
     /// ECS system responsible for replicating the current world state to all connected clients on a fixed interval.

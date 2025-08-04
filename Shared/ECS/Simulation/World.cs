@@ -61,9 +61,9 @@ namespace Shared.ECS.Simulation
         /// <param name="entityRegistry">Registry used for managing entities in this world.</param>
         /// <param name="tickRate">The time between ticks (e.g., 33ms for 30Hz).</param>
         /// <param name="scheduler">The scheduler to use for driving ticks.</param>
-        internal World(IEnumerable<ISystem> systems, 
-            EntityRegistry entityRegistry, 
-            TimeSpan tickRate, 
+        internal World(IEnumerable<ISystem> systems,
+            EntityRegistry entityRegistry,
+            TimeSpan tickRate,
             IScheduler scheduler)
         {
             _entityRegistry = entityRegistry;

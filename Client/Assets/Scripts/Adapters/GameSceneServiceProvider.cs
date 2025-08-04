@@ -1,7 +1,6 @@
 using System;
 using System.Linq;
 using Adapters.Character;
-using Adapters.Input;
 using Core.ECS;
 using Core.ECS.Simulation;
 using Core.Input;
