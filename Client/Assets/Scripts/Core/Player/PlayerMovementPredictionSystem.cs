@@ -4,6 +4,7 @@ using System.Numerics;
 using Core.Input;
 using Shared.ECS;
 using Shared.ECS.Components;
+using Shared.ECS.Prediction;
 using Shared.ECS.Replication;
 using Shared.ECS.TickSync;
 using Shared.Networking;

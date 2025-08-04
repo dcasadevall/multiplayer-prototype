@@ -1,6 +1,7 @@
 using LiteNetLib;
 using Shared.ECS;
 using Shared.ECS.Components;
+using Shared.ECS.Prediction;
 using Shared.ECS.Replication;
 using Shared.Logging;
 

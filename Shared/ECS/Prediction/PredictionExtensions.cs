@@ -1,9 +1,10 @@
 using System;
 using System.Collections.Generic;
-using System.Reflection; // Required for Dictionary
+using System.Reflection;
 using Shared.ECS.Entities;
+using Shared.ECS.Replication;
 
-namespace Shared.ECS.Replication
+namespace Shared.ECS.Prediction
 {
     /// <summary>
     /// Extension methods for working with predicted components on entities.
@@ -71,37 +72,6 @@ namespace Shared.ECS.Replication
 
                 return prop;
             }
-        }
-
-        /// <summary>
-        /// Tries to get a predicted component wrapper of a given runtime type from an entity.
-        /// </summary>
-        /// <param name="entity">The entity to query.</param>
-        /// <param name="componentType">The runtime type of the component to look for (e.g., typeof(Position)).</param>
-        /// <param name="component">The found component wrapper object, or null if not found.
-        /// Note: This is returned as 'object' because its specific generic type is not known at compile time.</param>
-        /// <returns>True if the predicted component was found, otherwise false.</returns>
-        public static bool TryGetPredictedComponent(this Entity entity, Type componentType, out object component)
-        {
-            if (entity == null)
-            {
-                throw new ArgumentNullException(nameof(entity), "Entity cannot be null.");
-            }
-
-            // Get the specific PredictedComponent<T> type from our high-performance cache.
-            var specificPredictedType = GetPredictedComponentType(componentType);
-
-            // Assuming your entity has a TryGet that returns a boolean and an 'out object'.
-            // If it returns 'out IComponent', this still works.
-            if (entity.TryGet(specificPredictedType, out var predictedComponent))
-            {
-                component = (PredictedComponent<IComponent>)predictedComponent;
-                return true;
-            }
-
-            // If not found, return false and null component.
-            component = null!;
-            return false;
         }
 
         /// <summary>

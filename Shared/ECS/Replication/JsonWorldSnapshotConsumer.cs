@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text.Json;
+using Shared.ECS.Prediction;
 using Shared.Logging;
 
 namespace Shared.ECS.Replication

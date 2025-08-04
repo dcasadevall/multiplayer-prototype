@@ -1,6 +1,6 @@
 using System.Text.Json.Serialization;
 
-namespace Shared.ECS.Replication
+namespace Shared.ECS.Prediction
 {
     /// <summary>
     /// A component wrapper used for client-side prediction and reconciliation.
