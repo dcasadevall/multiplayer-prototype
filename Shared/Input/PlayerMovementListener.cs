@@ -65,7 +65,7 @@ namespace Shared.Input
 
             if (entity == null)
             {
-                _logger.Warn($"Received PlayerMovementMessage from peer {peerId} but no player entity found.");
+                _logger.Warn(LoggedFeature.Input, $"Received PlayerMovementMessage from peer {peerId} but no player entity found.");
                 return;
             }
 

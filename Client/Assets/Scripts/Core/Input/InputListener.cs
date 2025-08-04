@@ -25,6 +25,11 @@ namespace Core.Input
         public void Tick()
         {
             var move = new Vector2(UnityEngine.Input.GetAxisRaw("Horizontal"), UnityEngine.Input.GetAxisRaw("Vertical"));
+            if (move == Vector2.zero)
+            {
+                return;
+            }
+            
             var tick = _tickSync.ClientTick;
 
             var input = new PlayerMovementMessage

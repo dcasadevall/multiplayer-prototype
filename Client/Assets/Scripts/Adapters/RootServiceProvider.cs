@@ -53,6 +53,9 @@ namespace Adapters
             
             // Networking, so we can connect to the server
             _services.RegisterNetLibTypes();
+            
+            // Tick scheduling (IInitializable, IDisposable are handled via this class lifeycle)
+            _services.RegisterSchedulingTypes();
 
             // Build the service provider for LoginScene
             _serviceProvider = _services.BuildServiceProvider();

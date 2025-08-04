@@ -73,7 +73,7 @@ namespace Shared.Networking
             var messageTypeClass = MessageTypeMap.GetMessageType(messageType);
             if (messageTypeClass == null)
             {
-                _logger.Warn("Received message with unknown type: {0}", messageType);
+                _logger.Warn(LoggedFeature.Networking, "Received message with unknown type: {0}", messageType);
                 return;
             }
 
@@ -89,18 +89,19 @@ namespace Shared.Networking
             try
             {
                 // Deserialize the JSON data into the appropriate message type
-                _logger.Debug("Deserializing message of type {0}: {1}", messageTypeClass.Name, json);
+                _logger.Debug(LoggedFeature.Networking, "Deserializing message of type {0}: {1}", messageTypeClass.Name, json);
                 message = JsonSerializer.Deserialize(json, messageTypeClass);
             }
             catch (Exception ex)
             {
-                _logger.Error("Failed to deserialize message of type {0}: {1}", messageTypeClass.Name, ex.Message);
+                _logger.Error(LoggedFeature.Networking, "Failed to deserialize message of type {0}: {1}", messageTypeClass.Name,
+                    ex.Message);
                 return;
             }
 
             if (message == null)
             {
-                _logger.Error("Unable to deserialize message type {0}", json, messageTypeClass.Name);
+                _logger.Error(LoggedFeature.Networking, "Unable to deserialize message type {0}", json, messageTypeClass.Name);
                 return;
             }
 
@@ -109,12 +110,13 @@ namespace Shared.Networking
             {
                 try
                 {
-                    _logger.Debug("Invoking handler for message type {0}", messageTypeClass.Name);
+                    _logger.Debug(LoggedFeature.Networking, "Invoking handler for message type {0}", messageTypeClass.Name);
                     handler(peer.Id, message);
                 }
                 catch (Exception ex)
                 {
-                    _logger.Error("Error while processing message of type {0}: {1}", messageTypeClass.Name, ex.Message);
+                    _logger.Error(LoggedFeature.Networking, "Error while processing message of type {0}: {1}", messageTypeClass.Name,
+                        ex.Message);
                 }
             }
         }
@@ -130,8 +132,8 @@ namespace Shared.Networking
 
             if (_handlers[type].ContainsKey(handlerId))
             {
-                _logger.Warn("Handler with ID '{0}' already registered for message type '{1}'." +
-                             " Overwriting existing handler.", handlerId, type.Name);
+                _logger.Warn(LoggedFeature.Networking, "Handler with ID '{0}' already registered for message type '{1}'." +
+                                                       " Overwriting existing handler.", handlerId, type.Name);
             }
 
             _handlers[type][handlerId] = (peerId, message) => handler(peerId, (TMessage)message);
@@ -159,7 +161,7 @@ namespace Shared.Networking
                 if (_receiver._handlers.TryGetValue(_messageType, out var handlers) &&
                     handlers.Remove(_handlerId))
                 {
-                    _receiver._logger.Info("Unregistered handler '{0}' for message type '{1}'.", _handlerId,
+                    _receiver._logger.Info(LoggedFeature.Networking, "Unregistered handler '{0}' for message type '{1}'.", _handlerId,
                         _messageType.Name);
                 }
             }

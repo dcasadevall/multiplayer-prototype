@@ -77,7 +77,9 @@ namespace Adapters.Character
             }
             else
             {
-                _logger.Warn($"No input found for tick {currentTick}. Using last position {lastPosition}.");
+                _logger.Warn(LoggedFeature.Prediction, 
+                    $"No input found for tick {currentTick}. " +
+                    $"Using last position {lastPosition}.");
             }
 
             // Store the new predicted state and update the entity.
