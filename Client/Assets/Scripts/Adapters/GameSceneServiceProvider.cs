@@ -31,7 +31,6 @@ namespace Adapters
             serviceCollection.AddSingleton<PlayerMovementPredictionSystem>();
             serviceCollection.AddSingleton<ISystem, PlayerMovementPredictionSystem>();
             serviceCollection.AddSingleton<ISystem, PlayerMovementReconciliationSystem>();
-            serviceCollection.AddSingleton<ISystem, EcsDebugSystem>();
             
             // Input
             serviceCollection.AddSingleton<InputListener>();

@@ -278,7 +278,23 @@ namespace Adapters.ECS.Debugging
                 try
                 {
                     var value = property.GetValue(component);
-                    properties[property.Name] = value?.ToString() ?? "null";
+                    
+                    // Handle nested components (like PredictedComponent<T>)
+                    if (value is IComponent nestedComponent)
+                    {
+                        properties[property.Name] = "Nested Component";
+                        
+                        // Add nested component properties with indentation
+                        var nestedProperties = GetComponentProperties(nestedComponent);
+                        foreach (var nestedProp in nestedProperties)
+                        {
+                            properties[$"  {nestedProp.Key}"] = nestedProp.Value;
+                        }
+                    }
+                    else
+                    {
+                        properties[property.Name] = value?.ToString() ?? "null";
+                    }
                 }
                 catch
                 {
@@ -288,9 +304,60 @@ namespace Adapters.ECS.Debugging
             
             return new ComponentInfo
             {
-                TypeName = componentType.Name,
+                TypeName = GetComponentDisplayName(componentType),
                 Properties = properties
             };
+        }
+        
+        private Dictionary<string, string> GetComponentProperties(IComponent component)
+        {
+            var properties = new Dictionary<string, string>();
+            var componentType = component.GetType();
+            
+            var componentProperties = componentType.GetProperties();
+            foreach (var property in componentProperties)
+            {
+                try
+                {
+                    var value = property.GetValue(component);
+                    
+                    // Handle deeply nested components
+                    if (value is IComponent deeplyNestedComponent)
+                    {
+                        properties[property.Name] = "Nested Component";
+                        
+                        var deeplyNestedProperties = GetComponentProperties(deeplyNestedComponent);
+                        foreach (var deeplyNestedProp in deeplyNestedProperties)
+                        {
+                            properties[$"  {deeplyNestedProp.Key}"] = deeplyNestedProp.Value;
+                        }
+                    }
+                    else
+                    {
+                        properties[property.Name] = value?.ToString() ?? "null";
+                    }
+                }
+                catch
+                {
+                    properties[property.Name] = "Error reading value";
+                }
+            }
+            
+            return properties;
+        }
+        
+        private string GetComponentDisplayName(Type componentType)
+        {
+            // Handle generic types like PredictedComponent<T>
+            if (componentType.IsGenericType)
+            {
+                var genericArguments = componentType.GetGenericArguments();
+                var typeNames = genericArguments.Select(t => t.Name).ToArray();
+                var baseName = componentType.Name.Substring(0, componentType.Name.IndexOf('`'));
+                return $"{baseName}<{string.Join(", ", typeNames)}>";
+            }
+            
+            return componentType.Name;
         }
         
         private bool PassesFilters(EntityInfo entityInfo)
