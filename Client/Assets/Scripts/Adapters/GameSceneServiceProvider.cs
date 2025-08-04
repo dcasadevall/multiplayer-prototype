@@ -1,6 +1,7 @@
 using System;
 using System.Linq;
 using Adapters.Character;
+using Adapters.ECS.Debugging;
 using Core.ECS;
 using Core.ECS.Simulation;
 using Core.Input;
@@ -21,6 +22,7 @@ namespace Adapters
     public class GameSceneServiceProvider : IDisposable, IInitializable
     {
         private IServiceProvider _serviceProvider;
+        public IServiceProvider ServiceProvider => _serviceProvider;
         
         public GameSceneServiceProvider(IServiceCollection serviceCollection, IClientConnection clientConnection)
         {
@@ -29,6 +31,7 @@ namespace Adapters
             serviceCollection.AddSingleton<PlayerMovementPredictionSystem>();
             serviceCollection.AddSingleton<ISystem, PlayerMovementPredictionSystem>();
             serviceCollection.AddSingleton<ISystem, PlayerMovementReconciliationSystem>();
+            serviceCollection.AddSingleton<ISystem, EcsDebugSystem>();
             
             // Input
             serviceCollection.AddSingleton<InputListener>();

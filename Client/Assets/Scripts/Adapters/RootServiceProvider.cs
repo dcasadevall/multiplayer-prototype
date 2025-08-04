@@ -34,6 +34,12 @@ namespace Adapters
         private IServiceCollection _services;
         private GameSceneServiceProvider _gameSceneServiceProvider;
         
+        /// <summary>
+        /// Allow access to the service provider for the login scene for other unity
+        /// behaviors. This should be used for debugging purposes only.
+        /// </summary>
+        public IServiceProvider ServiceProvider => _gameSceneServiceProvider?.ServiceProvider;
+        
         private void Awake()
         {
             // 1. Build a persistent, root service provider for networking
