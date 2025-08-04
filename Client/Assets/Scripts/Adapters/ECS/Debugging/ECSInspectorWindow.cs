@@ -15,7 +15,7 @@ namespace Adapters.ECS.Debugging
     /// </summary>
     public class EcsInspectorWindow : EditorWindow
     {
-        private EntityRegistry? _entityRegistry;
+        private EntityRegistry _entityRegistry;
         private Vector2 _scrollPosition;
         private bool _autoRefresh = true;
         private float _refreshInterval = 0.5f;
@@ -191,7 +191,9 @@ namespace Adapters.ECS.Debugging
         private void FindEntityRegistry()
         {
             // Try to find the entity registry from the scene
+#pragma warning disable CS0618 // Type or member is obsolete
             var serviceProvider = FindObjectOfType<RootServiceProvider>();
+#pragma warning restore CS0618 // Type or member is obsolete
             _entityRegistry = serviceProvider?.ServiceProvider?.GetRequiredService<EntityRegistry>();
         }
         

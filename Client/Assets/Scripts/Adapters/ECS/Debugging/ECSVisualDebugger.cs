@@ -7,6 +7,7 @@ using Shared.ECS.Components;
 using Shared.ECS.Entities;
 using UnityEngine;
 using ILogger = Shared.Logging.ILogger;
+#pragma warning disable CS0618 // Type or member is obsolete
 
 namespace Adapters.ECS.Debugging
 {
@@ -36,7 +37,7 @@ namespace Adapters.ECS.Debugging
         [SerializeField] private Color _labelColor = Color.yellow;
         
         private IServiceProvider _serviceProvider;
-        private EntityRegistry? _entityRegistry;
+        private EntityRegistry _entityRegistry;
         private float _lastLabelUpdate;
         
         // Cached entity data for performance

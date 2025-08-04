@@ -1,4 +1,5 @@
 using UnityEngine;
+#pragma warning disable CS0618 // Type or member is obsolete
 
 namespace Adapters.ECS.Debugging
 {
@@ -17,16 +18,10 @@ namespace Adapters.ECS.Debugging
         [SerializeField] private bool _showDebugInfoInInspector = true;
         [SerializeField] private bool _logToConsole = true;
         
-        private ECSWorldDebugger? _worldDebugger;
-        private ECSVisualDebugger? _visualDebugger;
+        private ECSVisualDebugger _visualDebugger;
         
         private void Awake()
         {
-            if (_enableWorldDebugger)
-            {
-                _worldDebugger = gameObject.AddComponent<ECSWorldDebugger>();
-            }
-            
             if (_enableVisualDebugger)
             {
                 _visualDebugger = gameObject.AddComponent<ECSVisualDebugger>();
@@ -37,20 +32,13 @@ namespace Adapters.ECS.Debugging
         
         private void OnDestroy()
         {
-            // Clean up debug components
-            if (_worldDebugger != null)
-            {
-                DestroyImmediate(_worldDebugger);
-            }
-            
             if (_visualDebugger != null)
             {
                 DestroyImmediate(_visualDebugger);
             }
         }
         
-        #region Unity Editor Integration
-        #if UNITY_EDITOR
+#if UNITY_EDITOR
         [UnityEditor.MenuItem("ECS/Debug/Add Debug Manager to Scene")]
         private static void AddDebugManagerToScene()
         {
@@ -70,26 +58,10 @@ namespace Adapters.ECS.Debugging
         }
         
         [UnityEditor.MenuItem("ECS/Debug/Open ECS Inspector")]
-        private static void OpenECSInspector()
+        private static void OpenEcsInspector()
         {
             EcsInspectorWindow.ShowWindow();
         }
-        
-        [UnityEditor.MenuItem("ECS/Debug/Log All Entities")]
-        private static void LogAllEntities()
-        {
-            var manager = FindObjectOfType<EcsDebugManager>();
-            if (manager != null && manager._worldDebugger != null)
-            {
-                manager._worldDebugger.SendMessage("DumpFullWorldState");
-            }
-            else
-            {
-                Debug.LogWarning("No ECS Debug Manager found in scene. Add one first.");
-            }
-        }
-        #endif
-        
-        #endregion
+#endif
     }
-} 
+}
