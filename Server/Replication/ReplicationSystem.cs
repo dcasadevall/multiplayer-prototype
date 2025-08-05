@@ -21,7 +21,10 @@ namespace Server.Replication
     /// Snapshots are sent to all connected peers using reliable, ordered delivery.
     /// </para>
     /// </summary>
-    [TickInterval(1)] // Replicate every 300ms at 30 ticks per second
+    // NOTE: It's okay to replicate every tick, but in a real game we would likely want to reduce this frequency
+    // to avoid flooding the network with large snapshots.
+    // We would send deltas and chunk large snapshots.
+    [TickInterval(1)]
     public class ReplicationSystem : ISystem
     {
         private readonly IMessageSender _messageSender;
