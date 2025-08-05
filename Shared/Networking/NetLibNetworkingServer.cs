@@ -22,6 +22,7 @@ namespace Shared.Networking
     public class NetLibNetworkingServer : INetworkingServer
     {
         private readonly NetManager _netManager;
+        private readonly IMessageSender _messageSender;
         private readonly EventBasedNetListener _eventListener;
         private readonly ILogger _logger;
         private readonly IScheduler _scheduler;
@@ -34,16 +35,19 @@ namespace Shared.Networking
         /// Constructs a new <see cref="NetLibNetworkingServer"/>.
         /// </summary>
         /// <param name="netManager">The LiteNetLib NetManager instance to use for networking. Must be constructed with an EventBasedNetListener.</param>
+        /// <param name="messageSender">The injected message sender for sending messages to clients.</param>
         /// <param name="eventListener">The injected eventBasedNetListener</param>
         /// <param name="logger">Logger for structured logging of network events.</param>
         /// <param name="scheduler">Scheduler for polling events.</param>
         /// <exception cref="ArgumentException">Thrown if the NetManager does not use an EventBasedNetListener.</exception>
         public NetLibNetworkingServer(NetManager netManager,
+            IMessageSender messageSender,
             EventBasedNetListener eventListener,
             ILogger logger,
             IScheduler scheduler)
         {
             _netManager = netManager;
+            _messageSender = messageSender;
             _eventListener = eventListener;
             _logger = logger;
             _scheduler = scheduler;
@@ -60,6 +64,7 @@ namespace Shared.Networking
             _running = true;
             _netSecret = netSecret;
             _eventListener.ConnectionRequestEvent += OnConnectionRequest;
+            _eventListener.PeerConnectedEvent += OnPeerConnected;
 
             // Use the address parameter if provided, otherwise fallback to default
             if (!string.IsNullOrWhiteSpace(address) &&
@@ -73,7 +78,7 @@ namespace Shared.Networking
                 _netManager.Start(port);
             }
 
-            _logger.Info("Server started on {0}:{1}...", address, port);
+            _logger.Info(LoggedFeature.Networking, "Server started on {0}:{1}...", address, port);
 
             _cts = new CancellationTokenSource();
             _pollHandle = _scheduler.ScheduleAtFixedRate(
@@ -90,8 +95,20 @@ namespace Shared.Networking
             var peer = _netSecret == "" ? request.Accept() : request.AcceptIfKey(_netSecret);
             if (peer == null)
             {
-                _logger.Warn("Connection request from {0} rejected.", request.RemoteEndPoint);
+                _logger.Warn(LoggedFeature.Networking, "Connection request from {0} rejected.", request.RemoteEndPoint);
             }
+        }
+
+        private void OnPeerConnected(NetPeer peer)
+        {
+            // Send ConnectedMessage to the client
+            var msg = new Messages.ConnectedMessage(
+                peer.Id,
+                DateTime.UtcNow
+            );
+
+            _messageSender.SendMessage(peer.Id, Messages.MessageType.Connected, msg, ChannelType.ReliableOrdered);
+            _logger.Info(LoggedFeature.Networking, "Sent ConnectedMessage to peer {0}", peer.Id);
         }
 
         private void Stop()
@@ -103,6 +120,7 @@ namespace Shared.Networking
 
             // Unsubscribe event handlers to prevent memory leaks
             _eventListener.ConnectionRequestEvent -= OnConnectionRequest;
+            _eventListener.PeerConnectedEvent -= OnPeerConnected;
 
             _logger.Info("Server stopped.");
         }

@@ -4,6 +4,7 @@ using System.Text;
 using System.Text.Json;
 using LiteNetLib;
 using Shared.Logging;
+using Shared.Networking.Messages;
 using Shared.Scheduling;
 
 namespace Shared.Networking

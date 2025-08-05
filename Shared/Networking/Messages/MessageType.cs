@@ -1,4 +1,4 @@
-namespace Shared.Networking
+namespace Shared.Networking.Messages
 {
     /// <summary>
     /// Defines the type of each message sent between server and client.
@@ -7,10 +7,11 @@ namespace Shared.Networking
     public enum MessageType : byte
     {
         /// <summary>
-        /// Server assigns a unique client ID to a newly connected client.
-        /// This is the first message sent during the handshake process.
+        /// Server sends this message immediately when a client connects.
+        /// Contains the assigned peer ID and connection information.
+        /// This is the first message in the handshake process.
         /// </summary>
-        ClientIdAssignment = 0,
+        Connected = 0,
 
         /// <summary>
         /// A full snapshot of the world state sent from the server to the client.

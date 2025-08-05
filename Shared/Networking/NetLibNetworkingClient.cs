@@ -3,6 +3,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using LiteNetLib;
 using Shared.Logging;
+using Shared.Networking.Messages;
 using Shared.Scheduling;
 using ILogger = Shared.Logging.ILogger;
 
@@ -27,7 +28,12 @@ namespace Shared.Networking
         /// <param name="netManager">The LiteNetLib NetManager instance to use for networking.</param>
         /// <param name="listener">The injected event-based listener for handling network events.</param>
         /// <param name="scheduler">Scheduler for polling events.</param>
-        public NetLibNetworkingClient(ILogger logger, NetManager netManager, EventBasedNetListener listener, IScheduler scheduler)
+        /// <param name="messageReceiver">The injected message receiver for handling messages.</param>
+        public NetLibNetworkingClient(
+            ILogger logger,
+            NetManager netManager,
+            EventBasedNetListener listener,
+            IScheduler scheduler)
         {
             _logger = logger;
             _netManager = netManager;
@@ -56,34 +62,47 @@ namespace Shared.Networking
                 TimeSpan.FromMilliseconds(15),
                 _cts.Token);
 
+            // Set up a message receiver to handle the connection response
+            // This has to happen before we connect to the server
+            // and we must initialize it before connecting so that it can handle messages immediately.
+            var messageReceiver = new NetLibJsonMessageReceiver(_listener, _logger);
+            messageReceiver.Initialize();
+
+            // Register a message handler for the ConnectedMessage
+            NetPeer? connectedPeer = null;
+            var handlerId = Guid.NewGuid().ToString();
             var tcs = new TaskCompletionSource<IClientConnection>(TaskCreationOptions.RunContinuationsAsynchronously);
-            var connectionAttempt = _netManager.Connect(address, port, netSecret);
-
-            void OnConnected(NetPeer peer)
+            using var handlerRegistration = messageReceiver.RegisterMessageHandler<ConnectedMessage>(handlerId, (peerId, msg) =>
             {
-                if (Equals(peer.Address, connectionAttempt.Address))
+                // Find the NetPeer by peerId
+                var peer = _netManager.GetPeerById(peerId);
+                if (peer == null)
                 {
-                    var messageSender = new NetLibJsonMessageSender(_netManager, _logger);
-                    var messageReceiver = new NetLibJsonMessageReceiver(_listener, _logger);
-                    var connection = new ClientConnection(peer, _logger, messageSender, messageReceiver);
-
-                    _logger.Debug(LoggedFeature.Networking, $"Client {peer.Id} connected. Address: {peer.Address}");
-                    tcs.TrySetResult(connection);
+                    _logger.Error(LoggedFeature.Networking, $"Failed to connect: Peer with ID {peerId} not found.");
+                    return;
                 }
-            }
+
+                _ = msg;
+                connectedPeer = peer;
+                var messageSender = new NetLibJsonMessageSender(_netManager, _logger);
+                var connection = new ClientConnection(peer, _logger, messageSender, messageReceiver, msg.PeerId);
+
+                _logger.Debug(LoggedFeature.Networking, $"Client {peer.Id} connected. Address: {peer.Address}");
+                tcs.TrySetResult(connection);
+            });
 
             void OnDisconnected(NetPeer peer, DisconnectInfo info)
             {
-                if (Equals(peer.Address, connectionAttempt.Address))
+                if (connectedPeer == null || Equals(peer, connectedPeer))
                 {
                     tcs.TrySetException(new Exception($"Failed to connect: {info.Reason}"));
                 }
             }
 
-            _listener.PeerConnectedEvent += OnConnected;
             _listener.PeerDisconnectedEvent += OnDisconnected;
 
             _logger.Info($"NetLibNetworkingClient: Connecting to server at {address}:{port}");
+            _netManager.Connect(address, port, netSecret);
 
             try
             {
@@ -101,7 +120,6 @@ namespace Shared.Networking
             }
             finally
             {
-                _listener.PeerConnectedEvent -= OnConnected;
                 _listener.PeerDisconnectedEvent -= OnDisconnected;
             }
         }
@@ -129,7 +147,7 @@ namespace Shared.Networking
             private bool _disposed;
             private readonly ILogger logger;
 
-            public int AssignedPeerId => _peer.Id;
+            public int AssignedPeerId { get; }
             public IMessageSender MessageSender { get; }
             public IMessageReceiver MessageReceiver => _jsonMessageReceiver;
             private readonly NetLibJsonMessageReceiver _jsonMessageReceiver;
@@ -137,16 +155,17 @@ namespace Shared.Networking
             public ClientConnection(NetPeer peer,
                 ILogger logger,
                 IMessageSender messageSender,
-                NetLibJsonMessageReceiver messageReceiver)
+                NetLibJsonMessageReceiver messageReceiver,
+                int assignedPeerId)
             {
                 _peer = peer;
                 this.logger = logger;
                 MessageSender = messageSender;
+                AssignedPeerId = assignedPeerId;
 
                 // We store the concrete implementation as we need
-                // to manage its lifecycle as part of this connection.
+                // to manage its disposal
                 _jsonMessageReceiver = messageReceiver;
-                _jsonMessageReceiver.Initialize();
             }
 
             /// <summary>

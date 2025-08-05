@@ -1,3 +1,5 @@
+using Shared.Networking.Messages;
+
 namespace Shared.Networking
 {
     /// <summary>

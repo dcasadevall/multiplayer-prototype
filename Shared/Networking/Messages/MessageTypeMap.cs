@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using Shared.ECS.Replication;
 using Shared.Input;
 
-namespace Shared.Networking
+namespace Shared.Networking.Messages
 {
     /// <summary>
     /// MessageTypeMap is a static class that maps <see cref="MessageType"/> to their corresponding message types.
@@ -13,6 +13,7 @@ namespace Shared.Networking
     {
         private static readonly Dictionary<MessageType, Type> _messageTypeMap = new()
         {
+            { MessageType.Connected, typeof(ConnectedMessage) },
             { MessageType.Snapshot, typeof(WorldSnapshotMessage) },
             { MessageType.PlayerMovement, typeof(PlayerMovementMessage) },
         };

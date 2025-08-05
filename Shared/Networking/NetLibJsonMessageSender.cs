@@ -3,6 +3,7 @@ using System.Text.Json;
 using LiteNetLib;
 using LiteNetLib.Utils;
 using Shared.Logging;
+using Shared.Networking.Messages;
 
 namespace Shared.Networking
 {

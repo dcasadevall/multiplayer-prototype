@@ -101,7 +101,7 @@ namespace Adapters
             _serviceProvider = null;
             
             // Dispose the GameSceneServiceProvider
-            _gameSceneServiceProvider.Dispose();
+            _gameSceneServiceProvider?.Dispose();
             _gameSceneServiceProvider = null;
             
             Debug.Log("LoginSceneServiceProvider: Disposed successfully");

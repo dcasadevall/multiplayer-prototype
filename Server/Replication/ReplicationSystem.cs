@@ -2,6 +2,7 @@ using Shared.ECS;
 using Shared.ECS.Replication;
 using Shared.ECS.Simulation;
 using Shared.Networking;
+using Shared.Networking.Messages;
 
 namespace Server.Replication
 {
