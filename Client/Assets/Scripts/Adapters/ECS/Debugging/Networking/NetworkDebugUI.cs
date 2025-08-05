@@ -52,7 +52,9 @@ namespace Core.Networking
 
         private void Start()
         {
+#pragma warning disable CS0618 // Type or member is obsolete
             var serviceProvider = FindObjectOfType<RootServiceProvider>()?.ServiceProvider;
+#pragma warning restore CS0618 // Type or member is obsolete
             _clientConnection = serviceProvider?.GetRequiredService<IClientConnection>();
             _messageReceiver = serviceProvider?.GetRequiredService<IMessageReceiver>();
             _logger = serviceProvider?.GetRequiredService<ILogger>();
