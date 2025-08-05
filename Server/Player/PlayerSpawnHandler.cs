@@ -34,9 +34,9 @@ namespace Server.Player
 
             // Generate a spawn position (this could be more complex in a real game)
             // We can keep it within a radius of 10 units from the origin for simplicity
-            var x = Random.Shared.Next(-10, 10);
+            var x = Random.Shared.Next(-3, 3);
             var y = 0;
-            var z = Random.Shared.Next(-10, 10);
+            var z = Random.Shared.Next(-3, 3);
 
             try
             {

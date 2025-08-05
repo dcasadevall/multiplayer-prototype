@@ -11,5 +11,10 @@ namespace Core.MathUtils
         {
             return new System.Numerics.Vector2(vector2.x, vector2.y);
         }
+
+        public static System.Numerics.Vector3 ToNumericsVector3(this UnityEngine.Vector3 vector3)
+        {
+            return new System.Numerics.Vector3(vector3.x, vector3.y, vector3.z);
+        }
     }
 }

@@ -27,9 +27,10 @@ namespace Adapters
         public GameSceneServiceProvider(IServiceCollection serviceCollection, IClientConnection clientConnection)
         {
             // Game systems
-            serviceCollection.AddSingleton<PlayerMovementPredictionSystem>();
-            serviceCollection.AddSingleton<ISystem, PlayerMovementPredictionSystem>();
-            serviceCollection.AddSingleton<ISystem, PlayerMovementReconciliationSystem>();
+            serviceCollection.AddSingleton<LocalPlayerMovementPredictionSystem>();
+            serviceCollection.AddSingleton<ISystem, LocalPlayerMovementPredictionSystem>();
+            serviceCollection.AddSingleton<ISystem, LocalPlayerMovementReconciliationSystem>();
+            serviceCollection.AddSingleton<ISystem, RemotePlayerMovementPredictionSystem>();
             
             // Input
             serviceCollection.AddSingleton<InputListener>();

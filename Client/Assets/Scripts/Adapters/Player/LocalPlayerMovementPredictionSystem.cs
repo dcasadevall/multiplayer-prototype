@@ -22,7 +22,7 @@ namespace Adapters.Player
         public Vector3 Velocity;
     }
 
-    public class PlayerMovementPredictionSystem : ISystem
+    public class LocalPlayerMovementPredictionSystem : ISystem
     {
         private readonly IInputListener _inputListener;
         private readonly TickSync _tickSync;
@@ -31,7 +31,7 @@ namespace Adapters.Player
         private readonly int _localPeerId;
         private float _lastDeltaTime;
 
-        public PlayerMovementPredictionSystem(IInputListener inputListener, IClientConnection connection, TickSync tickSync, ILogger logger)
+        public LocalPlayerMovementPredictionSystem(IInputListener inputListener, IClientConnection connection, TickSync tickSync, ILogger logger)
         {
             _inputListener = inputListener;
             _tickSync = tickSync;

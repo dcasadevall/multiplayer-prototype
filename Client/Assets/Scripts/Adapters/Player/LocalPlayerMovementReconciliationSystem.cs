@@ -11,9 +11,9 @@ using Vector3 = System.Numerics.Vector3;
 
 namespace Adapters.Player
 {
-    public class PlayerMovementReconciliationSystem : ISystem
+    public class LocalPlayerMovementReconciliationSystem : ISystem
     {
-        private readonly PlayerMovementPredictionSystem _prediction;
+        private readonly LocalPlayerMovementPredictionSystem _prediction;
         private readonly ILogger _logger;
         private readonly TickSync _tickSync;
         private readonly int _localPeerId;
@@ -21,7 +21,7 @@ namespace Adapters.Player
         // Error threshold. If distance is greater than this, we reconcile.
         private const float ReconciliationThreshold = 0.1f;
 
-        public PlayerMovementReconciliationSystem(PlayerMovementPredictionSystem prediction,
+        public LocalPlayerMovementReconciliationSystem(LocalPlayerMovementPredictionSystem prediction,
             IClientConnection connection,
             ILogger logger,
             TickSync tickSync)
@@ -34,24 +34,22 @@ namespace Adapters.Player
 
         public void Update(EntityRegistry registry, uint tickNumber, float deltaTime)
         {
-            // Get all player entities
-            var playerEntities = registry.GetAll()
-                .Where(x => x.Has<PlayerTagComponent>())
-                .Where(x => x.Has<PeerComponent>());
-
-            playerEntities.ToList().ForEach(entity => PredictAndReconcileEntityMovement(entity, deltaTime));
-        }
-
-        private void PredictAndReconcileEntityMovement(Entity entity, float deltaTime)
-        {
-            var serverTick = _tickSync.ServerTick;
-            
             // We can't reconcile if the server tick is 0 or we have no state for it.
+            var serverTick = _tickSync.ServerTick;
             if (serverTick == 0) return;
+            
+            var localPlayerEntity = registry
+                .GetAll()
+                .Where(x => x.Has<PeerComponent>())
+                .Where(x => x.Has<PlayerTagComponent>())
+                .Where(x => x.Has<PredictedComponent<PositionComponent>>())
+                .FirstOrDefault(x => x.GetRequired<PeerComponent>().PeerId == _localPeerId);
+            
+            if (localPlayerEntity == null) return;
 
             // 1. Get the server's authoritative state for its last processed tick.
-            var authoritativePosComponent = entity.GetRequired<PredictedComponent<PositionComponent>>();
-            var authoritativeVelComponent = entity.GetRequired<PredictedComponent<VelocityComponent>>();
+            var authoritativePosComponent = localPlayerEntity.GetRequired<PredictedComponent<PositionComponent>>();
+            var authoritativeVelComponent = localPlayerEntity.GetRequired<PredictedComponent<VelocityComponent>>();
             if (authoritativePosComponent.ServerValue == null || authoritativeVelComponent.ServerValue == null)
             {
                 // This can happen if we haven't received a state update from the server yet.
@@ -62,13 +60,13 @@ namespace Adapters.Player
             var authoritativeVelocity = authoritativeVelComponent.ServerValue.Value;
             
             // This is a remote peer. We predict their movement to make them appear smoother.
-            if (entity.GetRequired<PeerComponent>().PeerId != _localPeerId)
+            if (localPlayerEntity.GetRequired<PeerComponent>().PeerId != _localPeerId)
             {
                 // Get the current client-side position and update velocity to the latest from the server.
-                var positionComponent = entity.GetRequired<PositionComponent>();
-                entity.AddOrReplaceComponent(new VelocityComponent { Value = authoritativeVelocity });
+                var positionComponent = localPlayerEntity.GetRequired<PositionComponent>();
+                localPlayerEntity.AddOrReplaceComponent(new VelocityComponent { Value = authoritativeVelocity });
 
-                // Predict where the entity should be right now based on the last server update.
+                // Predict where the localPlayerEntity should be right now based on the last server update.
                 var clientTick = _tickSync.ClientTick;
                 var tickDifference = clientTick > serverTick ? clientTick - serverTick : 0;
                 var extrapolatedPosition = authoritativePosition + authoritativeVelocity * tickDifference * deltaTime;
@@ -95,11 +93,11 @@ namespace Adapters.Player
                 // 4. Instruct the prediction system to correct its state and re-simulate.
                 _prediction.CorrectStateAndResimulate(serverTick, authoritativePosition, authoritativeVelocity);
                 
-                // 5. Get the re-simulated position for the *current* client tick and update the entity.
+                // 5. Get the re-simulated position for the *current* client tick and update the localPlayerEntity.
                 if (_prediction.GetPredictedState(_tickSync.ClientTick, out var newlyPredictedState))
                 {
-                    entity.AddOrReplaceComponent(new PositionComponent { Value = newlyPredictedState.Position });
-                    entity.AddOrReplaceComponent(new VelocityComponent { Value = newlyPredictedState.Velocity });
+                    localPlayerEntity.AddOrReplaceComponent(new PositionComponent { Value = newlyPredictedState.Position });
+                    localPlayerEntity.AddOrReplaceComponent(new VelocityComponent { Value = newlyPredictedState.Velocity });
                 }
             }
             
