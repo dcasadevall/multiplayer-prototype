@@ -44,7 +44,13 @@ namespace Adapters.Player
         {
             _lastDeltaTime = deltaTime;
             var currentTick = _tickSync.ClientTick;
-            var localPlayerEntity = GetLocalPlayerEntity(registry);
+            var localPlayerEntity = registry
+                .GetAll()
+                .Where(x => x.Has<PeerComponent>())
+                .Where(x => x.Has<PlayerTagComponent>())
+                .Where(x => x.Has<PredictedComponent<PositionComponent>>())
+                .FirstOrDefault(x => x.GetRequired<PeerComponent>().PeerId == _localPeerId);
+            
             if (localPlayerEntity == null) return;
             
             // Get the position from the previous tick to predict the next one.
@@ -116,14 +122,6 @@ namespace Adapters.Player
             {
                 _stateBuffer.Remove(key);
             }
-        }
-
-        private Entity GetLocalPlayerEntity(EntityRegistry registry)
-        {
-            return registry
-                .GetAll()
-                .Where(x => x.Has<PeerComponent>() && x.Has<PlayerTagComponent>() && x.Has<PredictedComponent<PositionComponent>>())
-                .FirstOrDefault(x => x.GetRequired<PeerComponent>().PeerId == _localPeerId);
         }
     }
 }

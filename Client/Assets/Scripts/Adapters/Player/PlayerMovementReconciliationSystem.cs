@@ -33,17 +33,24 @@ namespace Adapters.Player
 
         public void Update(EntityRegistry registry, uint tickNumber, float deltaTime)
         {
-            var localPlayerEntity = GetLocalPlayerEntity(registry);
-            if (localPlayerEntity == null) return;
+            // Get all player entities
+            var playerEntities  = registry.GetAll()
+                .Where(x => x.Has<PlayerTagComponent>())
+                .Where(x => x.Has<PeerComponent>());
 
+            playerEntities.ToList().ForEach(PredictEntityMovement);
+        }
+
+        private void PredictEntityMovement(Entity entity)
+        {
             var serverTick = _tickSync.ServerTick;
             
             // We can't reconcile if the server tick is 0 or we have no state for it.
             if (serverTick == 0) return;
-            
+
             // 1. Get the server's authoritative position for its last processed tick.
-            var authoritativePosComponent = localPlayerEntity.GetRequired<PredictedComponent<PositionComponent>>();
-            var authoritativeVelComponent = localPlayerEntity.GetRequired<PredictedComponent<VelocityComponent>>();
+            var authoritativePosComponent = entity.GetRequired<PredictedComponent<PositionComponent>>();
+            var authoritativeVelComponent = entity.GetRequired<PredictedComponent<VelocityComponent>>();
             if (authoritativePosComponent.ServerValue == null || authoritativeVelComponent.ServerValue == null)
             {
                 // This can happen if we haven't received a state update from the server yet.
@@ -52,6 +59,16 @@ namespace Adapters.Player
 
             var authoritativePosition = authoritativePosComponent.ServerValue.Value;
             var authoritativeVelocity = authoritativeVelComponent.ServerValue.Value;
+            
+            // For remote peers, we don't predict
+            // Simply update position
+            if (entity.GetRequired<PeerComponent>().PeerId != _localPeerId)
+            {
+                entity.AddOrReplaceComponent(new PositionComponent { Value = authoritativePosition });
+                entity.AddOrReplaceComponent(new VelocityComponent { Value = authoritativeVelocity });
+                
+                return;
+            }
 
             if (!_prediction.GetPredictedState(serverTick, out var predictedState))
             {
@@ -72,8 +89,8 @@ namespace Adapters.Player
                 // 5. Get the re-simulated position for the *current* client tick and update the entity.
                 if (_prediction.GetPredictedState(_tickSync.ClientTick, out var newlyPredictedState))
                 {
-                    localPlayerEntity.AddOrReplaceComponent(new PositionComponent { Value = newlyPredictedState.Position });
-                    localPlayerEntity.AddOrReplaceComponent(new VelocityComponent { Value = newlyPredictedState.Velocity });
+                    entity.AddOrReplaceComponent(new PositionComponent { Value = newlyPredictedState.Position });
+                    entity.AddOrReplaceComponent(new VelocityComponent { Value = newlyPredictedState.Velocity });
                 }
             }
             
