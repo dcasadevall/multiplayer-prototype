@@ -6,7 +6,7 @@ using Shared.ECS.Replication;
 using Shared.Logging;
 using Shared.Scheduling;
 
-namespace Server.PlayerSpawn
+namespace Server.Player
 {
     /// <summary>
     /// Handles player spawn requests from clients.

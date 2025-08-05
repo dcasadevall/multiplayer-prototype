@@ -1,7 +1,7 @@
 using System;
 using UnityEngine;
 
-namespace Core.Player
+namespace Core.PlayerDeprecated
 {
     public interface IPlayer : IDisposable
     {

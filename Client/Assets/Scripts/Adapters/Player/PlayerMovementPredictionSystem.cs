@@ -7,10 +7,11 @@ using Shared.ECS.Components;
 using Shared.ECS.Entities;
 using Shared.ECS.Prediction;
 using Shared.ECS.TickSync;
+using Shared.Input;
 using Shared.Logging;
 using Shared.Networking;
 
-namespace Adapters.Character
+namespace Adapters.Player
 {
     public struct PredictedState
     {
@@ -26,13 +27,6 @@ namespace Adapters.Character
         private readonly ILogger _logger;
         private readonly Dictionary<uint, PredictedState> _stateBuffer = new();
         private readonly int _localPeerId;
-
-        // NOTE: Centralized movement logic.
-        // Let's assume a fixed tick rate, so deltaTime is constant. 
-        // Using a fixed speed value is more deterministic for lockstep/tick-based simulation.
-        private const float Speed = 5.0f; 
-        private const float TickRate = 60.0f; // Example tick rate
-        private const float MoveDeltaPerTick = Speed / TickRate;
 
         public PlayerMovementPredictionSystem(IInputListener inputListener, IClientConnection connection, TickSync tickSync, ILogger logger)
         {
@@ -71,9 +65,13 @@ namespace Adapters.Character
             var newPredictedPos = lastPosition;
             if (_inputListener.TryGetMovementAtTick(currentTick, out var input))
             {
-                // NOTE: Use the consistent movement calculation.
                 var moveDirection = new Vector3(input.MoveDirection.X, 0, input.MoveDirection.Y);
-                newPredictedPos += moveDirection * MoveDeltaPerTick;
+                if (moveDirection == Vector3.Zero)
+                {
+                    return;
+                }
+                
+                newPredictedPos += moveDirection * InputConstants.MoveDeltaPerTick;
             }
 
             // Store the new predicted state and update the entity.
@@ -98,7 +96,7 @@ namespace Adapters.Character
                 if (_inputListener.TryGetMovementAtTick(tick, out var input))
                 {
                     var moveDirection = new Vector3(input.MoveDirection.X, 0, input.MoveDirection.Y);
-                    newPredictedPos += moveDirection * MoveDeltaPerTick;
+                    newPredictedPos += moveDirection * InputConstants.MoveDeltaPerTick;
                 }
 
                 _stateBuffer[tick] = new PredictedState { Tick = tick, Position = newPredictedPos };

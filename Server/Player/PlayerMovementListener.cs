@@ -1,13 +1,12 @@
-using System;
-using System.Linq;
 using System.Numerics;
 using Shared.ECS;
 using Shared.ECS.Components;
+using Shared.Input;
 using Shared.Logging;
 using Shared.Networking;
 using Shared.Scheduling;
 
-namespace Shared.Input
+namespace Server.Player
 {
     /// <summary>
     /// Listens for <see cref="PlayerMovementMessage"/> messages from the network and applies movement to the corresponding player entity.
@@ -58,8 +57,7 @@ namespace Shared.Input
         private void HandlePlayerMovementMessage(int peerId, PlayerMovementMessage msg)
         {
             // sanity check for message value
-            var movement = new Vector3(msg.MoveDirection.X, 0, msg.MoveDirection.Y) * 0.1f;
-            if (movement == Vector3.Zero)
+            if (msg.MoveDirection == Vector2.Zero)
             {
                 _logger.Warn(LoggedFeature.Input, $"Received PlayerMovementMessage with zero movement from peer {peerId}. Ignoring.");
                 return;
@@ -78,9 +76,11 @@ namespace Shared.Input
                 return;
             }
 
-            var position = entity.GetRequired<PositionComponent>().Value;
+            var moveDirection = new Vector3(msg.MoveDirection.X, 0, msg.MoveDirection.Y);
+            var movementDelta = moveDirection * InputConstants.MoveDeltaPerTick;
 
-            entity.AddOrReplaceComponent(new PositionComponent { Value = position + movement });
+            var position = entity.GetRequired<PositionComponent>().Value;
+            entity.AddOrReplaceComponent(new PositionComponent { Value = position + movementDelta });
         }
 
         /// <summary>

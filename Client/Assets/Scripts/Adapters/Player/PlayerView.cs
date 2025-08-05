@@ -1,7 +1,7 @@
-using Core.Player;
+using Core.PlayerDeprecated;
 using UnityEngine;
 
-namespace Adapters.Character
+namespace Adapters.Player
 {
     public class PlayerView : MonoBehaviour
     {

@@ -1,6 +1,5 @@
 using System.Linq;
 using System.Numerics;
-using Core.Input;
 using Shared.ECS;
 using Shared.ECS.Components;
 using Shared.ECS.Entities;
@@ -9,7 +8,7 @@ using Shared.ECS.TickSync;
 using Shared.Logging;
 using Shared.Networking;
 
-namespace Adapters.Character
+namespace Adapters.Player
 {
     public class PlayerMovementReconciliationSystem : ISystem
     {
@@ -19,7 +18,7 @@ namespace Adapters.Character
         private readonly int _localPeerId;
 
         // Error threshold. If distance is greater than this, we reconcile.
-        private const float ReconciliationThreshold = 0.01f;
+        private const float ReconciliationThreshold = 0.1f;
 
         public PlayerMovementReconciliationSystem(PlayerMovementPredictionSystem prediction,
             IClientConnection connection,

@@ -1,7 +1,7 @@
 using System;
 using System.Linq;
-using Adapters.Character;
 using Adapters.ECS.Debugging;
+using Adapters.Player;
 using Core.ECS;
 using Core.ECS.Simulation;
 using Core.Input;
@@ -27,7 +27,6 @@ namespace Adapters
         public GameSceneServiceProvider(IServiceCollection serviceCollection, IClientConnection clientConnection)
         {
             // Game systems
-            serviceCollection.AddSingleton<ISystem, PlayerViewSystem>();
             serviceCollection.AddSingleton<PlayerMovementPredictionSystem>();
             serviceCollection.AddSingleton<ISystem, PlayerMovementPredictionSystem>();
             serviceCollection.AddSingleton<ISystem, PlayerMovementReconciliationSystem>();

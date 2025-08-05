@@ -2,7 +2,7 @@ using System;
 using Core.Input;
 using UnityEngine;
 
-namespace Core.Player
+namespace Core.PlayerDeprecated
 {
     public delegate void OnShootHandler(Vector3 origin, Vector3 direction);
 

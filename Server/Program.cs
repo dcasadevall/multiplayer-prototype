@@ -1,6 +1,5 @@
 ﻿using Microsoft.Extensions.DependencyInjection;
 using Server.Logging;
-using Server.PlayerSpawn;
 using Server.Replication;
 using Server.Scenes;
 using Shared;
@@ -13,6 +12,7 @@ using Shared.Logging;
 using Shared.Networking;
 using Shared.Scheduling;
 using Microsoft.Extensions.Configuration;
+using Server.Player;
 
 // Add Configuration
 var configuration = new ConfigurationBuilder()
