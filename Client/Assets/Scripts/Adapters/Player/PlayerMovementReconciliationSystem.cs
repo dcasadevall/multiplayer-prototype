@@ -35,21 +35,21 @@ namespace Adapters.Player
         public void Update(EntityRegistry registry, uint tickNumber, float deltaTime)
         {
             // Get all player entities
-            var playerEntities  = registry.GetAll()
+            var playerEntities = registry.GetAll()
                 .Where(x => x.Has<PlayerTagComponent>())
                 .Where(x => x.Has<PeerComponent>());
 
-            playerEntities.ToList().ForEach(PredictEntityMovement);
+            playerEntities.ToList().ForEach(entity => PredictAndReconcileEntityMovement(entity, deltaTime));
         }
 
-        private void PredictEntityMovement(Entity entity)
+        private void PredictAndReconcileEntityMovement(Entity entity, float deltaTime)
         {
             var serverTick = _tickSync.ServerTick;
             
             // We can't reconcile if the server tick is 0 or we have no state for it.
             if (serverTick == 0) return;
 
-            // 1. Get the server's authoritative position for its last processed tick.
+            // 1. Get the server's authoritative state for its last processed tick.
             var authoritativePosComponent = entity.GetRequired<PredictedComponent<PositionComponent>>();
             var authoritativeVelComponent = entity.GetRequired<PredictedComponent<VelocityComponent>>();
             if (authoritativePosComponent.ServerValue == null || authoritativeVelComponent.ServerValue == null)
@@ -61,13 +61,21 @@ namespace Adapters.Player
             var authoritativePosition = authoritativePosComponent.ServerValue.Value;
             var authoritativeVelocity = authoritativeVelComponent.ServerValue.Value;
             
-            // For remote peers, we don't predict
-            // Simply update position
+            // This is a remote peer. We predict their movement to make them appear smoother.
             if (entity.GetRequired<PeerComponent>().PeerId != _localPeerId)
             {
-                entity.AddOrReplaceComponent(new PositionComponent { Value = authoritativePosition });
+                // Get the current client-side position and update velocity to the latest from the server.
+                var positionComponent = entity.GetRequired<PositionComponent>();
                 entity.AddOrReplaceComponent(new VelocityComponent { Value = authoritativeVelocity });
-                
+
+                // Predict where the entity should be right now based on the last server update.
+                var clientTick = _tickSync.ClientTick;
+                var tickDifference = clientTick > serverTick ? clientTick - serverTick : 0;
+                var extrapolatedPosition = authoritativePosition + authoritativeVelocity * tickDifference * deltaTime;
+
+                // Smoothly interpolate the current position towards the extrapolated position.
+                // This avoids snapping and makes corrections appear smoother.
+                positionComponent.Value = Vector3.Lerp(positionComponent.Value, extrapolatedPosition, 0.2f);
                 return;
             }
 
