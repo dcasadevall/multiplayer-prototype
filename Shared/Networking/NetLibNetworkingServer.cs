@@ -60,7 +60,6 @@ namespace Shared.Networking
             _running = true;
             _netSecret = netSecret;
             _eventListener.ConnectionRequestEvent += OnConnectionRequest;
-            _eventListener.NetworkReceiveEvent += OnNetworkReceive;
 
             // Use the address parameter if provided, otherwise fallback to default
             if (!string.IsNullOrWhiteSpace(address) &&
@@ -95,13 +94,6 @@ namespace Shared.Networking
             }
         }
 
-        private void OnNetworkReceive(NetPeer peer, NetPacketReader reader, byte channel, DeliveryMethod method)
-        {
-            var message = reader.GetString();
-            _logger.Info("Received message from {0}: {1}", peer.Address, message);
-            reader.Recycle();
-        }
-
         private void Stop()
         {
             _running = false;
@@ -111,7 +103,6 @@ namespace Shared.Networking
 
             // Unsubscribe event handlers to prevent memory leaks
             _eventListener.ConnectionRequestEvent -= OnConnectionRequest;
-            _eventListener.NetworkReceiveEvent -= OnNetworkReceive;
 
             _logger.Info("Server stopped.");
         }

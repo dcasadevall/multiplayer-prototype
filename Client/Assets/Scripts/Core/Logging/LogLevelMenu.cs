@@ -10,7 +10,7 @@ namespace Core.Logging
     /// </summary>
     public static class LogLevelMenu
     {
-        private const string MenuPath = "Game/Log Level/";
+        private const string MenuPath = "Debug/Log Level/";
         private const string EditorPrefKey = "LogLevel";
         
         [InitializeOnLoadMethod]

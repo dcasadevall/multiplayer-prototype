@@ -43,7 +43,8 @@ namespace Shared.ECS.Replication
                 {
                     if (!componentSet.Contains(component.GetType().FullName))
                     {
-                        _logger.Debug("Removing component {0} from entity {1}", component.GetType().Name, entity.Id);
+                        _logger.Debug(LoggedFeature.Replication, "Removing component {0} from entity {1}", component.GetType().Name,
+                            entity.Id);
                         entity.Remove(component.GetType());
                     }
                 }
@@ -71,7 +72,8 @@ namespace Shared.ECS.Replication
                     // we are receiving this component.
                     if (entity.TrySetServerAuthoritativeValue(componentType, (IComponent)componentInstance))
                     {
-                        _logger.Debug("Entity {0} has predicted component {1}. Setting server authoritative value.",
+                        _logger.Debug(LoggedFeature.Replication,
+                            "Entity {0} has predicted component {1}. Setting server authoritative value.",
                             entity.Id, componentType.Name);
 
                         // Only add the predicted component if it doesn't already exist

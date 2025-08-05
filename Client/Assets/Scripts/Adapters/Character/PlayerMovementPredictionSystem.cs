@@ -75,12 +75,6 @@ namespace Adapters.Character
                 var moveDirection = new Vector3(input.MoveDirection.X, 0, input.MoveDirection.Y);
                 newPredictedPos += moveDirection * MoveDeltaPerTick;
             }
-            else
-            {
-                _logger.Warn(LoggedFeature.Prediction, 
-                    $"No input found for tick {currentTick}. " +
-                    $"Using last position {lastPosition}.");
-            }
 
             // Store the new predicted state and update the entity.
             _stateBuffer[currentTick] = new PredictedState { Tick = currentTick, Position = newPredictedPos };

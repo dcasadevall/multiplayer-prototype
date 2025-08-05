@@ -33,7 +33,7 @@ namespace Adapters.ECS.Debugging
         }
         
 #if UNITY_EDITOR
-        [UnityEditor.MenuItem("ECS/Debug/Add Debug Manager to Scene")]
+        [UnityEditor.MenuItem("Debug/ECS/Add Debug Manager to Scene")]
         private static void AddDebugManagerToScene()
         {
             var existingManager = FindObjectOfType<EcsDebugManager>();
@@ -49,7 +49,7 @@ namespace Adapters.ECS.Debugging
             Debug.Log("ECS Debug Manager added to scene. Make sure to register it with your DI container.");
         }
         
-        [UnityEditor.MenuItem("ECS/Debug/Open ECS Inspector")]
+        [UnityEditor.MenuItem("Debug/ECS/Open ECS Inspector")]
         private static void OpenEcsInspector()
         {
             EcsInspectorWindow.ShowWindow();

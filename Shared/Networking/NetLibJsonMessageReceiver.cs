@@ -66,7 +66,7 @@ namespace Shared.Networking
             DeliveryMethod deliveryMethod)
         {
             // Read the message type from the packet
-            _logger.Debug("Received message from peer {0} on channel {1} with delivery method {2}",
+            _logger.Debug(LoggedFeature.Networking, "Received message from peer {0} on channel {1} with delivery method {2}",
                 peer.Id, channel, deliveryMethod);
 
             var messageType = (MessageType)reader.GetByte();

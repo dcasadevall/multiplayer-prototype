@@ -186,7 +186,7 @@ namespace Adapters.ECS.Debugging
         #region Unity Editor Integration
         
         #if UNITY_EDITOR
-        [UnityEditor.MenuItem("ECS/Debug/Show Entity Positions")]
+        [UnityEditor.MenuItem("Debug/ECS/Show Entity Positions")]
         private static void ToggleEntityPositions()
         {
             var debugger = FindObjectOfType<ECSVisualDebugger>();
@@ -197,7 +197,7 @@ namespace Adapters.ECS.Debugging
             }
         }
         
-        [UnityEditor.MenuItem("ECS/Debug/Show Entity Labels")]
+        [UnityEditor.MenuItem("Debug/ECS/Show Entity Labels")]
         private static void ToggleEntityLabels()
         {
             var debugger = FindObjectOfType<ECSVisualDebugger>();
@@ -208,7 +208,7 @@ namespace Adapters.ECS.Debugging
             }
         }
         
-        [UnityEditor.MenuItem("ECS/Debug/Log Entity Positions")]
+        [UnityEditor.MenuItem("Debug/ECS/Log Entity Positions")]
         private static void LogEntityPositions()
         {
             var debugger = FindObjectOfType<ECSVisualDebugger>();

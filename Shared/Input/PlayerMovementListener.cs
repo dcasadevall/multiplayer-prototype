@@ -57,6 +57,15 @@ namespace Shared.Input
         /// <param name="msg">The movement message containing input data.</param>
         private void HandlePlayerMovementMessage(int peerId, PlayerMovementMessage msg)
         {
+            // sanity check for message value
+            var movement = new Vector3(msg.MoveDirection.X, 0, msg.MoveDirection.Y) * 0.1f;
+            if (movement == Vector3.Zero)
+            {
+                _logger.Warn(LoggedFeature.Input, $"Received PlayerMovementMessage with zero movement from peer {peerId}. Ignoring.");
+                return;
+            }
+
+            // Get the local player entity by peer ID
             var entity = _entityRegistry
                 .GetAll()
                 .Where(x => x.Has<PeerComponent>())
@@ -70,11 +79,6 @@ namespace Shared.Input
             }
 
             var position = entity.GetRequired<PositionComponent>().Value;
-            var movement = new Vector3(msg.MoveDirection.X, 0, msg.MoveDirection.Y) * 0.1f;
-            if (movement != Vector3.Zero)
-            {
-                _logger.Debug(LoggedFeature.Input, "Applying movement {0} to player entity {1}", movement, entity.Id);
-            }
 
             entity.AddOrReplaceComponent(new PositionComponent { Value = position + movement });
         }

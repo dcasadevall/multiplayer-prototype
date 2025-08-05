@@ -10,17 +10,17 @@ namespace Shared.ECS.Components
     {
         [JsonPropertyName("x")]
         public float X { get; set; }
-    
+
         [JsonPropertyName("y")]
         public float Y { get; set; }
-    
+
         [JsonPropertyName("z")]
         public float Z { get; set; }
-    
+
         [JsonIgnore]
-        public Vector3 Value 
-        { 
-            get => new Vector3(X, Y, Z);
+        public Vector3 Value
+        {
+            get => new(X, Y, Z);
             set
             {
                 X = value.X;
@@ -28,9 +28,11 @@ namespace Shared.ECS.Components
                 Z = value.Z;
             }
         }
-    
-        public PositionComponent() { }
-    
+
+        public PositionComponent()
+        {
+        }
+
         public PositionComponent(Vector3 value)
         {
             X = value.X;

@@ -8,7 +8,7 @@ namespace Core.Logging
     [InitializeOnLoad]
     public static class LogFeatureMenu
     {
-        private const string MenuPath = "Game/Log Features/";
+        private const string MenuPath = "Debug/Log Features/";
 
         static LogFeatureMenu()
         {
