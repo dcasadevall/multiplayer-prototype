@@ -97,13 +97,5 @@ namespace Adapters.Player
             // 6. Prune the state buffer to prevent memory leaks.
             _prediction.PruneOldStates(serverTick);
         }
-        
-        private Entity GetLocalPlayerEntity(EntityRegistry registry)
-        {
-            return registry
-                .GetAll()
-                .Where(x => x.Has<PeerComponent>() && x.Has<PlayerTagComponent>() && x.Has<PredictedComponent<PositionComponent>>())
-                .FirstOrDefault(x => x.GetRequired<PeerComponent>().PeerId == _localPeerId);
-        }
     }
 }
