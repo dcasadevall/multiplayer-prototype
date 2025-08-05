@@ -1,12 +1,13 @@
 using System.Linq;
-using System.Numerics;
 using Shared.ECS;
 using Shared.ECS.Components;
 using Shared.ECS.Entities;
 using Shared.ECS.Prediction;
 using Shared.ECS.TickSync;
-using Shared.Logging;
 using Shared.Networking;
+using UnityEngine;
+using ILogger = Shared.Logging.ILogger;
+using Vector3 = System.Numerics.Vector3;
 
 namespace Adapters.Player
 {

@@ -2,6 +2,7 @@ using System;
 using System.Threading;
 using System.Threading.Tasks;
 using LiteNetLib;
+using Shared.Logging;
 using Shared.Scheduling;
 using ILogger = Shared.Logging.ILogger;
 
@@ -60,19 +61,20 @@ namespace Shared.Networking
 
             void OnConnected(NetPeer peer)
             {
-                if (Equals(peer, connectionAttempt))
+                if (Equals(peer.Address, connectionAttempt.Address))
                 {
                     var messageSender = new NetLibJsonMessageSender(_netManager, _logger);
                     var messageReceiver = new NetLibJsonMessageReceiver(_listener, _logger);
                     var connection = new ClientConnection(peer, _logger, messageSender, messageReceiver);
 
+                    _logger.Debug(LoggedFeature.Networking, $"Client {peer.Id} connected. Address: {peer.Address}");
                     tcs.TrySetResult(connection);
                 }
             }
 
             void OnDisconnected(NetPeer peer, DisconnectInfo info)
             {
-                if (Equals(peer, connectionAttempt))
+                if (Equals(peer.Address, connectionAttempt.Address))
                 {
                     tcs.TrySetException(new Exception($"Failed to connect: {info.Reason}"));
                 }
