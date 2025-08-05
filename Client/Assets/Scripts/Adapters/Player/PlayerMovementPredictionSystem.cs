@@ -2,6 +2,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Numerics;
 using Core.Input;
+using Shared;
 using Shared.ECS;
 using Shared.ECS.Components;
 using Shared.ECS.Entities;
@@ -17,7 +18,7 @@ namespace Adapters.Player
     {
         public uint Tick;
         public Vector3 Position;
-        // You might also want to store velocity, rotation, etc.
+        public Vector3 Velocity;
     }
 
     public class PlayerMovementPredictionSystem : ISystem
@@ -27,6 +28,7 @@ namespace Adapters.Player
         private readonly ILogger _logger;
         private readonly Dictionary<uint, PredictedState> _stateBuffer = new();
         private readonly int _localPeerId;
+        private float _lastDeltaTime;
 
         public PlayerMovementPredictionSystem(IInputListener inputListener, IClientConnection connection, TickSync tickSync, ILogger logger)
         {
@@ -40,16 +42,11 @@ namespace Adapters.Player
 
         public void Update(EntityRegistry registry, uint tickNumber, float deltaTime)
         {
-            // The tickNumber here should be the client's current simulation tick.
-            // Ensure this is consistent with _tickSync.ClientTick.
+            _lastDeltaTime = deltaTime;
             var currentTick = _tickSync.ClientTick;
-
             var localPlayerEntity = GetLocalPlayerEntity(registry);
-            if (localPlayerEntity == null)
-            {
-                return;
-            }
-
+            if (localPlayerEntity == null) return;
+            
             // Get the position from the previous tick to predict the next one.
             // If the buffer is empty, use the entity's current position.
             Vector3 lastPosition;
@@ -61,49 +58,47 @@ namespace Adapters.Player
             {
                 lastPosition = localPlayerEntity.GetRequired<PositionComponent>().Value;
             }
-            
-            var newPredictedPos = lastPosition;
+
+            var newVelocity = Vector3.Zero;
             if (_inputListener.TryGetMovementAtTick(currentTick, out var input))
             {
                 var moveDirection = new Vector3(input.MoveDirection.X, 0, input.MoveDirection.Y);
-                if (moveDirection == Vector3.Zero)
-                {
-                    return;
-                }
-                
-                newPredictedPos += moveDirection * InputConstants.MoveDeltaPerTick;
+                newVelocity = moveDirection * InputConstants.PlayerSpeed;
             }
 
             // Store the new predicted state and update the entity.
-            _stateBuffer[currentTick] = new PredictedState { Tick = currentTick, Position = newPredictedPos };
+            var newPredictedPos = lastPosition + newVelocity * deltaTime;
+            _stateBuffer[currentTick] = new PredictedState { Tick = currentTick, Position = newPredictedPos, Velocity = newVelocity };
+            
             localPlayerEntity.AddOrReplaceComponent(new PositionComponent { Value = newPredictedPos });
+            localPlayerEntity.AddOrReplaceComponent(new VelocityComponent { Value = newVelocity });
         }
-        
-        // NEW: This is the core of the fix.
-        // It's called by the Reconciliation system when an error is detected.
-        public void CorrectStateAndResimulate(uint authoritativeTick, Vector3 authoritativePosition)
+
+        public void CorrectStateAndResimulate(uint authoritativeTick, Vector3 authoritativePosition, Vector3 authoritativeVelocity)
         {
             // 1. Correct the history with the server's authoritative state.
-            _stateBuffer[authoritativeTick] = new PredictedState { Tick = authoritativeTick, Position = authoritativePosition };
+            _stateBuffer[authoritativeTick] = new PredictedState { Tick = authoritativeTick, Position = authoritativePosition, Velocity = authoritativeVelocity };
+            var deltaTime = _lastDeltaTime == 0 ? (float)(1.0 / SharedConstants.WorldTickRate) : _lastDeltaTime;
 
             // 2. Re-simulate and update the buffer from that point forward to the present.
             for (uint tick = authoritativeTick + 1; tick <= _tickSync.ClientTick; tick++)
             {
                 // Get the corrected state from the previous tick
                 var previousState = _stateBuffer[tick - 1];
-                var newPredictedPos = previousState.Position;
+                var newVelocity = Vector3.Zero;
 
                 if (_inputListener.TryGetMovementAtTick(tick, out var input))
                 {
                     var moveDirection = new Vector3(input.MoveDirection.X, 0, input.MoveDirection.Y);
-                    newPredictedPos += moveDirection * InputConstants.MoveDeltaPerTick;
+                    newVelocity = moveDirection * InputConstants.PlayerSpeed;
                 }
 
-                _stateBuffer[tick] = new PredictedState { Tick = tick, Position = newPredictedPos };
+                var newPredictedPos = previousState.Position + newVelocity * deltaTime;
+                _stateBuffer[tick] = new PredictedState { Tick = tick, Position = newPredictedPos, Velocity = newVelocity };
             }
         }
         
-        // NEW: Clean up old states to prevent memory leaks.
+        // Clean up old states to prevent memory leaks.
         public void PruneOldStates(uint lastServerTick)
         {
             // Remove all buffered states older than the last authoritative tick from the server.
@@ -118,7 +113,6 @@ namespace Adapters.Player
 
         private Entity GetLocalPlayerEntity(EntityRegistry registry)
         {
-            // This is just to avoid code duplication.
             return registry
                 .GetAll()
                 .Where(x => x.Has<PeerComponent>() && x.Has<PlayerTagComponent>() && x.Has<PredictedComponent<PositionComponent>>())

@@ -34,26 +34,25 @@ namespace Adapters.Player
         public void Update(EntityRegistry registry, uint tickNumber, float deltaTime)
         {
             var localPlayerEntity = GetLocalPlayerEntity(registry);
-            if (localPlayerEntity == null)
-            {
-                return;
-            }
+            if (localPlayerEntity == null) return;
 
             var serverTick = _tickSync.ServerTick;
             
             // We can't reconcile if the server tick is 0 or we have no state for it.
-            if(serverTick == 0) return;
-
+            if (serverTick == 0) return;
+            
             // 1. Get the server's authoritative position for its last processed tick.
-            var authoritativePositionComponent = localPlayerEntity.GetRequired<PredictedComponent<PositionComponent>>();
-            if (authoritativePositionComponent.ServerValue == null)
+            var authoritativePosComponent = localPlayerEntity.GetRequired<PredictedComponent<PositionComponent>>();
+            var authoritativeVelComponent = localPlayerEntity.GetRequired<PredictedComponent<VelocityComponent>>();
+            if (authoritativePosComponent.ServerValue == null || authoritativeVelComponent.ServerValue == null)
             {
                 // This can happen if we haven't received a state update from the server yet.
                 return;
             }
-            var authoritativePosition = authoritativePositionComponent.ServerValue.Value;
 
-            // 2. Get the client's predicted state for that same tick from our history buffer.
+            var authoritativePosition = authoritativePosComponent.ServerValue.Value;
+            var authoritativeVelocity = authoritativeVelComponent.ServerValue.Value;
+
             if (!_prediction.GetPredictedState(serverTick, out var predictedState))
             {
                 // This can happen on startup or if the client is lagging severely.
@@ -68,15 +67,13 @@ namespace Adapters.Player
                 _logger.Debug($"Reconciliation needed at tick {serverTick}. Error: {error}");
 
                 // 4. Instruct the prediction system to correct its state and re-simulate.
-                _prediction.CorrectStateAndResimulate(serverTick, authoritativePosition);
+                _prediction.CorrectStateAndResimulate(serverTick, authoritativePosition, authoritativeVelocity);
                 
                 // 5. Get the re-simulated position for the *current* client tick and update the entity.
                 if (_prediction.GetPredictedState(_tickSync.ClientTick, out var newlyPredictedState))
                 {
-                    localPlayerEntity.AddOrReplaceComponent(new PositionComponent
-                    {
-                        Value = newlyPredictedState.Position
-                    });
+                    localPlayerEntity.AddOrReplaceComponent(new PositionComponent { Value = newlyPredictedState.Position });
+                    localPlayerEntity.AddOrReplaceComponent(new VelocityComponent { Value = newlyPredictedState.Velocity });
                 }
             }
             

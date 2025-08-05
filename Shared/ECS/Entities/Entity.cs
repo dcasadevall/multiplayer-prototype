@@ -112,6 +112,20 @@ namespace Shared.ECS.Entities
         }
 
         /// <summary>
+        /// Gets the component of the given type from the entity.
+        /// </summary>
+        /// <returns>The component of the given type, or null if not found.</returns>
+        public IComponent? Get(Type componentType)
+        {
+            if (TryGet(componentType, out var component))
+            {
+                return component;
+            }
+
+            return null;
+        }
+
+        /// <summary>
         /// Gets the component of the given type from the entity, or throws an exception if not found.
         /// </summary>
         /// <typeparam name="T"></typeparam>

@@ -13,6 +13,7 @@ namespace Core.Input
         private readonly TickSync _tickSync;
         private readonly IMessageSender _messageSender;
         private readonly Dictionary<uint, PlayerMovementMessage> _inputBuffer = new();
+        private Vector2 _lastSentMovement;
 
         public InputListener(TickSync tickSync, IMessageSender messageSender)
         {
@@ -24,9 +25,11 @@ namespace Core.Input
 
         public void Tick()
         {
-            var move = new Vector2(UnityEngine.Input.GetAxisRaw("Horizontal"), UnityEngine.Input.GetAxisRaw("Vertical"));
-            if (move == Vector2.zero)
+            var move = new Vector2(UnityEngine.Input.GetAxisRaw("Horizontal"), UnityEngine.Input.GetAxisRaw("Vertical")).normalized;
+
+            if (move == _lastSentMovement)
             {
+                // No change in input, don't send anything
                 return;
             }
             
@@ -35,7 +38,7 @@ namespace Core.Input
             var input = new PlayerMovementMessage
             {
                 ClientTick = tick,
-                MoveDirection = move.normalized.ToNumericsVector2()
+                MoveDirection = move.ToNumericsVector2()
             };
             
             // Store the input in the buffer
@@ -43,6 +46,7 @@ namespace Core.Input
 
             // Send to server
             _messageSender.SendMessageToServer(MessageType.PlayerMovement, input);
+            _lastSentMovement = move;
         }
     }
 }

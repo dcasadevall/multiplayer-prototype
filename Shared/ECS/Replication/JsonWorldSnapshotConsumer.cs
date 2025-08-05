@@ -35,13 +35,12 @@ namespace Shared.ECS.Replication
             foreach (var snapshotEntity in snapshot.Entities)
             {
                 var entity = _entityRegistry.GetOrCreate(snapshotEntity.Id);
+                var snapshotComponentTypes = snapshotEntity.Components.Select(c => c.Type).ToHashSet();
 
                 // Remove components that are not in the snapshot
-                var currentComponents = entity.GetAllComponents().ToList();
-                var componentSet = snapshotEntity.Components.Select(x => x.Type).ToHashSet();
-                foreach (var component in currentComponents)
+                foreach (var component in entity.GetAllComponents().ToList())
                 {
-                    if (!componentSet.Contains(component.GetType().FullName))
+                    if (!snapshotComponentTypes.Contains(component.GetType().FullName))
                     {
                         _logger.Debug(LoggedFeature.Replication, "Removing component {0} from entity {1}", component.GetType().Name,
                             entity.Id);
@@ -49,28 +48,21 @@ namespace Shared.ECS.Replication
                     }
                 }
 
-                // Add or replace components from the snapshot
-                foreach (var component in snapshotEntity.Components)
+                // Add or update components from the snapshot
+                foreach (var componentData in snapshotEntity.Components)
                 {
-                    var componentType = Type.GetType(component.Type);
-                    if (componentType == null)
-                    {
-                        continue;
-                    }
+                    var componentType = Type.GetType(componentData.Type);
+                    if (componentType == null) continue;
 
-                    var componentInstance = JsonSerializer.Deserialize(component.Json, componentType);
-                    if (componentInstance == null)
-                    {
-                        continue;
-                    }
-
-                    entity.AddOrReplaceComponent((IComponent)componentInstance);
+                    var deserializedComponent = JsonSerializer.Deserialize(componentData.Json, componentType);
+                    if (deserializedComponent == null) continue;
+                    var componentInstance = (IComponent)deserializedComponent;
 
                     // If the entity has a predicted component of this type, we only
                     // deserialize the server value.
                     // We will only deserialize the component value if this is the first time
                     // we are receiving this component.
-                    if (entity.TrySetServerAuthoritativeValue(componentType, (IComponent)componentInstance))
+                    if (entity.TrySetServerAuthoritativeValue(componentType, componentInstance))
                     {
                         _logger.Debug(LoggedFeature.Replication,
                             "Entity {0} has predicted component {1}. Setting server authoritative value.",
@@ -80,8 +72,13 @@ namespace Shared.ECS.Replication
                         // This prevents overwriting existing predicted components
                         if (!entity.Has(componentType))
                         {
-                            entity.AddComponent((IComponent)componentInstance, componentType);
+                            entity.AddComponent(componentInstance, componentType);
                         }
+                    }
+                    else
+                    {
+                        // Only add or replace the component if it is not a predicted component
+                        entity.AddOrReplaceComponent(componentInstance);
                     }
                 }
             }

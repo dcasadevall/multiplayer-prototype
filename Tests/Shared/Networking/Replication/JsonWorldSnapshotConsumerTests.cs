@@ -2,6 +2,7 @@ using System.Text.Json;
 using NSubstitute;
 using Shared.ECS;
 using Shared.ECS.Components;
+using Shared.ECS.Prediction;
 using Shared.ECS.Replication;
 using Shared.Logging;
 using Xunit;
@@ -176,6 +177,98 @@ namespace SharedUnitTests.Networking.Replication
             Assert.Equal(5.0f, position.Value.X);
             Assert.Equal(5.0f, position.Value.Y);
             Assert.Equal(5.0f, position.Value.Z);
+        }
+
+        [Fact]
+        public void ConsumeSnapshot_WithPredictedComponent_UpdatesServerValueOnly()
+        {
+            // Arrange
+            var entityId = Guid.NewGuid();
+            var initialPosition = new PositionComponent(new System.Numerics.Vector3(0, 0, 0));
+            var predictedPosition = new PositionComponent(new System.Numerics.Vector3(10, 10, 10));
+            var serverPosition = new PositionComponent(new System.Numerics.Vector3(42, 43, 44));
+
+            // Add entity with predicted component and a local predicted value
+            var entity = _registry.GetOrCreate(entityId);
+            entity.AddPredictedComponent(initialPosition);
+            entity.AddOrReplaceComponent(predictedPosition);
+
+            // Create a snapshot with a new server authoritative value
+            var positionJson = JsonSerializer.Serialize(serverPosition);
+            var snapshot = new WorldSnapshotMessage
+            {
+                Entities =
+                {
+                    new SnapshotEntity
+                    {
+                        Id = entityId,
+                        Components =
+                        {
+                            new SnapshotComponent
+                            {
+                                Type = typeof(PositionComponent).FullName!,
+                                Json = positionJson
+                            }
+                        }
+                    }
+                }
+            };
+
+            // Act
+            _consumer.ConsumeSnapshot(snapshot);
+
+            // Assert
+            // The predicted value should be updated to the server value (since AddOrReplaceComponent replaces it)
+            var predicted = entity.Get<PositionComponent>();
+            Assert.NotNull(predicted);
+            Assert.Equal(serverPosition.Value, predicted.Value);
+
+            // The predicted wrapper should NOT exist after snapshot consumption (since TrySetServerAuthoritativeValue only updates if present)
+            var predictedWrapperType = typeof(Shared.ECS.Prediction.PredictedComponent<PositionComponent>);
+            var predictedWrapper = entity.Get(predictedWrapperType);
+            Assert.Null(predictedWrapper);
+        }
+
+        [Fact]
+        public void ConsumeSnapshot_AddsPredictedComponentIfMissing()
+        {
+            // Arrange
+            var entityId = Guid.NewGuid();
+            var serverPosition = new PositionComponent(new System.Numerics.Vector3(1, 2, 3));
+
+            // No predicted component or position on entity yet
+            var entity = _registry.GetOrCreate(entityId);
+
+            // Create a snapshot with a position component
+            var positionJson = JsonSerializer.Serialize(serverPosition);
+            var snapshot = new WorldSnapshotMessage
+            {
+                Entities =
+                {
+                    new SnapshotEntity
+                    {
+                        Id = entityId,
+                        Components =
+                        {
+                            new SnapshotComponent
+                            {
+                                Type = typeof(PositionComponent).FullName!,
+                                Json = positionJson
+                            }
+                        }
+                    }
+                }
+            };
+
+            // Act
+            _consumer.ConsumeSnapshot(snapshot);
+
+            // Assert
+            // Should have a PositionComponent
+            Assert.True(entity.Has<PositionComponent>());
+            // Should NOT have a predicted component wrapper (since TrySetServerAuthoritativeValue returns false)
+            var predictedWrapperType = typeof(Shared.ECS.Prediction.PredictedComponent<PositionComponent>);
+            Assert.False(entity.Has(predictedWrapperType));
         }
 
         private WorldSnapshotMessage CreateSnapshotWithPositionComponent(Guid entityId, float x, float y, float z)
