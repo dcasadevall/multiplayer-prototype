@@ -26,13 +26,6 @@ namespace Core.Input
         public void Tick()
         {
             var move = new Vector2(UnityEngine.Input.GetAxisRaw("Horizontal"), UnityEngine.Input.GetAxisRaw("Vertical")).normalized;
-
-            if (move == _lastSentMovement)
-            {
-                // No change in input, don't send anything
-                return;
-            }
-            
             var tick = _tickSync.ClientTick;
 
             var input = new PlayerMovementMessage
@@ -41,11 +34,16 @@ namespace Core.Input
                 MoveDirection = move.ToNumericsVector2()
             };
             
-            // Store the input in the buffer
+            // Store the input in the buffer for client-side prediction.
             _inputBuffer[tick] = input;
 
-            // Send to server
+            // Only send an update to the server if the input state has actually changed.
+            if (move == _lastSentMovement) return;
+            
+            // Send the new input state to the server.
             _messageSender.SendMessageToServer(MessageType.PlayerMovement, input);
+
+            // Update the last sent state.
             _lastSentMovement = move;
         }
     }

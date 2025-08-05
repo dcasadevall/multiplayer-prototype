@@ -54,11 +54,17 @@ namespace Adapters.Player
             {
                 lastPosition = lastState.Position;
             }
+            else if(localPlayerEntity.TryGet<PositionComponent>(out var pos))
+            {
+                lastPosition = pos.Value;
+            }
             else
             {
-                lastPosition = localPlayerEntity.GetRequired<PositionComponent>().Value;
+                // Cannot predict without a starting position.
+                return;
             }
 
+            // Default to zero velocity. Only apply a non-zero velocity if there is input for the current tick.
             var newVelocity = Vector3.Zero;
             if (_inputListener.TryGetMovementAtTick(currentTick, out var input))
             {
@@ -68,6 +74,7 @@ namespace Adapters.Player
 
             // Store the new predicted state and update the entity.
             var newPredictedPos = lastPosition + newVelocity * deltaTime;
+            
             _stateBuffer[currentTick] = new PredictedState { Tick = currentTick, Position = newPredictedPos, Velocity = newVelocity };
             
             localPlayerEntity.AddOrReplaceComponent(new PositionComponent { Value = newPredictedPos });
