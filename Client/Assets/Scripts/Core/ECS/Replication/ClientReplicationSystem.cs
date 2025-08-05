@@ -6,6 +6,14 @@ using Shared.Networking;
 
 namespace Core.ECS.Replication
 {
+    public interface IReplicationStats
+    {
+        /// <summary>
+        /// Gets the time between snapshots received from the server.
+        /// </summary>
+        TimeSpan TimeBetweenSnapshots { get; }
+    }
+    
     /// <summary>
     /// ECS system responsible for consuming world snapshots received from the server.
     /// 
@@ -25,10 +33,13 @@ namespace Core.ECS.Replication
     /// </para>
     /// </summary>
     [TickInterval(1)] // Process snapshots as frequently as possible
-    public class ClientReplicationSystem : ISystem, IDisposable
+    public class ClientReplicationSystem : ISystem, IDisposable, IReplicationStats
     {
         private readonly IWorldSnapshotConsumer _worldSnapshotConsumer;
         private readonly IDisposable _subscription;
+
+        public TimeSpan TimeBetweenSnapshots { get; private set; }
+        private DateTime _lastSnapshotTime;
 
         /// <summary>
         /// Constructs a new ClientReplicationSystem using dependency injection.
@@ -57,7 +68,14 @@ namespace Core.ECS.Replication
 
         private void HandleMessageReceived(int peerId, WorldSnapshotMessage msg)
         {
+            // Log the time since the last snapshot was received
+            if (_lastSnapshotTime != default)
+            {
+                var timeSinceLastSnapshot = DateTime.Now - _lastSnapshotTime;
+                TimeBetweenSnapshots = timeSinceLastSnapshot;
+            }
             _worldSnapshotConsumer.ConsumeSnapshot(msg);
+            _lastSnapshotTime = DateTime.Now;
         }
 
         /// <summary>

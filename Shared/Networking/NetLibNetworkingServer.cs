@@ -3,6 +3,7 @@ using System.Net;
 using System.Threading;
 using LiteNetLib;
 using Shared.Logging;
+using Shared.Networking.Messages;
 using Shared.Scheduling;
 
 namespace Shared.Networking
@@ -102,12 +103,12 @@ namespace Shared.Networking
         private void OnPeerConnected(NetPeer peer)
         {
             // Send ConnectedMessage to the client
-            var msg = new Messages.ConnectedMessage(
+            var msg = new ConnectedMessage(
                 peer.Id,
                 DateTime.UtcNow
             );
 
-            _messageSender.SendMessage(peer.Id, Messages.MessageType.Connected, msg, ChannelType.ReliableOrdered);
+            _messageSender.SendMessage(peer.Id, MessageType.Connected, msg, ChannelType.ReliableOrdered);
             _logger.Info(LoggedFeature.Networking, "Sent ConnectedMessage to peer {0}", peer.Id);
         }
 

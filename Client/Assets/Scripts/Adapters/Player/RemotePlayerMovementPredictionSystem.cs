@@ -1,8 +1,11 @@
+using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Numerics;
 using Shared.ECS;
 using Shared.ECS.Components;
 using Shared.ECS.Prediction;
+using Shared.ECS.Replication;
 using Shared.ECS.TickSync;
 using Shared.Logging;
 using Shared.Networking;
@@ -14,6 +17,7 @@ namespace Adapters.Player
         private readonly TickSync _tickSync;
         private readonly ILogger _logger;
         private readonly int _localPeerId;
+        private const float MaxCorrectionDistance = 2.0f;
 
         public RemotePlayerMovementPredictionSystem(IClientConnection connection, TickSync tickSync, ILogger logger)
         {
@@ -21,7 +25,7 @@ namespace Adapters.Player
             _logger = logger;
             _localPeerId = connection.AssignedPeerId;
         }
-        
+
         public void Update(EntityRegistry registry, uint tickNumber, float deltaTime)
         {
             var remotePlayerEntities = registry
@@ -33,30 +37,49 @@ namespace Adapters.Player
 
             foreach (var entity in remotePlayerEntities)
             {
-                // Get the current client-side position and update velocity to the latest from the server.
                 var positionComponent = entity.GetRequired<PositionComponent>();
+                var velocityComponent = entity.GetRequired<VelocityComponent>();
+                if (!entity.TryGet(out PredictedStateComponent predictedState))
+                {
+                    entity.AddComponent<PredictedStateComponent>();
+                    predictedState = entity.GetRequired<PredictedStateComponent>();
+                }
+
                 var authoritativePositionComponent = entity.GetRequired<PredictedComponent<PositionComponent>>();
                 var authoritativeVelocityComponent = entity.GetRequired<PredictedComponent<VelocityComponent>>();
+
                 if (authoritativePositionComponent.ServerValue == null || authoritativeVelocityComponent.ServerValue == null)
                 {
                     _logger.Warn("Remote player entity {0} does not have authoritative position or velocity.", entity.Id);
                     continue;
                 }
-                
-                // Set the authoritative position and velocity to the entity.
+
                 var authoritativePosition = authoritativePositionComponent.ServerValue.Value;
-                entity.AddOrReplaceComponent(new VelocityComponent { Value = authoritativePosition });
-
-                // Predict where the entity should be right now based on the last server update.
-                var clientTick = _tickSync.ClientTick;
-                var serverTick = _tickSync.ServerTick;
-                var tickDifference = clientTick > serverTick ? clientTick - serverTick : 0;
                 var authoritativeVelocity = authoritativeVelocityComponent.ServerValue.Value;
-                var extrapolatedPosition = authoritativePosition + authoritativeVelocity * tickDifference * deltaTime;
+                var serverTick = _tickSync.ServerTick;
 
-                // Smoothly interpolate the current position towards the extrapolated position.
-                // This avoids snapping and makes corrections appear smoother.
-                positionComponent.Value = Vector3.Lerp(positionComponent.Value, extrapolatedPosition, 0.2f);
+                // Update velocity from server
+                velocityComponent.Value = authoritativeVelocity;
+
+                // First time receiving authoritative data or fresh update from server
+                if (predictedState.LastServerTick != serverTick)
+                {
+                    predictedState.LastServerTick = serverTick;
+                    predictedState.PredictedPosition = authoritativePosition;
+
+                    // If current predicted position is too far, snap or correct
+                    float dist = Vector3.Distance(positionComponent.Value, authoritativePosition);
+                    if (dist > MaxCorrectionDistance)
+                    {
+                        positionComponent.Value = authoritativePosition;
+                    }
+                }
+
+                // Predict forward every tick based on last known velocity
+                predictedState.PredictedPosition += velocityComponent.Value * deltaTime;
+
+                // Smooth the visual position toward the predicted one
+                positionComponent.Value = Vector3.Lerp(positionComponent.Value, predictedState.PredictedPosition, 0.5f);
             }
         }
     }

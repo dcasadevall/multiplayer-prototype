@@ -34,6 +34,7 @@ namespace Core.ECS
             services.AddSingleton<ClientReplicationSystem>();
             services.AddSingleton<ISystem>(sp => sp.GetRequiredService<ClientReplicationSystem>());
             services.AddSingleton<IDisposable>(sp => sp.GetRequiredService<ClientReplicationSystem>());
+            services.AddSingleton<IReplicationStats>(sp => sp.GetRequiredService<ClientReplicationSystem>());
             
             // After replication, register the tick sync system so it's available for the other
             // systems that need it.

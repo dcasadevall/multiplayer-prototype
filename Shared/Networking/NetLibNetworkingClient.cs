@@ -152,6 +152,8 @@ namespace Shared.Networking
             public IMessageReceiver MessageReceiver => _jsonMessageReceiver;
             private readonly NetLibJsonMessageReceiver _jsonMessageReceiver;
 
+            public int PingMs => _peer.Ping;
+
             public ClientConnection(NetPeer peer,
                 ILogger logger,
                 IMessageSender messageSender,

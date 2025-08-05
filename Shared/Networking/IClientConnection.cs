@@ -14,6 +14,11 @@ namespace Shared.Networking
         int AssignedPeerId { get; }
 
         /// <summary>
+        /// The current ping time in milliseconds to the server.
+        /// </summary>
+        int PingMs { get; }
+
+        /// <summary>
         /// The message sender for sending messages to the server or other peers.
         /// </summary>
         IMessageSender MessageSender { get; }

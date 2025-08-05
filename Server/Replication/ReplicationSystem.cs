@@ -21,7 +21,7 @@ namespace Server.Replication
     /// Snapshots are sent to all connected peers using reliable, ordered delivery.
     /// </para>
     /// </summary>
-    [TickInterval(10)] // Replicate every 300ms at 30 ticks per second
+    [TickInterval(1)] // Replicate every 300ms at 30 ticks per second
     public class ReplicationSystem : ISystem
     {
         private readonly IMessageSender _messageSender;
