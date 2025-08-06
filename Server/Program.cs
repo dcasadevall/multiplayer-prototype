@@ -36,7 +36,13 @@ services.AddSingleton<ILogger, ConsoleLogger>();
 services.AddSingleton<ISystem, WorldDiagnosticsSystem>();
 services.AddSingleton<ISystem, MovementSystem>();
 services.AddSingleton<ISystem, HealthSystem>();
-services.AddSingleton<ISystem, ServerTickSystem>();
+
+// Register TickSync and ServerTickSystem
+// This should be the LAST system before the replication system
+var tickSync = new TickSync();
+services.AddSingleton<ISystem>(sp => new ServerTickSystem(tickSync));
+services.AddSingleton<ITickSync>(tickSync);
+
 services.AddSingleton<ISystem, ReplicationSystem>();
 services.AddSingleton<ISystem, SelfDestroyingSystem>();
 
@@ -95,7 +101,9 @@ sceneLoader.Load(path);
 
 // Create a fixed timestep world running at the specified frequency
 // Add all the systems registered in the service provider
-var worldBuilder = new WorldBuilder(entityRegistry, scheduler).WithFrequency(SharedConstants.WorldTickRate);
+var worldBuilder = new WorldBuilder(entityRegistry, tickSync, scheduler)
+    .WithFrequency(SharedConstants.WorldTickRate);
+
 var systems = serviceProvider.GetServices<ISystem>().ToList();
 systems.ForEach(x => worldBuilder.AddSystem(x));
 var world = worldBuilder.Build();

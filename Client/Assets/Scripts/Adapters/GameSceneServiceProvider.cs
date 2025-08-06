@@ -26,6 +26,10 @@ namespace Adapters
         
         public GameSceneServiceProvider(IServiceCollection serviceCollection, IClientConnection clientConnection)
         {
+            // Register the core ECS services
+            // This includes the replication system, tick sync, entity view system, etc.
+            serviceCollection.RegisterEcsServices();
+            
             // Prediction systems
             serviceCollection.AddSingleton<ISystem, PredictedPlayerMovementSystem>();
             serviceCollection.AddSingleton<ISystem, VelocityPredictionSystem>();
@@ -42,8 +46,6 @@ namespace Adapters
             serviceCollection.AddSingleton<IInputListener>(sp => sp.GetRequiredService<InputListener>());
             serviceCollection.AddSingleton<ITickable>(sp => sp.GetRequiredService<InputListener>());
             
-            // World manager inits the ECS world. Make sure ECS services are registered too.
-            serviceCollection.RegisterEcsServices();
             serviceCollection.AddSingleton<ClientWorldManager>();
             serviceCollection.AddSingleton<IInitializable>(sp => sp.GetRequiredService<ClientWorldManager>());
             serviceCollection.AddSingleton<IDisposable>(sp => sp.GetRequiredService<ClientWorldManager>());

@@ -93,7 +93,7 @@ namespace Core.ECS.Prediction
             _predictedProjectiles[predictedProjectileId.Value] = projectile;
 
             // Send shot message to server
-            SendShotMessage(_tickSync.ServerTick, shotDirection, predictedProjectileId.Value);
+            SendShotMessage(clientTick, shotDirection, predictedProjectileId.Value);
 
             _logger.Debug("Fired predicted projectile {0} at tick {1}", predictedProjectileId, _tickSync.ServerTick);
         }

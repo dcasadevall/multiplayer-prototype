@@ -5,6 +5,8 @@ using Microsoft.Extensions.DependencyInjection;
 using Shared.ECS;
 using Shared.ECS.Replication;
 using Shared.ECS.TickSync;
+using Shared.Logging;
+using Shared.Networking;
 
 namespace Core.ECS
 {
@@ -40,7 +42,7 @@ namespace Core.ECS
             // systems that need it.
             var tickSync = new TickSync();
             services.AddSingleton<ITickSync>(tickSync);
-            services.AddSingleton<ISystem, ClientTickSystem>(sp => new ClientTickSystem(tickSync));
+            services.AddSingleton<ISystem, ClientTickSystem>(sp => new ClientTickSystem(tickSync, sp.GetRequiredService<IClientConnection>(), sp.GetRequiredService<ILogger>()));
             
             // Entity view system creates and manages entity game object creation and destruction
             services.AddSingleton<EntityViewSystem>();

@@ -63,7 +63,6 @@ namespace Core.ECS.Prediction
 
         public void Update(EntityRegistry registry, uint tickNumber, float deltaTime)
         {
-            var clientTick = _tickSync.ClientTick;
             var localPlayer = registry.GetLocalPlayerEntity(_localPeerId);
 
             if (localPlayer == null) return;
@@ -71,10 +70,10 @@ namespace Core.ECS.Prediction
             // Send any new movement input to the server
             // This could be done in a separate system,
             // but we handle it here to keep all the local movement logic together.
-            SendMovementInputIfNecessary(clientTick);
+            SendMovementInputIfNecessary(tickNumber);
 
             // Apply prediction and smoothing
-            ProcessLocalPlayerMovement(localPlayer, clientTick, deltaTime);
+            ProcessLocalPlayerMovement(localPlayer, tickNumber, deltaTime);
 
             // Check for reconciliation against server state
             CheckReconciliation(localPlayer, deltaTime);
@@ -96,7 +95,7 @@ namespace Core.ECS.Prediction
             
             var playerMovementMsg = new PlayerMovementMessage
             {
-                ClientTick = _tickSync.ServerTick, // TODO: Client should be close to server tick
+                ClientTick = clientTick,
                 MoveDirection = moveDirection
             };
             

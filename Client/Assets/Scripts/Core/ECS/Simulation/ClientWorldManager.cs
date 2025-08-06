@@ -4,6 +4,7 @@ using System.Linq;
 using Shared;
 using Shared.ECS;
 using Shared.ECS.Simulation;
+using Shared.ECS.TickSync;
 using Shared.Scheduling;
 using UnityEngine;
 
@@ -22,13 +23,15 @@ namespace Core.ECS.Simulation
     public class ClientWorldManager : IInitializable, IDisposable
     {
         private readonly EntityRegistry _entityRegistry;
+        private readonly ITickSync _tickSync;
         private readonly IScheduler _scheduler;
         private readonly IEnumerable<ISystem> _systems;
         private World _world;
 
-        public ClientWorldManager(EntityRegistry entityRegistry, IScheduler scheduler, IEnumerable<ISystem> systems)
+        public ClientWorldManager(EntityRegistry entityRegistry, ITickSync tickSync, IScheduler scheduler, IEnumerable<ISystem> systems)
         {
             _entityRegistry = entityRegistry;
+            _tickSync = tickSync;
             _scheduler = scheduler;
             _systems = systems;
         }
@@ -38,8 +41,9 @@ namespace Core.ECS.Simulation
             Debug.Log("ClientWorldManager: Initializing ECS world with DI...");
             
             // Create a world using the WorldBuilder pattern (like the server)
-            var worldBuilder = new WorldBuilder(_entityRegistry, _scheduler)
-                .WithFrequency(SharedConstants.WorldTickRate);
+            var worldBuilder = new WorldBuilder(_entityRegistry, _tickSync, _scheduler)
+                .WithFrequency(SharedConstants.WorldTickRate)
+                .WithWorldMode(WorldMode.Client);
             
             // Add all registered systems to the world
             _systems.ToList().ForEach(system => worldBuilder.AddSystem(system));

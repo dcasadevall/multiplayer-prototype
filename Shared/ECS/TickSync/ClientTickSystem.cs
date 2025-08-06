@@ -1,4 +1,6 @@
 using System.Linq;
+using Shared.Math;
+using Shared.Networking;
 
 namespace Shared.ECS.TickSync
 {
@@ -13,14 +15,17 @@ namespace Shared.ECS.TickSync
     public class ClientTickSystem : ISystem
     {
         private readonly TickSync _tickSync;
+        private readonly IClientConnection _connection;
 
         /// <summary>
         /// Constructs a new <see cref="ClientTickSystem"/>.
         /// </summary>
         /// <param name="tickSync">The tick synchronization state to update.</param>
-        public ClientTickSystem(TickSync tickSync)
+        /// <param name="connection">The client connection used to retrieve ping information.</param>
+        public ClientTickSystem(TickSync tickSync, IClientConnection connection)
         {
             _tickSync = tickSync;
+            _connection = connection;
         }
 
         /// <summary>
@@ -31,9 +36,6 @@ namespace Shared.ECS.TickSync
         /// <param name="deltaTime">The time elapsed since the last tick.</param>
         public void Update(EntityRegistry registry, uint tickNumber, float deltaTime)
         {
-            // The client's world tick is the source of truth for the ClientTick.
-            _tickSync.ClientTick = tickNumber;
-
             var tickEntity = registry.GetAll().FirstOrDefault(x => x.Has<ServerTickComponent>());
             if (tickEntity == null) return;
 
@@ -41,6 +43,11 @@ namespace Shared.ECS.TickSync
 
             // Update the server tick and smooth it for interpolation.
             _tickSync.ServerTick = serverTickComponent.TickNumber;
+            _tickSync.SmoothedTick = Lerping.Lerp(_tickSync.SmoothedTick, _tickSync.ServerTick, 0.1f);
+
+            // Update the client tick, accounting for latency.
+            var halfRttInTicks = (uint)(_connection.PingMs / (SharedConstants.WorldTickRate * 1000f));
+            _tickSync.ClientTick = _tickSync.ServerTick + halfRttInTicks;
         }
     }
 }

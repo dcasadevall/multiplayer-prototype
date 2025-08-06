@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Threading;
+using Shared.ECS.TickSync;
 using Shared.Scheduling;
 
 namespace Shared.ECS.Simulation
@@ -30,6 +31,8 @@ namespace Shared.ECS.Simulation
         private readonly List<SystemSchedule> _scheduledSystems = new List<SystemSchedule>();
         private readonly IScheduler _scheduler;
         private readonly EntityRegistry _entityRegistry;
+        private readonly ITickSync _tickSync;
+        private readonly WorldMode _worldMode;
 
         private CancellationTokenSource? _cancelTokenSource;
         private IDisposable? _tickDisposable;
@@ -45,32 +48,28 @@ namespace Shared.ECS.Simulation
         public uint CurrentTickIndex => _tickNumber;
 
         /// <summary>
-        /// Gets the fixed delta time used for each simulation step.
-        /// </summary>
-        public float FixedDeltaTime => _fixedDeltaTime;
-
-        /// <summary>
-        /// Gets the tick rate (time between ticks).
-        /// </summary>
-        public TimeSpan TickRate => _tickRate;
-
-        /// <summary>
         /// Initializes a new <see cref="World"/> with the given systems and configuration.
         /// </summary>
         /// <param name="systems">The systems to register with this world.</param>
         /// <param name="entityRegistry">Registry used for managing entities in this world.</param>
+        /// <param name="tickSync">Tick synchronization service for managing server and client ticks.</param>
         /// <param name="tickRate">The time between ticks (e.g., 33ms for 30Hz).</param>
         /// <param name="scheduler">The scheduler to use for driving ticks.</param>
+        /// <param name="worldMode">The mode of the world (Server or Client).</param>
         internal World(IEnumerable<ISystem> systems,
             EntityRegistry entityRegistry,
+            ITickSync tickSync,
             TimeSpan tickRate,
-            IScheduler scheduler)
+            IScheduler scheduler,
+            WorldMode worldMode)
         {
             _entityRegistry = entityRegistry;
+            _tickSync = tickSync;
             _tickRate = tickRate;
             _fixedDeltaTime = (float)tickRate.TotalSeconds;
             _tickNumber = 0;
             _scheduler = scheduler;
+            _worldMode = worldMode;
 
             // Create scheduled systems
             foreach (var system in systems)
@@ -134,7 +133,14 @@ namespace Shared.ECS.Simulation
         /// </summary>
         private void Tick()
         {
-            _tickNumber++;
+            if (_worldMode == WorldMode.Server)
+            {
+                _tickNumber++;
+            }
+            else
+            {
+                _tickNumber = _tickSync.ClientTick;
+            }
 
             // Update systems that should run on this tick
             foreach (var scheduledSystem in _scheduledSystems)
