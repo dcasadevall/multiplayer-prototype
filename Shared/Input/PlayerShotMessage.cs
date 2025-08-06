@@ -38,7 +38,7 @@ namespace Shared.Input
         /// The direction in which the shot was fired (normalized vector).
         /// </summary>
         [JsonIgnore]
-        public Vector3 FireDirection
+        public Vector3 Direction
         {
             get => new Vector3(DirectionX, DirectionY, DirectionZ);
             set

@@ -4,6 +4,9 @@ using Xunit;
 
 namespace SharedUnitTests.ECS.Components
 {
+    /// <summary>
+    /// Tests for generic ECS component classes.
+    /// </summary>
     public class ComponentTests
     {
         public class PositionComponentTests
@@ -25,7 +28,7 @@ namespace SharedUnitTests.ECS.Components
                 var position = new Vector3(1, 2, 3);
 
                 // Act
-                var component = new PositionComponent{ Value = position };
+                var component = new PositionComponent { Value = position };
 
                 // Assert
                 Assert.Equal(position, component.Value);
@@ -65,7 +68,7 @@ namespace SharedUnitTests.ECS.Components
                 var velocity = new Vector3(1, 2, 3);
 
                 // Act
-                var component = new VelocityComponent{ Value = velocity };
+                var component = new VelocityComponent { Value = velocity };
 
                 // Assert
                 Assert.Equal(velocity, component.Value);

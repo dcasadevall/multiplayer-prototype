@@ -7,7 +7,10 @@ using Xunit;
 
 namespace SharedUnitTests.ECS.Components
 {
-    public class LaserComponentTests
+    /// <summary>
+    /// Tests containing all components used by a player shot
+    /// </summary>
+    public class PlayerShotComponentTests
     {
         [Fact]
         public void DamageApplyingComponent_ShouldSerializeCorrectly()
@@ -60,7 +63,7 @@ namespace SharedUnitTests.ECS.Components
             var message = new PlayerShotMessage
             {
                 Tick = 150,
-                FireDirection = new Vector3(3, 2, 1),
+                Direction = new Vector3(3, 2, 1),
                 PredictedProjectileId = predictedId
             };
 
@@ -71,7 +74,7 @@ namespace SharedUnitTests.ECS.Components
             // Assert
             Assert.NotNull(deserialized);
             Assert.Equal(150u, deserialized.Tick);
-            Assert.Equal(new Vector3(3, 2, 1), deserialized.FireDirection);
+            Assert.Equal(new Vector3(3, 2, 1), deserialized.Direction);
             Assert.Equal(predictedId, deserialized.PredictedProjectileId);
         }
 

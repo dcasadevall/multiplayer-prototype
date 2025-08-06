@@ -100,9 +100,9 @@ namespace Server.Player
             }
 
             // Validate direction (should be normalized)
-            if (Math.Abs(shotMessage.FireDirection.Length() - 1.0f) > 0.1f)
+            if (Math.Abs(shotMessage.Direction.Length() - 1.0f) > 0.1f)
             {
-                logger.Warn(LoggedFeature.Input, "Invalid fire direction magnitude: {0}", shotMessage.FireDirection.Length());
+                logger.Warn(LoggedFeature.Input, "Invalid fire direction magnitude: {0}", shotMessage.Direction.Length());
                 return false;
             }
 
@@ -124,7 +124,7 @@ namespace Server.Player
             });
 
             // Add initial velocity based on shot direction
-            var velocity = shotMessage.FireDirection * LaserSpeed;
+            var velocity = shotMessage.Direction * LaserSpeed;
             projectile.AddComponent(new VelocityComponent
             {
                 X = velocity.X,

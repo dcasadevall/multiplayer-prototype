@@ -63,30 +63,30 @@ namespace Core.ECS.Prediction
 
         private void HandleShootInput(EntityRegistry entityRegistry, Entity localPlayer, uint clientTick)
         {
-            if (!_inputListener.TryGetShotAtTick(clientTick, out var shotMessage))
+            // Only create a predicted projectile and send a shot message if there is shot input for this tick
+            if (_inputListener.TryGetShotAtTick(clientTick, out var shotDirection))
             {
-                CreatePredictedProjectile(entityRegistry, localPlayer, clientTick);
+                CreatePredictedProjectile(entityRegistry, localPlayer, shotDirection, clientTick);
             }
         }
 
-        private void CreatePredictedProjectile(EntityRegistry entityRegistry, Entity player, uint currentTick)
+        private void CreatePredictedProjectile(EntityRegistry entityRegistry, Entity player, Vector3 shotDirection, uint currentTick)
         {
             var playerPosition = player.GetRequired<PositionComponent>();
             var firePosition = playerPosition.Value;
-            var fireDirection = Vector3.UnitZ; // Forward direction (can be enhanced with camera direction later)
-            
+
             // Generate unique ID for this predicted projectile
             var predictedProjectileId = Guid.NewGuid();
-            
+
             // Create predicted projectile entity
-            var projectile = CreatePredictedProjectile(entityRegistry, firePosition, fireDirection, currentTick, predictedProjectileId);
-            
+            var projectile = CreatePredictedProjectile(entityRegistry, firePosition, shotDirection, currentTick, predictedProjectileId);
+
             // Track the predicted projectile
             _predictedProjectiles[predictedProjectileId] = projectile;
-            
+
             // Send shot message to server
-            SendShotMessage(currentTick, fireDirection, predictedProjectileId);
-            
+            SendShotMessage(currentTick, shotDirection, predictedProjectileId);
+
             _logger.Debug("Fired predicted projectile {0} at tick {1}", predictedProjectileId, currentTick);
         }
 
@@ -122,7 +122,7 @@ namespace Core.ECS.Prediction
             var shotMessage = new PlayerShotMessage
             {
                 Tick = tick,
-                FireDirection = fireDirection,
+                Direction = fireDirection,
                 PredictedProjectileId = predictedProjectileId
             };
             
