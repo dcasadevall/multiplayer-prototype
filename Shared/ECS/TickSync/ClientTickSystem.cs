@@ -1,5 +1,6 @@
 using System.Linq;
 using Shared.Math;
+using Shared.ECS.TickSync;
 
 namespace Shared.ECS.TickSync
 {
@@ -32,33 +33,23 @@ namespace Shared.ECS.TickSync
         /// <param name="deltaTime">The time elapsed since the last tick.</param>
         public void Update(EntityRegistry registry, uint tickNumber, float deltaTime)
         {
+            // The client's world tick is the source of truth for the ClientTick.
+            _tickSync.ClientTick = tickNumber;
+
             var tickEntity = registry.GetAll().FirstOrDefault(x => x.Has<ServerTickComponent>());
             if (tickEntity == null) return;
 
-            var serverTick = tickEntity.GetRequired<ServerTickComponent>();
+            var serverTickComponent = tickEntity.GetRequired<ServerTickComponent>();
 
-            int estimatedLatencyTicks = EstimateLatencyInTicks(); // based on RTT and tick rate
-            _tickSync.ClientTick = serverTick.TickNumber + (uint)estimatedLatencyTicks;
-            _tickSync.ServerTick = serverTick.TickNumber;
+            // Update the server tick and smooth it for interpolation.
+            _tickSync.ServerTick = serverTickComponent.TickNumber;
             _tickSync.SmoothedTick = Lerping.Lerp(_tickSync.SmoothedTick, _tickSync.ServerTick, 0.1f);
 
             if (!_tickSync.IsInitialized)
             {
-                _tickSync.TickOffset = (int)(tickNumber - serverTick.TickNumber);
+                _tickSync.TickOffset = (int)(tickNumber - serverTickComponent.TickNumber);
                 _tickSync.IsInitialized = true;
             }
-        }
-
-        private int EstimateLatencyInTicks()
-        {
-            // This is a placeholder for actual latency estimation logic.
-            // In a real implementation, we would measure round-trip time (RTT)
-            // and convert it to ticks based on the tick rate.
-            // For example, if our tick rate is 30 ticks per second,
-            // and RTT is 100ms, then:
-            // RTT in seconds = 0.1
-            // Ticks = RTT * TickRate = 0.1 * 30 = 3 ticks
-            return 3;
         }
     }
 }
