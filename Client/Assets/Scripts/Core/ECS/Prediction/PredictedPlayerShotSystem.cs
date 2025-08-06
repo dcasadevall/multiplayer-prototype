@@ -113,7 +113,8 @@ namespace Core.ECS.Prediction
             // We do NOT add SpawnAuthorityComponent here, as this is a predicted entity.
             // The server will create the authoritative entity when it processes the shot.
             // and the SpawnAuthorityComponent will be added to it.
-            projectile.AddComponent(new ProjectileTagComponent());
+            projectile.AddComponent<ProjectileTagComponent>();
+            projectile.AddComponent<LocalEntityTagComponent>();
             projectile.AddComponent(new PrefabComponent { PrefabName = GameplayConstants.ProjectilePrefabName });
             projectile.AddComponent(new DamageApplyingComponent { Damage = GameplayConstants.ProjectileDamage });
             projectile.AddComponent(SelfDestroyingComponent.CreateWithTTL(currentTick, GameplayConstants.ProjectileTtlTicks));

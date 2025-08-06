@@ -93,7 +93,7 @@ namespace Server.Player
                 .First(x => x.Has<ServerTickComponent>())
                 .GetRequired<ServerTickComponent>().TickNumber;
 
-            // Validate tick (shouldn't be too far in the future or past
+            // // Validate tick (shouldn't be too far in the future or past
             if (shotMessage.Tick > serverTick + GameplayConstants.MaxShotTickDeviation ||
                 shotMessage.Tick < serverTick - GameplayConstants.MaxShotTickDeviation)
             {

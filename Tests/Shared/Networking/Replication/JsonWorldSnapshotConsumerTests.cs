@@ -271,6 +271,36 @@ namespace SharedUnitTests.Networking.Replication
             Assert.False(entity.Has(predictedWrapperType));
         }
 
+        [Fact]
+        public void ConsumeSnapshot_DoesNotDeleteEntitiesWithLocalEntityTagComponent()
+        {
+            // Arrange
+            var entityIdInSnapshot = Guid.NewGuid();
+            var entityIdLocal = Guid.NewGuid();
+
+            // Create a local entity with LocalEntityTagComponent
+            var localEntity = _registry.GetOrCreate(entityIdLocal);
+            localEntity.AddComponent(new LocalEntityTagComponent());
+            localEntity.AddComponent(new PositionComponent(new System.Numerics.Vector3(99, 99, 99)));
+
+            // Create a snapshot with a different entity
+            var snapshot = CreateSnapshotWithPositionComponent(entityIdInSnapshot, 1.0f, 2.0f, 3.0f);
+
+            // Act
+            _consumer.ConsumeSnapshot(snapshot);
+
+            // Assert
+            var entities = _registry.GetAll().ToList();
+            // Should contain both the entity from the snapshot and the local entity
+            Assert.Contains(entities, e => e.Id.Value == entityIdInSnapshot);
+            Assert.Contains(entities, e => e.Id.Value == entityIdLocal);
+
+            // Local entity should still have its LocalEntityTagComponent
+            var localEntityAfter = entities.First(e => e.Id.Value == entityIdLocal);
+            Assert.True(localEntityAfter.Has<LocalEntityTagComponent>());
+            Assert.True(localEntityAfter.Has<PositionComponent>());
+        }
+
         private WorldSnapshotMessage CreateSnapshotWithPositionComponent(Guid entityId, float x, float y, float z)
         {
             var positionComponent = new PositionComponent(new System.Numerics.Vector3(x, y, z));
