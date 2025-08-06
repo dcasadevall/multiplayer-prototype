@@ -141,22 +141,12 @@ namespace Core.Networking
         
         private void DrawConnectionInfo()
         {
-            GUILayout.Label("Connection Info:");
-            
             var peerId = _clientConnection?.AssignedPeerId ?? -1;
-            var uptime = DateTime.Now - _connectionStartTime;
-            
             GUILayout.Label($"Peer ID: {peerId}");
-            GUILayout.Label($"Uptime: {uptime:hh\\:mm\\:ss}");
-            GUILayout.Label($"Ping: {_currentPing} ms");
-            GUILayout.Label($"Replication Interval: {_replicationStats?.TimeBetweenSnapshots.TotalMilliseconds ?? 0} ms");
-            GUILayout.Label($"Total Packets: {_totalPacketsReceived}");
         }
         
         private void DrawCurrentStats()
         {
-            GUILayout.Label("Current Stats:");
-            
             var pingText = _currentPing >= 0 ? $"{_currentPing}ms" : "N/A";
             var pingColor = GetPingColor(_currentPing);
             
@@ -171,6 +161,8 @@ namespace Core.Networking
                 GUILayout.Label($"Replication Interval: {_replicationStats.TimeBetweenSnapshots.TotalMilliseconds} ms");
                 GUI.color = Color.white;
             }
+            
+            GUILayout.Label($"Total Packets: {_totalPacketsReceived}");
         }
         
         private void DrawMiniGraphs()
