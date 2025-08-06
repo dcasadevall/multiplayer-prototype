@@ -19,11 +19,8 @@ namespace Server.Player
     {
         private IDisposable? _subscription;
 
-        // Projectile settings (should match client)
-        private const float LaserSpeed = 15f;
-        private const uint LaserTTLTicks = 120; // 4 seconds at 30 ticks/sec
-        private const int LaserDamage = 25;
-        private const float MaxShotRange = 100f; // Maximum valid shot distance
+        // Track last shot time per peer for cooldown validation
+        private readonly Dictionary<int, uint> _lastShotTicks = new();
 
         public void Initialize()
         {
@@ -55,65 +52,85 @@ namespace Server.Player
             _subscription = null;
         }
 
-        private void HandlePlayerShot(int peerId, PlayerShotMessage shotMessage)
+        public void HandlePlayerShot(int peerId, PlayerShotMessage shotMessage)
         {
             try
             {
                 // Validate the shot
-                // Get the server tick entity
-                var serverTick = entityRegistry.GetAll()
-                    .First(x => x.Has<ServerTickComponent>())
-                    .GetRequired<ServerTickComponent>().TickNumber;
+                if (!ValidateShot(peerId, shotMessage))
+                {
+                    logger.Warn("Invalid shot from peer {0}: validation failed", peerId);
+                    return;
+                }
 
                 var playerEntity = GetPlayerEntity(peerId);
                 if (playerEntity == null)
                 {
-                    logger.Warn(LoggedFeature.Input, $"Player {peerId} does not have a player entity");
+                    logger.Warn("Player {0} does not have a player entity", peerId);
                     return;
                 }
 
-                if (!ValidateShot(shotMessage, serverTick))
-                {
-                    logger.Warn(LoggedFeature.Input, "Invalid shot from peer {0}: validation failed", peerId);
-                    return;
-                }
+                // Record the shot time for cooldown tracking
+                _lastShotTicks[peerId] = shotMessage.Tick;
 
                 // Spawn the authoritative projectile
-                var projectile = SpawnProjectile(shotMessage, serverTick, playerEntity);
+                var projectile = SpawnProjectile(shotMessage, playerEntity);
 
-                logger.Debug(LoggedFeature.Input, "Spawned projectile {0} for peer {1} at tick {2}",
+                logger.Debug("Spawned projectile {0} for peer {1} at tick {2}",
                     projectile.Id, peerId, shotMessage.Tick);
             }
             catch (Exception ex)
             {
-                logger.Error(LoggedFeature.Input, "Error handling player shot from peer {0}: {1}", peerId, ex.Message);
+                logger.Error("Error handling player shot from peer {0}: {1}", peerId, ex.Message);
             }
         }
 
-        private bool ValidateShot(PlayerShotMessage shotMessage, uint serverTick)
+        private bool ValidateShot(int peerId, PlayerShotMessage shotMessage)
         {
-            // Validate tick (shouldn't be too far in the future)
-            if (shotMessage.Tick > serverTick + 10) // Allow some tolerance for latency
+            // Get current server tick
+            var serverTick = entityRegistry.GetAll()
+                .First(x => x.Has<ServerTickComponent>())
+                .GetRequired<ServerTickComponent>().TickNumber;
+
+            // Validate tick (shouldn't be too far in the future or past
+            if (shotMessage.Tick > serverTick + GameplayConstants.MaxShotTickDeviation ||
+                shotMessage.Tick < serverTick - GameplayConstants.MaxShotTickDeviation)
             {
-                logger.Warn(LoggedFeature.Input, "Shot tick {0} is too far in the future (current: {1})", shotMessage.Tick, serverTick);
+                logger.Warn("Shot tick {0} is too far in the future (current: {1})", shotMessage.Tick, serverTick);
                 return false;
+            }
+
+            // Validate cooldown - prevent shot spamming
+            if (_lastShotTicks.TryGetValue(peerId, out var lastShotTick))
+            {
+                if (shotMessage.Tick < lastShotTick + GameplayConstants.PlayerShotCooldownTicks)
+                {
+                    logger.Warn("Shot from peer {0} blocked by server cooldown. Last shot: {1}, Current: {2}",
+                        peerId, lastShotTick, shotMessage.Tick);
+                    return false;
+                }
             }
 
             // Validate direction (should be normalized)
             if (Math.Abs(shotMessage.Direction.Length() - 1.0f) > 0.1f)
             {
-                logger.Warn(LoggedFeature.Input, "Invalid fire direction magnitude: {0}", shotMessage.Direction.Length());
+                logger.Warn("Invalid fire direction magnitude: {0}", shotMessage.Direction.Length());
                 return false;
             }
 
             return true;
         }
 
-        private Entity SpawnProjectile(PlayerShotMessage shotMessage, uint serverTick, Entity playerEntity)
+        private Entity SpawnProjectile(PlayerShotMessage shotMessage, Entity playerEntity)
         {
             var projectile = entityRegistry.CreateEntity();
-            var playerPosition = playerEntity.GetRequired<PositionComponent>().Value;
+            var playerPosition = playerEntity.GetRequired<PositionComponent>();
             var peerId = playerEntity.GetRequired<PeerComponent>().PeerId;
+
+            // Get current server tick
+            var serverTick = entityRegistry.GetAll()
+                .First(x => x.Has<ServerTickComponent>())
+                .GetRequired<ServerTickComponent>().TickNumber;
 
             // Position and movement
             projectile.AddComponent(new PositionComponent
@@ -124,7 +141,7 @@ namespace Server.Player
             });
 
             // Add initial velocity based on shot direction
-            var velocity = shotMessage.Direction * LaserSpeed;
+            var velocity = shotMessage.Direction * GameplayConstants.ProjectileSpeed;
             projectile.AddComponent(new VelocityComponent
             {
                 X = velocity.X,
@@ -134,8 +151,8 @@ namespace Server.Player
 
             // Projectile properties
             projectile.AddComponent(new ProjectileTagComponent());
-            projectile.AddComponent(new DamageApplyingComponent { Damage = LaserDamage });
-            projectile.AddComponent(SelfDestroyingComponent.CreateWithTTL(serverTick, LaserTTLTicks));
+            projectile.AddComponent(new DamageApplyingComponent { Damage = GameplayConstants.ProjectileDamage });
+            projectile.AddComponent(SelfDestroyingComponent.CreateWithTTL(serverTick, GameplayConstants.ProjectileTtlTicks));
 
             // Spawn authority
             projectile.AddComponent(new SpawnAuthorityComponent
@@ -149,6 +166,16 @@ namespace Server.Player
             projectile.AddComponent(new ReplicatedTagComponent());
 
             return projectile;
+        }
+
+        /// <summary>
+        /// Cleans up shot tracking data for a disconnected peer.
+        /// </summary>
+        /// <param name="peerId">The peer ID that disconnected</param>
+        public void OnPeerDisconnected(int peerId)
+        {
+            _lastShotTicks.Remove(peerId);
+            logger.Debug("Cleaned up shot tracking for disconnected peer {0}", peerId);
         }
 
         /// <summary>

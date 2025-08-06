@@ -42,7 +42,7 @@ namespace Server.Player
             }
 
             var moveDirection = new Vector3(msg.MoveDirection.X, 0, msg.MoveDirection.Y);
-            var velocity = moveDirection * InputConstants.PlayerSpeed;
+            var velocity = moveDirection * GameplayConstants.PlayerSpeed;
 
             entity.AddOrReplaceComponent(new VelocityComponent { Value = velocity });
         }

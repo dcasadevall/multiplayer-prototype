@@ -1,5 +1,6 @@
 using System.Numerics;
 using NSubstitute;
+using Server.Player;
 using Shared.ECS;
 using Shared.ECS.Components;
 using Shared.ECS.Replication;
@@ -14,116 +15,318 @@ namespace ServerUnitTests.Player
     public class PlayerShotHandlerTests
     {
         private readonly EntityRegistry _registry = new();
-        private readonly IMessageReceiver _messageReceiverMock = Substitute.For<IMessageReceiver>();
-        private readonly ILogger _loggerMock = Substitute.For<ILogger>();
+        private readonly IMessageReceiver _messageReceiver = Substitute.For<IMessageReceiver>();
+        private readonly ILogger _logger = Substitute.For<ILogger>();
 
         [Fact]
-        public void Initialize_ShouldRegisterMessageHandler()
+        public void HandlePlayerShot_ShouldSpawnProjectile_WhenValidShotReceived()
         {
             // Arrange
-            var handler = new Server.Player.PlayerShotHandler(_registry, _messageReceiverMock, _loggerMock);
+            var handler = new PlayerShotHandler(_registry, _messageReceiver, _logger);
+            var peerId = 42;
 
-            // Act
-            handler.Initialize();
+            // Set up server tick entity
+            var serverTickEntity = _registry.CreateEntity();
+            serverTickEntity.AddComponent(new ServerTickComponent { TickNumber = 10 });
 
-            // Assert
-            _messageReceiverMock.Received(1)
-                .RegisterMessageHandler(
-                    Arg.Any<string>(), Arg.Any<MessageHandler<PlayerShotMessage>>());
-        }
-
-        [Fact]
-        public void HandlePlayerShot_ShouldSpawnProjectile_WhenShotIsValid()
-        {
-            // Arrange
-            var peerId = 99;
+            // Create player entity
             var playerEntity = _registry.CreateEntity();
             playerEntity.AddComponent(new PeerComponent { PeerId = peerId });
             playerEntity.AddComponent(new PlayerTagComponent());
-            playerEntity.AddComponent(new PositionComponent { Value = new Vector3(1, 2, 3) });
+            playerEntity.AddComponent(new PositionComponent { X = 1, Y = 2, Z = 3 });
 
-            var serverTickEntity = _registry.CreateEntity();
-            serverTickEntity.AddComponent(new ServerTickComponent { TickNumber = 5 });
-
-            var handler = new Server.Player.PlayerShotHandler(_registry, _messageReceiverMock, _loggerMock);
-
-            var shotMsg = new PlayerShotMessage
+            var shotMessage = new PlayerShotMessage
             {
-                Tick = 5,
-                Direction = Vector3.UnitY,
+                Tick = 10,
+                Direction = Vector3.UnitZ,
                 PredictedProjectileId = Guid.NewGuid()
             };
 
             // Act
-            var method = handler.GetType().GetMethod("HandlePlayerShotMessage",
-                System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
-            method?.Invoke(handler, [peerId, shotMsg]);
+            handler.HandlePlayerShot(peerId, shotMessage);
 
             // Assert
-            var projectile = _registry.GetAll().FirstOrDefault(e => e.Has<ProjectileTagComponent>());
-            Assert.NotNull(projectile);
+            var projectiles = _registry.GetAll().Where(e => e.Has<ProjectileTagComponent>()).ToList();
+            Assert.Single(projectiles);
+
+            var projectile = projectiles.First();
             Assert.True(projectile.Has<ReplicatedTagComponent>());
-            Assert.Equal(5U, projectile.GetRequired<SpawnAuthorityComponent>().SpawnTick);
+            Assert.True(projectile.Has<DamageApplyingComponent>());
+            Assert.True(projectile.Has<SelfDestroyingComponent>());
+            Assert.True(projectile.Has<SpawnAuthorityComponent>());
+
+            var spawnAuthority = projectile.GetRequired<SpawnAuthorityComponent>();
+            Assert.Equal(peerId, spawnAuthority.SpawnedByPeerId);
+            Assert.Equal(shotMessage.Tick, spawnAuthority.SpawnTick);
         }
 
         [Fact]
-        public void HandlePlayerShotMessage_ShouldNotSpawnProjectile_WhenPlayerEntityNotFound()
+        public void HandlePlayerShot_ShouldBlockShot_WhenCooldownNotExpired()
         {
             // Arrange
-            var handler = new Server.Player.PlayerShotHandler(_registry, _messageReceiverMock, _loggerMock);
-            var shotMsg = new PlayerShotMessage
+            var handler = new PlayerShotHandler(_registry, _messageReceiver, _logger);
+            var peerId = 42;
+
+            // Set up server tick entity
+            var serverTickEntity = _registry.CreateEntity();
+            serverTickEntity.AddComponent(new ServerTickComponent { TickNumber = 20 });
+
+            // Create player entity
+            var playerEntity = _registry.CreateEntity();
+            playerEntity.AddComponent(new PeerComponent { PeerId = peerId });
+            playerEntity.AddComponent(new PlayerTagComponent());
+            playerEntity.AddComponent(new PositionComponent { X = 1, Y = 2, Z = 3 });
+
+            // First shot - should succeed
+            var firstShot = new PlayerShotMessage
             {
-                Tick = 1,
+                Tick = 20,
+                Direction = Vector3.UnitZ,
+                PredictedProjectileId = Guid.NewGuid()
+            };
+            handler.HandlePlayerShot(peerId, firstShot);
+
+            // Second shot within cooldown - should be blocked
+            var secondShot = new PlayerShotMessage
+            {
+                Tick = 25, // Only 5 ticks later, but cooldown is 15 ticks
+                Direction = Vector3.UnitZ,
+                PredictedProjectileId = Guid.NewGuid()
+            };
+
+            // Act
+            handler.HandlePlayerShot(peerId, secondShot);
+
+            // Assert
+            var projectiles = _registry.GetAll().Where(e => e.Has<ProjectileTagComponent>()).ToList();
+            Assert.Single(projectiles); // Only the first shot should have created a projectile
+
+            // Verify warning was logged
+            _logger.Received().Warn(Arg.Is<string>(s => s.Contains("blocked by server cooldown")),
+                Arg.Any<object[]>());
+        }
+
+        [Fact]
+        public void HandlePlayerShot_ShouldAllowShot_WhenCooldownExpired()
+        {
+            // Arrange
+            var handler = new PlayerShotHandler(_registry, _messageReceiver, _logger);
+            var peerId = 42;
+
+            var tickEntity = _registry.CreateEntity();
+            tickEntity.AddComponent(new ServerTickComponent { TickNumber = 20 });
+
+            // Create player entity
+            var playerEntity = _registry.CreateEntity();
+            playerEntity.AddComponent(new PeerComponent { PeerId = peerId });
+            playerEntity.AddComponent(new PlayerTagComponent());
+            playerEntity.AddComponent(new PositionComponent { X = 1, Y = 2, Z = 3 });
+
+            // First shot
+            var firstShot = new PlayerShotMessage
+            {
+                Tick = 20,
+                Direction = Vector3.UnitZ,
+                PredictedProjectileId = Guid.NewGuid()
+            };
+            handler.HandlePlayerShot(peerId, firstShot);
+
+            // Second shot after cooldown expires
+            // Must advance server tick
+            tickEntity.AddOrReplaceComponent(new ServerTickComponent { TickNumber = 36 });
+            var secondShot = new PlayerShotMessage
+            {
+                Tick = 36, // 16 ticks later, cooldown is 15 ticks so this should work
+                Direction = Vector3.UnitZ,
+                PredictedProjectileId = Guid.NewGuid()
+            };
+
+            // Act
+            handler.HandlePlayerShot(peerId, secondShot);
+
+            // Assert
+            var projectiles = _registry.GetAll().Where(e => e.Has<ProjectileTagComponent>()).ToList();
+            Assert.Equal(2, projectiles.Count); // Both shots should have created projectiles
+        }
+
+        [Fact]
+        public void HandlePlayerShot_ShouldTrackCooldownPerPeer()
+        {
+            // Arrange
+            var handler = new PlayerShotHandler(_registry, _messageReceiver, _logger);
+            var peerId1 = 42;
+            var peerId2 = 43;
+
+            // Set up server tick
+            _registry.CreateEntity().AddComponent(new ServerTickComponent { TickNumber = 20 });
+
+            // Create player entities
+            var player1 = _registry.CreateEntity();
+            player1.AddComponent(new PeerComponent { PeerId = peerId1 });
+            player1.AddComponent(new PlayerTagComponent());
+            player1.AddComponent(new PositionComponent { X = 1, Y = 2, Z = 3 });
+
+            var player2 = _registry.CreateEntity();
+            player2.AddComponent(new PeerComponent { PeerId = peerId2 });
+            player2.AddComponent(new PlayerTagComponent());
+            player2.AddComponent(new PositionComponent { X = 4, Y = 5, Z = 6 });
+
+            // First player shoots
+            var shot1 = new PlayerShotMessage
+            {
+                Tick = 20,
+                Direction = Vector3.UnitZ,
+                PredictedProjectileId = Guid.NewGuid()
+            };
+            handler.HandlePlayerShot(peerId1, shot1);
+
+            // Second player shoots immediately after (different peer, should work)
+            var shot2 = new PlayerShotMessage
+            {
+                Tick = 21,
                 Direction = Vector3.UnitX,
                 PredictedProjectileId = Guid.NewGuid()
             };
 
             // Act
-            var method = handler.GetType().GetMethod("HandlePlayerShotMessage",
-                System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
-            method?.Invoke(handler, [42, shotMsg]);
+            handler.HandlePlayerShot(peerId2, shot2);
 
             // Assert
-            var projectile = _registry.GetAll().FirstOrDefault(e => e.Has<ProjectileTagComponent>());
-            Assert.Null(projectile);
+            var projectiles = _registry.GetAll().Where(e => e.Has<ProjectileTagComponent>()).ToList();
+            Assert.Equal(2, projectiles.Count); // Both shots should succeed since they're different peers
         }
 
         [Fact]
-        public void ValidateShot_ShouldReturnFalse_WhenTickTooFarInFuture()
+        public void HandlePlayerShot_ShouldNotSpawnProjectile_WhenPlayerEntityNotFound()
         {
             // Arrange
-            var handler = new Server.Player.PlayerShotHandler(_registry, _messageReceiverMock, _loggerMock);
+            var handler = new PlayerShotHandler(_registry, _messageReceiver, _logger);
+            _registry.CreateEntity().AddComponent(new ServerTickComponent { TickNumber = 10 });
+
             var shotMsg = new PlayerShotMessage
             {
-                Tick = 100,
+                Tick = 10,
                 Direction = Vector3.UnitX,
                 PredictedProjectileId = Guid.NewGuid()
             };
 
-            var method = handler.GetType().GetMethod("ValidateShot",
-                System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
-            var result = (bool)method!.Invoke(handler, [shotMsg, 1u])!;
+            // Act (no player entity exists for this peer ID)
+            handler.HandlePlayerShot(999, shotMsg);
 
-            Assert.False(result);
+            // Assert
+            var projectiles = _registry.GetAll().Where(e => e.Has<ProjectileTagComponent>()).ToList();
+            Assert.Empty(projectiles);
         }
 
         [Fact]
-        public void ValidateShot_ShouldReturnFalse_WhenDirectionNotNormalized()
+        public void HandlePlayerShot_ShouldNotSpawnProjectile_WhenDirectionNotNormalized()
         {
             // Arrange
-            var handler = new Server.Player.PlayerShotHandler(_registry, _messageReceiverMock, _loggerMock);
+            var handler = new PlayerShotHandler(_registry, _messageReceiver, _logger);
+            var peerId = 42;
+
+            // Set server tick
+            _registry.CreateEntity().AddComponent(new ServerTickComponent { TickNumber = 10 });
+
+            // Create player entity
+            var playerEntity = _registry.CreateEntity();
+            playerEntity.AddComponent(new PeerComponent { PeerId = peerId });
+            playerEntity.AddComponent(new PlayerTagComponent());
+            playerEntity.AddComponent(new PositionComponent { X = 1, Y = 2, Z = 3 });
+
             var shotMsg = new PlayerShotMessage
             {
-                Tick = 1,
-                Direction = new Vector3(10, 0, 0),
+                Tick = 10,
+                Direction = new Vector3(10, 0, 0), // Not normalized
                 PredictedProjectileId = Guid.NewGuid()
             };
 
-            var method = handler.GetType().GetMethod("ValidateShot",
-                System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
-            var result = (bool)method!.Invoke(handler, [shotMsg, 1u])!;
+            // Act
+            handler.HandlePlayerShot(peerId, shotMsg);
 
-            Assert.False(result);
+            // Assert
+            var projectiles = _registry.GetAll().Where(e => e.Has<ProjectileTagComponent>()).ToList();
+            Assert.Empty(projectiles);
+        }
+
+        [Theory]
+        [InlineData(100U, 10U)] // Too far ahead
+        [InlineData(60U, 100U)] // Too far behind 
+        public void HandlePlayerShot_ShouldNotSpawnProjectile_WhenTickIsOutOfSync(uint shotTick, uint serverTick)
+        {
+            // Arrange
+            var handler = new PlayerShotHandler(_registry, _messageReceiver, _logger);
+            var peerId = 42;
+
+            // Set server tick
+            _registry.CreateEntity().AddComponent(new ServerTickComponent { TickNumber = serverTick });
+
+            // Create player entity
+            var playerEntity = _registry.CreateEntity();
+            playerEntity.AddComponent(new PeerComponent { PeerId = peerId });
+            playerEntity.AddComponent(new PlayerTagComponent());
+            playerEntity.AddComponent(new PositionComponent { X = 1, Y = 2, Z = 3 });
+
+            var shotMsg = new PlayerShotMessage
+            {
+                Tick = shotTick,
+                Direction = Vector3.UnitZ,
+                PredictedProjectileId = Guid.NewGuid()
+            };
+
+            // Act
+            handler.HandlePlayerShot(peerId, shotMsg);
+
+            // Assert
+            var projectiles = _registry.GetAll().Where(e => e.Has<ProjectileTagComponent>()).ToList();
+            Assert.Empty(projectiles);
+        }
+
+        [Fact]
+        public void OnPeerDisconnected_ShouldCleanupCooldownTracking()
+        {
+            // Arrange
+            var handler = new PlayerShotHandler(_registry, _messageReceiver, _logger);
+            var peerId = 42;
+
+            // Set up server tick and player
+            _registry.CreateEntity().AddComponent(new ServerTickComponent { TickNumber = 10 });
+            var playerEntity = _registry.CreateEntity();
+            playerEntity.AddComponent(new PeerComponent { PeerId = peerId });
+            playerEntity.AddComponent(new PlayerTagComponent());
+            playerEntity.AddComponent(new PositionComponent { X = 1, Y = 2, Z = 3 });
+
+            // Fire a shot to establish cooldown tracking
+            var shotMsg = new PlayerShotMessage
+            {
+                Tick = 10,
+                Direction = Vector3.UnitZ,
+                PredictedProjectileId = Guid.NewGuid()
+            };
+            handler.HandlePlayerShot(peerId, shotMsg);
+
+            // Act
+            handler.OnPeerDisconnected(peerId);
+
+            // Recreate player after disconnect and verify cooldown was cleared
+            var newPlayerEntity = _registry.CreateEntity();
+            newPlayerEntity.AddComponent(new PeerComponent { PeerId = peerId });
+            newPlayerEntity.AddComponent(new PlayerTagComponent());
+            newPlayerEntity.AddComponent(new PositionComponent { X = 1, Y = 2, Z = 3 });
+
+            var secondShot = new PlayerShotMessage
+            {
+                Tick = 11, // Immediately after, but cooldown should be cleared
+                Direction = Vector3.UnitZ,
+                PredictedProjectileId = Guid.NewGuid()
+            };
+
+            // Act
+            handler.HandlePlayerShot(peerId, secondShot);
+
+            // Assert - should have 2 projectiles (cooldown was cleared)
+            var projectiles = _registry.GetAll().Where(e => e.Has<ProjectileTagComponent>()).ToList();
+            Assert.Equal(2, projectiles.Count);
         }
     }
 }

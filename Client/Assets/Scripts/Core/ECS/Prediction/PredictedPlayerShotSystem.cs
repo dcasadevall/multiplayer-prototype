@@ -33,12 +33,9 @@ namespace Core.ECS.Prediction
         
         // Track predicted projectiles for association with server entities
         private readonly Dictionary<Guid, Entity> _predictedProjectiles = new();
-        private readonly Dictionary<Guid, Guid> _serverToLocalMapping = new();
         
-        // Projectile settings
-        private const float LaserSpeed = 15f;
-        private const uint LaserTTLTicks = 120; // 4 seconds at 30 ticks/sec
-        private const int LaserDamage = 25;
+        // Cooldown tracking
+        private uint _lastShotTick;
 
         public PredictedPlayerShotSystem(
             IInputListener inputListener,
@@ -69,6 +66,16 @@ namespace Core.ECS.Prediction
         private void HandleShootInput()
         {
             var clientTick = _tickSync.ClientTick;
+            
+            // Check cooldown
+            if (clientTick < _lastShotTick + GameplayConstants.PlayerShotCooldownTicks)
+            {
+                _logger.Debug("Shot blocked by cooldown. Time remaining: {0} ticks", 
+                    (_lastShotTick + GameplayConstants.PlayerShotCooldownTicks) - clientTick);
+                return;
+            }
+            
+            _lastShotTick = clientTick;
             CreatePredictedProjectile(_entityRegistry, Vector3.UnitZ, clientTick);
         }
 
@@ -111,12 +118,16 @@ namespace Core.ECS.Prediction
             
             // Position and movement
             projectile.AddComponent(new PositionComponent { X = position.X, Y = position.Y, Z = position.Z });
-            projectile.AddComponent(new VelocityComponent { X = direction.X * LaserSpeed, Y = direction.Y * LaserSpeed, Z = direction.Z * LaserSpeed });
+            projectile.AddComponent(new VelocityComponent { 
+                X = direction.X * GameplayConstants.ProjectileSpeed, 
+                Y = direction.Y * GameplayConstants.ProjectileSpeed, 
+                Z = direction.Z * GameplayConstants.ProjectileSpeed 
+            });
             
             // Projectile properties
             projectile.AddComponent(new ProjectileTagComponent());
-            projectile.AddComponent(new DamageApplyingComponent { Damage = LaserDamage });
-            projectile.AddComponent(SelfDestroyingComponent.CreateWithTTL(currentTick, LaserTTLTicks));
+            projectile.AddComponent(new DamageApplyingComponent { Damage = GameplayConstants.ProjectileDamage });
+            projectile.AddComponent(SelfDestroyingComponent.CreateWithTTL(currentTick, GameplayConstants.ProjectileTtlTicks));
             
             // Spawn authority
             projectile.AddComponent(new SpawnAuthorityComponent 
@@ -191,9 +202,6 @@ namespace Core.ECS.Prediction
                 if (!isPredicted && spawnAuthority.SpawnedByPeerId == _localPeerId &&
                     _predictedProjectiles.TryGetValue(spawnAuthority.LocalEntityId, out var predictedProjectile))
                 {
-                    // Associate the server entity with our predicted entity
-                    _serverToLocalMapping[serverProjectile.Id.Value] = spawnAuthority.LocalEntityId;
-                    
                     // Remove the predicted projectile since we now have server authority
                     entityRegistry.DestroyEntity(predictedProjectile.Id);
                     _predictedProjectiles.Remove(spawnAuthority.LocalEntityId);

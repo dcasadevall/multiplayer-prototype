@@ -42,10 +42,9 @@ namespace Core.ECS.Prediction
         // Store last input sent to the server to avoid sending duplicate inputs
         private Vector2 _lastMovementSent = Vector2.Zero;
 
-        public struct PredictedState
+        private struct PredictedState
         {
             public Vector3 Position;
-            public Vector3 Velocity;
         }
 
         public PredictedPlayerMovementSystem(
@@ -129,7 +128,7 @@ namespace Core.ECS.Prediction
             var newVelocity = Vector3.Zero;
             if (_inputListener.TryGetMovementAtTick(clientTick, out var moveDirection))
             {
-                newVelocity = new Vector3(moveDirection.X, 0, moveDirection.Y) * InputConstants.PlayerSpeed;
+                newVelocity = new Vector3(moveDirection.X, 0, moveDirection.Y) * GameplayConstants.PlayerSpeed;
             }
 
             // Predict the new position for this tick
@@ -139,7 +138,6 @@ namespace Core.ECS.Prediction
             _stateBuffer[clientTick] = new PredictedState
             {
                 Position = newPosition,
-                Velocity = newVelocity
             };
 
             // Smoothly reduce the reconciliation error over time
@@ -159,7 +157,7 @@ namespace Core.ECS.Prediction
             if (!predictedPosition.HasServerValue || serverTick == 0 || !_stateBuffer.TryGetValue(serverTick, out var predictedStateOnServerTick))
                 return;
 
-            var serverPosition = predictedPosition.ServerValue.Value;
+            var serverPosition = predictedPosition.ServerValue!.Value;
             var serverVelocity = localPlayer.GetRequired<PredictedComponent<VelocityComponent>>().ServerValue.Value;
 
             // Calculate the prediction error
@@ -194,7 +192,6 @@ namespace Core.ECS.Prediction
             _stateBuffer[authoritativeTick] = new PredictedState
             {
                 Position = authoritativePosition,
-                Velocity = authoritativeVelocity
             };
 
             // Re-simulate from the corrected tick forward to the current client tick
@@ -206,14 +203,13 @@ namespace Core.ECS.Prediction
                 // Apply the historical input for this tick
                 if (_inputListener.TryGetMovementAtTick(tick, out var moveDirection))
                 {
-                    newVelocity = new Vector3(moveDirection.X, 0, moveDirection.Y) * InputConstants.PlayerSpeed;
+                    newVelocity = new Vector3(moveDirection.X, 0, moveDirection.Y) * GameplayConstants.PlayerSpeed;
                 }
 
                 var newPosition = previousState.Position + newVelocity * deltaTime;
                 _stateBuffer[tick] = new PredictedState
                 {
                     Position = newPosition,
-                    Velocity = newVelocity
                 };
             }
         }

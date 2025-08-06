@@ -48,6 +48,10 @@ services.AddSingleton<PlayerSpawnHandler>();
 services.AddSingleton<IInitializable>(sp => sp.GetRequiredService<PlayerSpawnHandler>());
 services.AddSingleton<IDisposable>(sp => sp.GetRequiredService<PlayerSpawnHandler>());
 
+services.AddSingleton<PlayerShotHandler>();
+services.AddSingleton<IInitializable>(sp => sp.GetRequiredService<PlayerShotHandler>());
+services.AddSingleton<IDisposable>(sp => sp.GetRequiredService<PlayerShotHandler>());
+
 // Register all shared services (Networking, Scheduling, etc.)
 services.RegisterSharedTypes();
 
