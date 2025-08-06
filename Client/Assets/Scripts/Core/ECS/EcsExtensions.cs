@@ -38,8 +38,9 @@ namespace Core.ECS
             
             // After replication, register the tick sync system so it's available for the other
             // systems that need it.
-            services.AddSingleton<TickSync>();
-            services.AddSingleton<ISystem, ClientTickSystem>();
+            var tickSync = new TickSync();
+            services.AddSingleton<ITickSync>(tickSync);
+            services.AddSingleton<ISystem, ClientTickSystem>(sp => new ClientTickSystem(tickSync));
             
             // Entity view system creates and manages entity game object creation and destruction
             services.AddSingleton<EntityViewSystem>();

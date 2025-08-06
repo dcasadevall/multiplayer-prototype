@@ -1,35 +1,27 @@
 namespace Shared.ECS.TickSync
 {
-    /// <summary>
-    /// TickSync provides a way to synchronize ticks between server and client.
-    /// </summary>
-    public class TickSync : ITickSync
+    public interface ITickSync
     {
         /// <summary>
         /// Server tick number, replicated from the server.
         /// </summary>
-        public uint ServerTick { get; set; }
+        public uint ServerTick { get; }
 
         /// <summary>
         /// Client tick number. Should be ahead of the server tick by a few ticks
         /// for client-side prediction.
         /// </summary>
-        public uint ClientTick { get; set; }
+        public uint ClientTick { get; }
 
         /// <summary>
         /// Server tick number smoothed over time.
         /// Used for interpolation in visuals.
         /// </summary>
-        public float SmoothedTick { get; set; }
+        public float SmoothedTick { get; }
 
         /// <summary>
         /// The offset in ticks to the server tick.
         /// </summary>
-        public int TickOffset { get; set; }
-
-        /// <summary>
-        /// Used to determine if the TickSync has been initialized.
-        /// </summary>
-        public bool IsInitialized { get; set; }
+        public int TickOffset { get; }
     }
 }

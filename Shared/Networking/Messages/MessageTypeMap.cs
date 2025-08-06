@@ -16,6 +16,7 @@ namespace Shared.Networking.Messages
             { MessageType.Connected, typeof(ConnectedMessage) },
             { MessageType.Snapshot, typeof(WorldSnapshotMessage) },
             { MessageType.PlayerMovement, typeof(PlayerMovementMessage) },
+            { MessageType.PlayerShot, typeof(PlayerShotMessage) },
         };
 
         /// <summary>

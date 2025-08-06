@@ -25,5 +25,12 @@ namespace Shared.Networking.Messages
         /// This message is used for networked movement prediction and reconciliation.
         /// </summary>
         PlayerMovement = 2,
+
+        /// <summary>
+        /// Player shot message sent from the client to the server.
+        /// Contains shooting information for server validation and projectile spawning.
+        /// Used for laser/projectile system with client-side prediction.
+        /// </summary>
+        PlayerShot = 3,
     }
 }

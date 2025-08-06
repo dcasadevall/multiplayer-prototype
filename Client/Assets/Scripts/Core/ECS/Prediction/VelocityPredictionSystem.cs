@@ -16,7 +16,7 @@ namespace Core.ECS.Prediction
     /// </summary>
     public class VelocityPredictionSystem : ISystem
     {
-        private readonly TickSync _tickSync;
+        private readonly ITickSync _tickSync;
         private readonly ILogger _logger;
         private readonly IClientConnection _clientConnection;
         
@@ -24,7 +24,7 @@ namespace Core.ECS.Prediction
         private const float InterpolationSpeed = 0.5f;
         private const float MaxSnapDistance = 2.0f;
 
-        public VelocityPredictionSystem(IClientConnection clientConnection, TickSync tickSync, ILogger logger)
+        public VelocityPredictionSystem(IClientConnection clientConnection, ITickSync tickSync, ILogger logger)
         {
             _tickSync = tickSync;
             _logger = logger;

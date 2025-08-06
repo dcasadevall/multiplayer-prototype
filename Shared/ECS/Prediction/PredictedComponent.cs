@@ -27,13 +27,6 @@ namespace Shared.ECS.Prediction
         public T? ServerValue { get; set; }
 
         /// <summary>
-        /// The client tick when this server value was received.
-        /// Used for lag compensation and interpolation calculations.
-        /// </summary>
-        [JsonPropertyName("receivedAtTick")]
-        public uint ReceivedAtTick { get; set; }
-
-        /// <summary>
         /// Whether this predicted component has received authoritative data from the server.
         /// </summary>
         [JsonIgnore]

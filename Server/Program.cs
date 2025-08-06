@@ -7,7 +7,6 @@ using Shared.ECS;
 using Shared.ECS.Simulation;
 using Shared.ECS.Systems;
 using Shared.ECS.TickSync;
-using Shared.Input;
 using Shared.Logging;
 using Shared.Networking;
 using Shared.Scheduling;
@@ -39,6 +38,7 @@ services.AddSingleton<ISystem, MovementSystem>();
 services.AddSingleton<ISystem, HealthSystem>();
 services.AddSingleton<ISystem, ServerTickSystem>();
 services.AddSingleton<ISystem, ReplicationSystem>();
+services.AddSingleton<ISystem, SelfDestroyingSystem>();
 
 // Scene loading
 services.AddSingleton<SceneLoader>();
@@ -65,10 +65,14 @@ services.AddSingleton<IScheduler, TimerScheduler>();
 // Register the networking server abstraction
 services.AddSingleton<INetworkingServer, NetLibNetworkingServer>();
 
-// Server Input handling
-services.AddSingleton<PlayerMovementListener>();
-services.AddSingleton<IInitializable, PlayerMovementListener>();
-services.AddSingleton<IDisposable, PlayerMovementListener>();
+// Server Input handling: Movement
+services.AddSingleton<PlayerMovementHandler>();
+services.AddSingleton<IInitializable, PlayerMovementHandler>();
+services.AddSingleton<IDisposable, PlayerMovementHandler>();
+// Server Input handling: Shots
+services.AddSingleton<PlayerShotHandler>();
+services.AddSingleton<IInitializable, PlayerShotHandler>();
+services.AddSingleton<IDisposable, PlayerShotHandler>();
 
 var serviceProvider = services.BuildServiceProvider();
 var entityRegistry = serviceProvider.GetRequiredService<EntityRegistry>();

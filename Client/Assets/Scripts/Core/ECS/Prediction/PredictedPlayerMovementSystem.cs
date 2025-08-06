@@ -20,7 +20,7 @@ namespace Core.ECS.Prediction
     public class PredictedPlayerMovementSystem : ISystem
     {
         private readonly IInputListener _inputListener;
-        private readonly TickSync _tickSync;
+        private readonly ITickSync _tickSync;
         private readonly ILogger _logger;
         private readonly IClientConnection _clientConnection;
         private readonly Dictionary<uint, PredictedState> _stateBuffer = new();
@@ -41,7 +41,7 @@ namespace Core.ECS.Prediction
         public PredictedPlayerMovementSystem(
             IInputListener inputListener,
             IClientConnection clientConnection,
-            TickSync tickSync,
+            ITickSync tickSync,
             ILogger logger)
         {
             _inputListener = inputListener;

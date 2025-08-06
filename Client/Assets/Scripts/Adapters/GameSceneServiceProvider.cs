@@ -6,6 +6,7 @@ using Core.ECS.Simulation;
 using Core.Input;
 using Microsoft.Extensions.DependencyInjection;
 using Shared.ECS;
+using Shared.ECS.Systems;
 using Shared.Networking;
 using Shared.Scheduling;
 
@@ -28,6 +29,10 @@ namespace Adapters
             // Prediction systems
             serviceCollection.AddSingleton<ISystem, PredictedPlayerMovementSystem>();
             serviceCollection.AddSingleton<ISystem, VelocityPredictionSystem>();
+            serviceCollection.AddSingleton<ISystem, ProjectilePredictionSystem>();
+            
+            // Entity lifecycle systems
+            serviceCollection.AddSingleton<ISystem, SelfDestroyingSystem>();
             
             // Input
             serviceCollection.AddSingleton<InputListener>();

@@ -11,12 +11,12 @@ namespace Core.Input
 {
     public class InputListener : ITickable, IInputListener
     {
-        private readonly TickSync _tickSync;
+        private readonly ITickSync _tickSync;
         private readonly IMessageSender _messageSender;
         private readonly Dictionary<uint, PlayerMovementMessage> _inputBuffer = new();
         private Vector2 _lastSentMovement;
 
-        public InputListener(TickSync tickSync, IMessageSender messageSender)
+        public InputListener(ITickSync tickSync, IMessageSender messageSender)
         {
             _tickSync = tickSync;
             _messageSender = messageSender;
@@ -25,6 +25,12 @@ namespace Core.Input
         public bool TryGetMovementAtTick(uint tick, out PlayerMovementMessage input) => _inputBuffer.TryGetValue(tick, out input);
 
         public void Tick()
+        {
+            HandleMovementInput();
+            HandleShotInput();
+        }
+        
+        private void HandleMovementInput()
         {
             var move = new Vector2(UnityEngine.Input.GetAxisRaw("Horizontal"), UnityEngine.Input.GetAxisRaw("Vertical")).normalized;
             var tick = _tickSync.ClientTick;
@@ -45,7 +51,21 @@ namespace Core.Input
             _messageSender.SendMessageToServer(MessageType.PlayerMovement, input);
 
             // Update the last sent state.
-            _lastSentMovement = move;
+            _lastSentMovement = move;        
+        }
+
+        private void HandleShotInput()
+        {
+            if (!UnityEngine.Input.GetKeyUp(KeyCode.Space))
+            {
+                return;
+            }
+            
+            var tick = _tickSync.ClientTick;
+            var shotMessage = new PlayerShotMessage
+            {
+                
+            };
         }
     }
 }

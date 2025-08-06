@@ -11,7 +11,7 @@ namespace Server.Player
     /// <summary>
     /// Listens for <see cref="PlayerMovementMessage"/> messages from the network and updates the velocity of the corresponding player entity.
     /// </summary>
-    public class PlayerMovementListener(EntityRegistry entityRegistry, IMessageReceiver messageReceiver, ILogger logger)
+    public class PlayerMovementHandler(EntityRegistry entityRegistry, IMessageReceiver messageReceiver, ILogger logger)
         : IInitializable, IDisposable
     {
         private IDisposable? _subscription;
