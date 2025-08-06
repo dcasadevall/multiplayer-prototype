@@ -63,7 +63,7 @@ namespace Tests.Core.ECS.Prediction
             // Assert: Should send shot message to server
             _messageSender.Received().SendMessageToServer(
                 Arg.Is(MessageType.PlayerShot),
-                Arg.Is<PlayerShotMessage>(msg => msg.Tick == tick && msg.FireDirection == shotDirection)
+                Arg.Is<PlayerShotMessage>(msg => msg.Tick == tick && msg.Direction == shotDirection)
             );
         }
 
