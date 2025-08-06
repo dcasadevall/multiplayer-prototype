@@ -1,6 +1,4 @@
 using System.Linq;
-using Shared.Math;
-using Shared.ECS.TickSync;
 
 namespace Shared.ECS.TickSync
 {
@@ -43,13 +41,6 @@ namespace Shared.ECS.TickSync
 
             // Update the server tick and smooth it for interpolation.
             _tickSync.ServerTick = serverTickComponent.TickNumber;
-            _tickSync.SmoothedTick = Lerping.Lerp(_tickSync.SmoothedTick, _tickSync.ServerTick, 0.1f);
-
-            if (!_tickSync.IsInitialized)
-            {
-                _tickSync.TickOffset = (int)(tickNumber - serverTickComponent.TickNumber);
-                _tickSync.IsInitialized = true;
-            }
         }
     }
 }

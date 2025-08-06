@@ -15,21 +15,5 @@ namespace Shared.ECS.TickSync
         /// for client-side prediction.
         /// </summary>
         public uint ClientTick { get; set; }
-
-        /// <summary>
-        /// Server tick number smoothed over time.
-        /// Used for interpolation in visuals.
-        /// </summary>
-        public float SmoothedTick { get; set; }
-
-        /// <summary>
-        /// The offset in ticks to the server tick.
-        /// </summary>
-        public int TickOffset { get; set; }
-
-        /// <summary>
-        /// Used to determine if the TickSync has been initialized.
-        /// </summary>
-        public bool IsInitialized { get; set; }
     }
 }
