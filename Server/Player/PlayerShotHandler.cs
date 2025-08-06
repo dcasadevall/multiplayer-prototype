@@ -1,6 +1,7 @@
 using Shared.ECS;
 using Shared.ECS.Components;
 using Shared.ECS.Entities;
+using Shared.ECS.Prediction;
 using Shared.ECS.Replication;
 using Shared.ECS.TickSync;
 using Shared.Input;
@@ -96,7 +97,7 @@ namespace Server.Player
             if (shotMessage.Tick > serverTick + GameplayConstants.MaxShotTickDeviation ||
                 shotMessage.Tick < serverTick - GameplayConstants.MaxShotTickDeviation)
             {
-                logger.Warn("Shot tick {0} is too far in the future (current: {1})", shotMessage.Tick, serverTick);
+                logger.Warn("Shot tick {0} is too far out of sync (current: {1})", shotMessage.Tick, serverTick);
                 return false;
             }
 
@@ -132,25 +133,14 @@ namespace Server.Player
                 .First(x => x.Has<ServerTickComponent>())
                 .GetRequired<ServerTickComponent>().TickNumber;
 
-            // Position and movement
-            projectile.AddComponent(new PositionComponent
-            {
-                X = playerPosition.X,
-                Y = playerPosition.Y,
-                Z = playerPosition.Z
-            });
-
-            // Add initial velocity based on shot direction
+            // Position and velocity
             var velocity = shotMessage.Direction * GameplayConstants.ProjectileSpeed;
-            projectile.AddComponent(new VelocityComponent
-            {
-                X = velocity.X,
-                Y = velocity.Y,
-                Z = velocity.Z
-            });
+            projectile.AddPredictedComponent(new PositionComponent { Value = playerPosition.Value });
+            projectile.AddPredictedComponent(new VelocityComponent { Value = velocity * GameplayConstants.ProjectileSpeed });
 
             // Projectile properties
             projectile.AddComponent(new ProjectileTagComponent());
+            projectile.AddComponent(new PrefabComponent { PrefabName = GameplayConstants.ProjectilePrefabName });
             projectile.AddComponent(new DamageApplyingComponent { Damage = GameplayConstants.ProjectileDamage });
             projectile.AddComponent(SelfDestroyingComponent.CreateWithTTL(serverTick, GameplayConstants.ProjectileTtlTicks));
 

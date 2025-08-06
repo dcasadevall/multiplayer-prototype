@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Numerics;
 using System.Text.Json;
+using Shared.ECS.Components;
 using Shared.ECS.Prediction;
 using Shared.Logging;
 
@@ -43,7 +44,9 @@ namespace Shared.ECS.Replication
                 {
                     if (!snapshotComponentTypes.Contains(component.GetType().FullName))
                     {
-                        _logger.Debug(LoggedFeature.Replication, "Removing component {0} from entity {1}", component.GetType().Name,
+                        _logger.Debug(LoggedFeature.Replication,
+                            "Removing component {0} from entity {1}",
+                            component.GetType().Name,
                             entity.Id);
                         entity.Remove(component.GetType());
                     }
@@ -85,19 +88,28 @@ namespace Shared.ECS.Replication
             }
 
             // Prune entities that are not in the snapshot
-            PruneStaleEntities(snapshot.Entities.Select(e => new EntityId(e.Id)));
+            var entitiesInSnapshot = snapshot.Entities.Select(e => new EntityId(e.Id));
+
+            // Do not prune entities that are spawned locally
+            var entitiesSpawnedLocally = _entityRegistry.GetAll()
+                .Where(e => e.Has<LocalEntityTagComponent>())
+                .Select(e => e.Id);
+
+            // Combine entities from the snapshot with those spawned locally
+            var excludedEntities = entitiesInSnapshot.Concat(entitiesSpawnedLocally).Distinct();
+            PruneStaleEntities(excludedEntities);
         }
 
         /// <summary>
         /// Removes entities from the registry that are not present in the latest snapshot.
         /// </summary>
-        /// <param name="entities">The set of entity IDs present in the snapshot.</param>
-        private void PruneStaleEntities(IEnumerable<EntityId> entities)
+        /// <param name="excludedEntities">The entities to exclude from the pruning.</param>
+        private void PruneStaleEntities(IEnumerable<EntityId> excludedEntities)
         {
             // Get all current entities in the registry
             var currentEntities = _entityRegistry.GetAll().Select(e => e.Id);
             // Find entities that are not in the snapshot
-            var staleEntities = currentEntities.Except(entities).ToList();
+            var staleEntities = currentEntities.Except(excludedEntities).ToList();
             // Remove stale entities from the registry
             foreach (var staleId in staleEntities)
             {
