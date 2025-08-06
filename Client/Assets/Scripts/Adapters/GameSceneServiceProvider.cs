@@ -1,8 +1,7 @@
 using System;
 using System.Linq;
-using Adapters.ECS.Debugging;
-using Adapters.Player;
 using Core.ECS;
+using Core.ECS.Prediction;
 using Core.ECS.Simulation;
 using Core.Input;
 using Microsoft.Extensions.DependencyInjection;
@@ -26,11 +25,9 @@ namespace Adapters
         
         public GameSceneServiceProvider(IServiceCollection serviceCollection, IClientConnection clientConnection)
         {
-            // Game systems
-            serviceCollection.AddSingleton<LocalPlayerMovementPredictionSystem>();
-            serviceCollection.AddSingleton<ISystem, LocalPlayerMovementPredictionSystem>();
-            serviceCollection.AddSingleton<ISystem, LocalPlayerMovementReconciliationSystem>();
-            serviceCollection.AddSingleton<ISystem, RemotePlayerMovementPredictionSystem>();
+            // Prediction systems
+            serviceCollection.AddSingleton<ISystem, PredictedPlayerMovementSystem>();
+            serviceCollection.AddSingleton<ISystem, VelocityPredictionSystem>();
             
             // Input
             serviceCollection.AddSingleton<InputListener>();

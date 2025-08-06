@@ -8,12 +8,6 @@ using Shared.Logging;
 
 namespace Shared.ECS.Replication
 {
-    public class PredictedStateComponent : IComponent
-    {
-        public Vector3 PredictedPosition;
-        public uint LastServerTick;
-    }
-
     /// <summary>
     /// JSON Implementation of <see cref="IWorldSnapshotConsumer"/>.
     /// <para>
@@ -47,7 +41,7 @@ namespace Shared.ECS.Replication
                 // Remove components that are not in the snapshot
                 foreach (var component in entity.GetAllComponents().ToList())
                 {
-                    if (!snapshotComponentTypes.Contains(component.GetType().FullName) && component is not PredictedStateComponent)
+                    if (!snapshotComponentTypes.Contains(component.GetType().FullName))
                     {
                         _logger.Debug(LoggedFeature.Replication, "Removing component {0} from entity {1}", component.GetType().Name,
                             entity.Id);
