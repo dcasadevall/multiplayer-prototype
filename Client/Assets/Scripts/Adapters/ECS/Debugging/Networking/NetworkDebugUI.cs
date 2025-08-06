@@ -4,7 +4,6 @@ using System.Linq;
 using Adapters;
 using Core.ECS.Replication;
 using Microsoft.Extensions.DependencyInjection;
-using Shared.ECS.Replication;
 using Shared.Networking;
 using UnityEngine;
 using ILogger = Shared.Logging.ILogger;
@@ -35,18 +34,15 @@ namespace Core.Networking
         
         // Network stats
         private readonly Queue<float> _pingHistory = new();
-        private readonly Queue<float> _upsHistory = new();
-        private readonly Queue<float> _updateTimestamps = new();
         private readonly Queue<TimeSpan> _replicationIntervals = new();
         
         private IDisposable _snapshotHandler;
         private bool _showDebugUI;
         private float _lastStatsUpdate;
-        private const float STATS_UPDATE_INTERVAL = 0.5f;
+        private const float StatsUpdateInterval = 0.5f;
         
         // Current stats
         private int _currentPing;
-        private float _currentUPS;
         private int _totalPacketsReceived;
         private DateTime _connectionStartTime;
 
@@ -63,7 +59,6 @@ namespace Core.Networking
             _showDebugUI = _showOnStart;
             _connectionStartTime = DateTime.Now;
             
-            RegisterMessageHandlers();
             _logger.Info("Network Debug UI initialized");
         }
         
@@ -89,59 +84,25 @@ namespace Core.Networking
             }
         }
         
-        private void RegisterMessageHandlers()
-        {
-            _snapshotHandler = _messageReceiver.RegisterMessageHandler<WorldSnapshotMessage>(
-                "NetworkDebugUI",
-                OnWorldSnapshotReceived);
-        }
-        
-        private void OnWorldSnapshotReceived(int peerId, WorldSnapshotMessage message)
-        {
-            _totalPacketsReceived++;
-            _updateTimestamps.Enqueue(Time.time);
-            
-            // Trim old timestamps
-            while (_updateTimestamps.Count > _historySize)
-            {
-                _updateTimestamps.Dequeue();
-            }
-        }
-        
         private void UpdateStats()
         {
-            if (Time.time - _lastStatsUpdate < STATS_UPDATE_INTERVAL)
+            if (Time.time - _lastStatsUpdate < StatsUpdateInterval)
                 return;
                 
             _lastStatsUpdate = Time.time;
             
             // Update current stats
             _currentPing = _clientConnection?.PingMs ?? -1;
-            _currentUPS = CalculateUpdatesPerSecond();
             
             // Add to history
             _pingHistory.Enqueue(_currentPing);
-            _upsHistory.Enqueue(_currentUPS);
             _replicationIntervals.Enqueue(_replicationStats.TimeBetweenSnapshots);
             
             // Trim history
             while (_pingHistory.Count > _historySize)
                 _pingHistory.Dequeue();
-            while (_upsHistory.Count > _historySize)
-                _upsHistory.Dequeue();
             while (_replicationIntervals.Count > _historySize)
                 _replicationIntervals.Dequeue();
-        }
-        
-        private float CalculateUpdatesPerSecond()
-        {
-            if (_updateTimestamps.Count < 2)
-                return 0f;
-                
-            var timestamps = _updateTimestamps.ToArray();
-            var timeSpan = timestamps.Last() - timestamps.First();
-            
-            return timeSpan > 0 ? (timestamps.Length - 1) / timeSpan : 0f;
         }
         
         private void DrawDebugWindow()
@@ -188,7 +149,6 @@ namespace Core.Networking
             GUILayout.Label($"Peer ID: {peerId}");
             GUILayout.Label($"Uptime: {uptime:hh\\:mm\\:ss}");
             GUILayout.Label($"Ping: {_currentPing} ms");
-            GUILayout.Label($"Updates/sec: {_currentUPS:F1}");
             GUILayout.Label($"Replication Interval: {_replicationStats?.TimeBetweenSnapshots.TotalMilliseconds ?? 0} ms");
             GUILayout.Label($"Total Packets: {_totalPacketsReceived}");
         }
@@ -202,11 +162,6 @@ namespace Core.Networking
             
             GUI.color = pingColor;
             GUILayout.Label($"Ping: {pingText}");
-            GUI.color = Color.white;
-            
-            var upsColor = GetUPSColor(_currentUPS);
-            GUI.color = upsColor;
-            GUILayout.Label($"Updates/sec: {_currentUPS:F1}");
             GUI.color = Color.white;
             
             if (_replicationStats != null)
@@ -227,13 +182,6 @@ namespace Core.Networking
             {
                 GUILayout.Label("Ping (ms):");
                 DrawMiniGraph(_pingHistory.ToArray(), _pingGraphColor, 0, 200);
-            }
-            
-            // UPS graph
-            if (_upsHistory.Count > 1)
-            {
-                GUILayout.Label("Updates/sec:");
-                DrawMiniGraph(_upsHistory.ToArray(), _upsGraphColor, 0, 60);
             }
             
             // Replication interval graph
@@ -314,14 +262,6 @@ namespace Core.Networking
             return Color.red;
         }
         
-        private Color GetUPSColor(float ups)
-        {
-            if (ups >= 20) return Color.green;
-            if (ups >= 10) return Color.yellow;
-            if (ups >= 5) return Color.orange;
-            return Color.red;
-        }
-        
         private Color GetReplicationIntervalColor(TimeSpan interval)
         {
             if (interval.TotalMilliseconds < 50) return Color.green;
@@ -341,8 +281,6 @@ namespace Core.Networking
         public void ResetStats()
         {
             _pingHistory.Clear();
-            _upsHistory.Clear();
-            _updateTimestamps.Clear();
             _totalPacketsReceived = 0;
             _connectionStartTime = DateTime.Now;
             _logger.Info("Network debug stats reset");
