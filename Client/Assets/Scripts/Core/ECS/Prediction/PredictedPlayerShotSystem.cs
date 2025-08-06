@@ -85,27 +85,24 @@ namespace Core.ECS.Prediction
             var playerPosition = localPlayer.GetRequired<PositionComponent>();
             var firePosition = playerPosition.Value;
 
-            // Generate unique ID for this predicted projectile
-            var predictedProjectileId = Guid.NewGuid();
-
             // Create predicted projectile entity
-            var projectile = CreatePredictedProjectile(_entityRegistry, firePosition, shotDirection, clientTick, predictedProjectileId);
+            var projectile = CreatePredictedProjectile(_entityRegistry, firePosition, shotDirection, clientTick);
+            var predictedProjectileId = projectile.Id;
 
             // Track the predicted projectile
-            _predictedProjectiles[predictedProjectileId] = projectile;
+            _predictedProjectiles[predictedProjectileId.Value] = projectile;
 
             // Send shot message to server
-            var predictedServerTick = _tickSync.ClientTick - _tickSync.TickOffset;
-            SendShotMessage((uint)predictedServerTick, shotDirection, predictedProjectileId);
+            SendShotMessage(_tickSync.ServerTick, shotDirection, predictedProjectileId.Value);
 
-            _logger.Debug("Fired predicted projectile {0} at tick {1}", predictedProjectileId, clientTick);
+            _logger.Debug("Fired predicted projectile {0} at tick {1}", predictedProjectileId, _tickSync.ServerTick);
         }
 
-        private Entity CreatePredictedProjectile(EntityRegistry entityRegistry, Vector3 position, Vector3 direction, uint currentTick, Guid predictedId)
+        private Entity CreatePredictedProjectile(EntityRegistry entityRegistry, Vector3 position, Vector3 direction, uint clientTick)
         {
             var projectile = entityRegistry.CreateEntity();
             
-            // Position and movement
+            // Position and movement. These are automatically predicted by VelocityPredictionSystem.
             projectile.AddPredictedComponent(new PositionComponent { Value = position });
             projectile.AddPredictedComponent(new VelocityComponent { Value = direction * GameplayConstants.ProjectileSpeed });
             
@@ -117,7 +114,7 @@ namespace Core.ECS.Prediction
             projectile.AddComponent<LocalEntityTagComponent>();
             projectile.AddComponent(new PrefabComponent { PrefabName = GameplayConstants.ProjectilePrefabName });
             projectile.AddComponent(new DamageApplyingComponent { Damage = GameplayConstants.ProjectileDamage });
-            projectile.AddComponent(SelfDestroyingComponent.CreateWithTTL(currentTick, GameplayConstants.ProjectileTtlTicks));
+            projectile.AddComponent(SelfDestroyingComponent.CreateWithTTL(clientTick, GameplayConstants.ProjectileTtlTicks));
             
             // Make it replicated (will be overridden by server data when it arrives)
             projectile.AddComponent(new ReplicatedTagComponent());

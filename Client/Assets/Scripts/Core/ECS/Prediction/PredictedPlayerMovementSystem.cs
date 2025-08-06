@@ -96,7 +96,7 @@ namespace Core.ECS.Prediction
             
             var playerMovementMsg = new PlayerMovementMessage
             {
-                ClientTick = clientTick,
+                ClientTick = _tickSync.ServerTick, // TODO: Client should be close to server tick
                 MoveDirection = moveDirection
             };
             
