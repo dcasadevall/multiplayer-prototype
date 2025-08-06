@@ -42,7 +42,7 @@ namespace Adapters.ECS.Debugging
         // Cached entity data for performance
         private readonly List<EntityVisualInfo> _entityVisualInfos = new();
         
-        private void Awake()
+        private void Start()
         {
             _serviceProvider = FindAnyObjectByType<RootServiceProvider>()?.ServiceProvider;
             Debug.Log("ECS Visual Debugger initialized");

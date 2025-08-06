@@ -1,9 +1,9 @@
+using System;
 using System.Collections.Generic;
 using Core.MathUtils;
 using Shared.ECS.TickSync;
 using Shared.Scheduling;
 using UnityEngine;
-using Vector3 = System.Numerics.Vector3;
 using Vector2 = System.Numerics.Vector2;
 
 namespace Core.Input
@@ -11,21 +11,20 @@ namespace Core.Input
     /// <summary>
     /// InputListener stores the input from the player and provides methods to retrieve the input at a specific tick.
     /// It uses buffers to store the past tick input.
+    /// IT also handles the shooting input and raises an event when the player shoots.
     /// </summary>
     public class InputListener : ITickable, IInputListener
     {
-        private readonly ITickSync _tickSync;
-        
+        public event Action OnShoot;
+
         // Buffers to store input for client-side prediction
         private readonly Dictionary<uint, Vector2> _movementInputBuffer = new();
-        private readonly Dictionary<uint, Vector3> _shotsInputBuffer = new();
+        private readonly ITickSync _tickSync;
 
         public InputListener(ITickSync tickSync)
         {
             _tickSync = tickSync;
         }
-
-        public bool TryGetShotAtTick(uint tick, out Vector3 shotDirection) => _shotsInputBuffer.TryGetValue(tick, out shotDirection);
 
         public bool TryGetMovementAtTick(uint tick, out Vector2 moveDirection) => _movementInputBuffer.TryGetValue(tick, out moveDirection);
 
@@ -47,12 +46,9 @@ namespace Core.Input
 
         private void HandleShotInput()
         {
-            if (!UnityEngine.Input.GetKeyUp(KeyCode.Space)) return;
+            if (!UnityEngine.Input.GetKey(KeyCode.Space)) return;
             
-            // Store the input in the buffer for client-side prediction.
-            // Currently, this buffer is not used, but it is here for consistency with movement input.
-            // We could consider removing it if we do not need to predict shots.
-            _shotsInputBuffer[_tickSync.ClientTick] = Vector3.UnitZ;
+            OnShoot?.Invoke();
         }
 
         private void RemoveStaleInputs()
@@ -65,14 +61,6 @@ namespace Core.Input
                 if (tick < threshold)
                 {
                     _movementInputBuffer.Remove(tick);
-                }
-            }
-
-            foreach (var tick in new List<uint>(_shotsInputBuffer.Keys))
-            {
-                if (tick < threshold)
-                {
-                    _shotsInputBuffer.Remove(tick);
                 }
             }
         }

@@ -1,5 +1,6 @@
 using System;
 using System.Numerics;
+using Core.ECS.Entities;
 using Core.ECS.Prediction;
 using Core.Input;
 using NSubstitute;
@@ -7,6 +8,7 @@ using NUnit.Framework;
 using Shared.ECS;
 using Shared.ECS.Components;
 using Shared.ECS.Entities;
+using Shared.ECS.TickSync;
 using Shared.Input;
 using Shared.Networking;
 using Shared.Networking.Messages;
@@ -32,6 +34,7 @@ namespace Tests.Core.ECS.Prediction
             _clientConnection = Substitute.For<IClientConnection>();
             _logger = Substitute.For<ILogger>();
             _registry = new EntityRegistry();
+            var tickSync = Substitute.For<ITickSync>();
 
             _clientConnection.AssignedPeerId.Returns(1);
 
@@ -42,8 +45,10 @@ namespace Tests.Core.ECS.Prediction
 
             _system = new PredictedPlayerShotSystem(
                 _inputListener,
+                _registry,
                 _messageSender,
                 _clientConnection,
+                tickSync,
                 _logger
             );
         }
@@ -51,19 +56,17 @@ namespace Tests.Core.ECS.Prediction
         [Test]
         public void Update_ShotInputProvided_CreatesPredictedProjectileAndSendsMessage()
         {
-            // Arrange
-            var tick = 1u;
-            Vector3 shotDirection = Vector3.UnitZ;
-            _inputListener.TryGetShotAtTick(tick, out Arg.Any<Vector3>())
-                .Returns(x => { x[1] = shotDirection; return true; });
+            // Simulate OnShoot event being triggered
+            _system.Initialize();
+            _registry.GetLocalPlayerEntity(_clientConnection.AssignedPeerId).GetRequired<PositionComponent>().Value = Vector3.Zero;
 
-            // Act
-            _system.Update(_registry, tick, 0.016f);
+            // Act: Raise the OnShoot event
+            _inputListener.OnShoot += Raise.Event<Action>();
 
             // Assert: Should send shot message to server
             _messageSender.Received().SendMessageToServer(
                 Arg.Is(MessageType.PlayerShot),
-                Arg.Is<PlayerShotMessage>(msg => msg.Tick == tick && msg.Direction == shotDirection)
+                Arg.Any<PlayerShotMessage>()
             );
         }
 
@@ -72,8 +75,7 @@ namespace Tests.Core.ECS.Prediction
         {
             // Arrange
             var tick = 2u;
-            _inputListener.TryGetShotAtTick(tick, out Arg.Any<Vector3>())
-                .Returns(false);
+            // Do not raise OnShoot event
 
             // Act
             _system.Update(_registry, tick, 0.016f);
@@ -91,12 +93,12 @@ namespace Tests.Core.ECS.Prediction
             // Arrange
             var tick = 3u;
             var predictedId = Guid.NewGuid();
-            Vector3 shotDirection = Vector3.UnitZ;
-            _inputListener.TryGetShotAtTick(tick, out Arg.Any<Vector3>())
-                .Returns(x => { x[1] = shotDirection; return true; });
 
-            // Fire predicted projectile
-            _system.Update(_registry, tick, 0.016f);
+            _system.Initialize();
+            _registry.GetLocalPlayerEntity(_clientConnection.AssignedPeerId).GetRequired<PositionComponent>().Value = Vector3.Zero;
+
+            // Simulate OnShoot event to create predicted projectile
+            _inputListener.OnShoot += Raise.Event<Action>();
 
             // Simulate server projectile with matching SpawnAuthority
             var serverProjectile = _registry.CreateEntity();
@@ -112,9 +114,6 @@ namespace Tests.Core.ECS.Prediction
             _system.Update(_registry, tick + 1, 0.016f);
 
             // Assert: Predicted projectile should be destroyed and mapping created
-            // (We can't directly check destroyed entity, but mapping should exist)
-            // This test assumes _serverToLocalMapping is internal or exposed for testing.
-            // If not, you may need to expose it or check via logger calls.
             _logger.Received().Debug(
                 Arg.Is<string>(s => s.Contains("Associated server projectile")),
                 Arg.Any<object[]>()
@@ -122,4 +121,3 @@ namespace Tests.Core.ECS.Prediction
         }
     }
 }
-

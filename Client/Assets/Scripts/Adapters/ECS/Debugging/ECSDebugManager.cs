@@ -28,7 +28,7 @@ namespace Adapters.ECS.Debugging
         {
             if (_visualDebugger != null)
             {
-                DestroyImmediate(_visualDebugger);
+                Destroy(_visualDebugger);
             }
         }
         

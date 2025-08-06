@@ -9,9 +9,11 @@ using Shared.ECS.Components;
 using Shared.ECS.Entities;
 using Shared.ECS.Prediction;
 using Shared.ECS.Replication;
+using Shared.ECS.TickSync;
 using Shared.Input;
 using Shared.Networking;
 using Shared.Networking.Messages;
+using Shared.Scheduling;
 using ILogger = Shared.Logging.ILogger;
 
 namespace Core.ECS.Prediction
@@ -20,10 +22,12 @@ namespace Core.ECS.Prediction
     /// System that handles client-side projectile prediction.
     /// Spawns predicted projectiles when the local player shoots, and associates them with server projectiles.
     /// </summary>
-    public class PredictedPlayerShotSystem : ISystem
+    public class PredictedPlayerShotSystem : ISystem, IInitializable, IDisposable
     {
         private readonly IInputListener _inputListener;
+        private readonly EntityRegistry _entityRegistry;
         private readonly IMessageSender _messageSender;
+        private readonly ITickSync _tickSync;
         private readonly int _localPeerId;
         private readonly ILogger _logger;
         
@@ -38,14 +42,34 @@ namespace Core.ECS.Prediction
 
         public PredictedPlayerShotSystem(
             IInputListener inputListener,
+            EntityRegistry entityRegistry,
             IMessageSender messageSender,
             IClientConnection clientConnection,
+            ITickSync tickSync,
             ILogger logger)
         {
             _inputListener = inputListener;
+            _entityRegistry = entityRegistry;
             _messageSender = messageSender;
+            _tickSync = tickSync;
             _logger = logger;
             _localPeerId = clientConnection.AssignedPeerId;
+        }
+
+        public void Initialize()
+        {
+            _inputListener.OnShoot += HandleShootInput;
+        }
+
+        public void Dispose()
+        {
+            _inputListener.OnShoot -= HandleShootInput;
+        }
+        
+        private void HandleShootInput()
+        {
+            var clientTick = _tickSync.ClientTick;
+            CreatePredictedProjectile(_entityRegistry, Vector3.UnitZ, clientTick);
         }
 
         public void Update(EntityRegistry entityRegistry, uint tickNumber, float deltaTime)
@@ -56,23 +80,14 @@ namespace Core.ECS.Prediction
                 return;
             }
             
-            HandleShootInput(entityRegistry, localPlayer, tickNumber);
             UpdateProjectileMovement(entityRegistry, deltaTime);
             AssociateServerProjectiles(entityRegistry);
         }
 
-        private void HandleShootInput(EntityRegistry entityRegistry, Entity localPlayer, uint clientTick)
+        private void CreatePredictedProjectile(EntityRegistry entityRegistry, Vector3 shotDirection, uint currentTick)
         {
-            // Only create a predicted projectile and send a shot message if there is shot input for this tick
-            if (_inputListener.TryGetShotAtTick(clientTick, out var shotDirection))
-            {
-                CreatePredictedProjectile(entityRegistry, localPlayer, shotDirection, clientTick);
-            }
-        }
-
-        private void CreatePredictedProjectile(EntityRegistry entityRegistry, Entity player, Vector3 shotDirection, uint currentTick)
-        {
-            var playerPosition = player.GetRequired<PositionComponent>();
+            var localPlayer = entityRegistry.GetLocalPlayerEntity(_localPeerId);
+            var playerPosition = localPlayer.GetRequired<PositionComponent>();
             var firePosition = playerPosition.Value;
 
             // Generate unique ID for this predicted projectile
