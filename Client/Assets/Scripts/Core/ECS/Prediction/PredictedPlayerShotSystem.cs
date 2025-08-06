@@ -1,17 +1,17 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Numerics;
+using Core.ECS.Entities;
 using Core.Input;
 using Shared.ECS;
 using Shared.ECS.Components;
 using Shared.ECS.Entities;
 using Shared.ECS.Prediction;
 using Shared.ECS.Replication;
-using Shared.ECS.TickSync;
 using Shared.Input;
 using Shared.Networking;
 using Shared.Networking.Messages;
-using UnityEngine;
 using ILogger = Shared.Logging.ILogger;
 
 namespace Core.ECS.Prediction
@@ -20,11 +20,11 @@ namespace Core.ECS.Prediction
     /// System that handles client-side projectile prediction.
     /// Spawns predicted projectiles when the local player shoots, and associates them with server projectiles.
     /// </summary>
-    public class ProjectilePredictionSystem : ISystem
+    public class PredictedPlayerShotSystem : ISystem
     {
+        private readonly IInputListener _inputListener;
         private readonly IMessageSender _messageSender;
-        private readonly IClientConnection _clientConnection;
-        private readonly ITickSync _tickSync;
+        private readonly int _localPeerId;
         private readonly ILogger _logger;
         
         // Track predicted projectiles for association with server entities
@@ -36,52 +36,40 @@ namespace Core.ECS.Prediction
         private const uint LaserTTLTicks = 120; // 4 seconds at 30 ticks/sec
         private const int LaserDamage = 25;
 
-        public ProjectilePredictionSystem(
+        public PredictedPlayerShotSystem(
             IInputListener inputListener,
             IMessageSender messageSender,
             IClientConnection clientConnection,
-            ITickSync tickSync,
             ILogger logger)
         {
+            _inputListener = inputListener;
             _messageSender = messageSender;
-            _clientConnection = clientConnection;
-            _tickSync = tickSync;
             _logger = logger;
+            _localPeerId = clientConnection.AssignedPeerId;
         }
 
-        public void Update(EntityRegistry registry, uint tickNumber, float deltaTime)
+        public void Update(EntityRegistry entityRegistry, uint tickNumber, float deltaTime)
         {
-            HandleShootInput(registry);
-            UpdateProjectileMovement(registry, deltaTime);
-            AssociateServerProjectiles(registry);
-        }
-
-        private void HandleShootInput(EntityRegistry registry)
-        {
-            var currentTick = _tickSync.ClientTick;
-            
-            // Check for shoot input (space bar)
-            if (Input.GetKeyDown(KeyCode.Space))
+            var localPlayer = entityRegistry.GetLocalPlayerEntity(_localPeerId);
+            if (localPlayer == null)
             {
-                var localPlayer = GetLocalPlayerEntity(registry);
-                if (localPlayer != null)
-                {
-                    FireProjectile(registry, localPlayer, currentTick);
-                }
+                return;
+            }
+            
+            HandleShootInput(entityRegistry, localPlayer, tickNumber);
+            UpdateProjectileMovement(entityRegistry, deltaTime);
+            AssociateServerProjectiles(entityRegistry);
+        }
+
+        private void HandleShootInput(EntityRegistry entityRegistry, Entity localPlayer, uint clientTick)
+        {
+            if (!_inputListener.TryGetShotAtTick(clientTick, out var shotMessage))
+            {
+                CreatePredictedProjectile(entityRegistry, localPlayer, clientTick);
             }
         }
 
-        private Entity? GetLocalPlayerEntity(EntityRegistry registry)
-        {
-            return registry
-                .GetAll()
-                .Where(x => x.Has<PeerComponent>())
-                .Where(x => x.Has<PlayerTagComponent>())
-                .Where(x => x.Has<PositionComponent>())
-                .FirstOrDefault(x => x.GetRequired<PeerComponent>().PeerId == _clientConnection.AssignedPeerId);
-        }
-
-        private void FireProjectile(EntityRegistry registry, Entity player, uint currentTick)
+        private void CreatePredictedProjectile(EntityRegistry entityRegistry, Entity player, uint currentTick)
         {
             var playerPosition = player.GetRequired<PositionComponent>();
             var firePosition = playerPosition.Value;
@@ -91,20 +79,20 @@ namespace Core.ECS.Prediction
             var predictedProjectileId = Guid.NewGuid();
             
             // Create predicted projectile entity
-            var projectile = CreatePredictedProjectile(registry, firePosition, fireDirection, currentTick, predictedProjectileId);
+            var projectile = CreatePredictedProjectile(entityRegistry, firePosition, fireDirection, currentTick, predictedProjectileId);
             
             // Track the predicted projectile
             _predictedProjectiles[predictedProjectileId] = projectile;
             
             // Send shot message to server
-            SendShotMessage(currentTick, firePosition, fireDirection, predictedProjectileId);
+            SendShotMessage(currentTick, fireDirection, predictedProjectileId);
             
             _logger.Debug("Fired predicted projectile {0} at tick {1}", predictedProjectileId, currentTick);
         }
 
-        private Entity CreatePredictedProjectile(EntityRegistry registry, Vector3 position, Vector3 direction, uint currentTick, Guid predictedId)
+        private Entity CreatePredictedProjectile(EntityRegistry entityRegistry, Vector3 position, Vector3 direction, uint currentTick, Guid predictedId)
         {
-            var projectile = registry.CreateEntity();
+            var projectile = entityRegistry.CreateEntity();
             
             // Position and movement
             projectile.AddComponent(new PositionComponent { X = position.X, Y = position.Y, Z = position.Z });
@@ -118,7 +106,7 @@ namespace Core.ECS.Prediction
             // Spawn authority
             projectile.AddComponent(new SpawnAuthorityComponent 
             { 
-                SpawnedByPeerId = _clientConnection.AssignedPeerId, 
+                SpawnedByPeerId = _localPeerId, 
                 LocalEntityId = predictedId, 
                 SpawnTick = currentTick 
             });
@@ -129,12 +117,11 @@ namespace Core.ECS.Prediction
             return projectile;
         }
 
-        private void SendShotMessage(uint tick, Vector3 firePosition, Vector3 fireDirection, Guid predictedProjectileId)
+        private void SendShotMessage(uint tick, Vector3 fireDirection, Guid predictedProjectileId)
         {
             var shotMessage = new PlayerShotMessage
             {
                 Tick = tick,
-                FirePosition = firePosition,
                 FireDirection = fireDirection,
                 PredictedProjectileId = predictedProjectileId
             };
@@ -150,9 +137,9 @@ namespace Core.ECS.Prediction
             }
         }
 
-        private void UpdateProjectileMovement(EntityRegistry registry, float deltaTime)
+        private void UpdateProjectileMovement(EntityRegistry entityRegistry, float deltaTime)
         {
-            var projectiles = registry
+            var projectiles = entityRegistry
                 .GetAll()
                 .Where(x => x.Has<ProjectileTagComponent>())
                 .Where(x => x.Has<PositionComponent>())
@@ -169,10 +156,10 @@ namespace Core.ECS.Prediction
             }
         }
 
-        private void AssociateServerProjectiles(EntityRegistry registry)
+        private void AssociateServerProjectiles(EntityRegistry entityRegistry)
         {
             // Find server projectiles that need to be associated with predicted ones
-            var serverProjectiles = registry
+            var serverProjectiles = entityRegistry
                 .GetAll()
                 .Where(x => x.Has<SpawnAuthorityComponent>())
                 .Where(x => x.Has<ProjectileTagComponent>())
@@ -186,36 +173,19 @@ namespace Core.ECS.Prediction
                 // Check if this server projectile corresponds to one of our predictions
                 // Since we removed IsPredicted, we check if the entity doesn't have a PredictedComponent wrapper
                 var isPredicted = serverProjectile.TryGet<PredictedComponent<PositionComponent>>(out _);
-                if (!isPredicted && spawnAuthority.SpawnedByPeerId == _clientConnection.AssignedPeerId &&
+                if (!isPredicted && spawnAuthority.SpawnedByPeerId == _localPeerId &&
                     _predictedProjectiles.TryGetValue(spawnAuthority.LocalEntityId, out var predictedProjectile))
                 {
                     // Associate the server entity with our predicted entity
                     _serverToLocalMapping[serverProjectile.Id.Value] = spawnAuthority.LocalEntityId;
                     
                     // Remove the predicted projectile since we now have server authority
-                    registry.DestroyEntity(predictedProjectile.Id);
+                    entityRegistry.DestroyEntity(predictedProjectile.Id);
                     _predictedProjectiles.Remove(spawnAuthority.LocalEntityId);
                     
                     _logger.Debug("Associated server projectile {0} with predicted projectile {1}", 
                         serverProjectile.Id, spawnAuthority.LocalEntityId);
                 }
-            }
-        }
-
-        /// <summary>
-        /// Cleans up prediction tracking for old projectiles
-        /// </summary>
-        public void CleanupOldPredictions(uint currentTick)
-        {
-            var oldPredictions = _predictedProjectiles
-                .Where(kvp => kvp.Value.Has<SelfDestroyingComponent>())
-                .Where(kvp => kvp.Value.GetRequired<SelfDestroyingComponent>().DestroyAtTick < currentTick)
-                .Select(kvp => kvp.Key)
-                .ToList();
-
-            foreach (var predictionId in oldPredictions)
-            {
-                _predictedProjectiles.Remove(predictionId);
             }
         }
     }

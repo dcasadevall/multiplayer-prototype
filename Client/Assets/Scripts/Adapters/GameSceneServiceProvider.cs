@@ -29,7 +29,7 @@ namespace Adapters
             // Prediction systems
             serviceCollection.AddSingleton<ISystem, PredictedPlayerMovementSystem>();
             serviceCollection.AddSingleton<ISystem, VelocityPredictionSystem>();
-            serviceCollection.AddSingleton<ISystem, ProjectilePredictionSystem>();
+            serviceCollection.AddSingleton<ISystem, PredictedPlayerShotSystem>();
             
             // Entity lifecycle systems
             serviceCollection.AddSingleton<ISystem, SelfDestroyingSystem>();

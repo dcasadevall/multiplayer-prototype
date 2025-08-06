@@ -1,71 +1,80 @@
 using System.Collections.Generic;
 using Core.MathUtils;
 using Shared.ECS.TickSync;
-using Shared.Input;
-using Shared.Networking;
-using Shared.Networking.Messages;
 using Shared.Scheduling;
 using UnityEngine;
+using Vector3 = System.Numerics.Vector3;
+using Vector2 = System.Numerics.Vector2;
 
 namespace Core.Input
 {
+    /// <summary>
+    /// InputListener stores the input from the player and provides methods to retrieve the input at a specific tick.
+    /// It uses buffers to store the past tick input.
+    /// </summary>
     public class InputListener : ITickable, IInputListener
     {
         private readonly ITickSync _tickSync;
-        private readonly IMessageSender _messageSender;
-        private readonly Dictionary<uint, PlayerMovementMessage> _inputBuffer = new();
-        private Vector2 _lastSentMovement;
+        
+        // Buffers to store input for client-side prediction
+        private readonly Dictionary<uint, Vector2> _movementInputBuffer = new();
+        private readonly Dictionary<uint, Vector3> _shotsInputBuffer = new();
 
-        public InputListener(ITickSync tickSync, IMessageSender messageSender)
+        public InputListener(ITickSync tickSync)
         {
             _tickSync = tickSync;
-            _messageSender = messageSender;
         }
 
-        public bool TryGetMovementAtTick(uint tick, out PlayerMovementMessage input) => _inputBuffer.TryGetValue(tick, out input);
+        public bool TryGetShotAtTick(uint tick, out Vector3 shotDirection) => _shotsInputBuffer.TryGetValue(tick, out shotDirection);
+
+        public bool TryGetMovementAtTick(uint tick, out Vector2 moveDirection) => _movementInputBuffer.TryGetValue(tick, out moveDirection);
 
         public void Tick()
         {
             HandleMovementInput();
             HandleShotInput();
+            RemoveStaleInputs();
         }
-        
+
         private void HandleMovementInput()
         {
-            var move = new Vector2(UnityEngine.Input.GetAxisRaw("Horizontal"), UnityEngine.Input.GetAxisRaw("Vertical")).normalized;
+            var move = new Vector2(UnityEngine.Input.GetAxisRaw("Horizontal"), UnityEngine.Input.GetAxisRaw("Vertical")).Normalized();
             var tick = _tickSync.ClientTick;
 
-            var input = new PlayerMovementMessage
-            {
-                ClientTick = tick,
-                MoveDirection = move.ToNumericsVector2()
-            };
-            
             // Store the input in the buffer for client-side prediction.
-            _inputBuffer[tick] = input;
-
-            // Only send an update to the server if the input state has actually changed.
-            if (move == _lastSentMovement) return;
-            
-            // Send the new input state to the server.
-            _messageSender.SendMessageToServer(MessageType.PlayerMovement, input);
-
-            // Update the last sent state.
-            _lastSentMovement = move;        
+            _movementInputBuffer[tick] = move;
         }
 
         private void HandleShotInput()
         {
-            if (!UnityEngine.Input.GetKeyUp(KeyCode.Space))
-            {
-                return;
-            }
+            if (!UnityEngine.Input.GetKeyUp(KeyCode.Space)) return;
             
-            var tick = _tickSync.ClientTick;
-            var shotMessage = new PlayerShotMessage
+            // Store the input in the buffer for client-side prediction.
+            // Currently, this buffer is not used, but it is here for consistency with movement input.
+            // We could consider removing it if we do not need to predict shots.
+            _shotsInputBuffer[_tickSync.ClientTick] = Vector3.UnitZ;
+        }
+
+        private void RemoveStaleInputs()
+        {
+            // Remove inputs that are older than the current tick minus a certain threshold.
+            // This is to prevent the buffer from growing indefinitely.
+            var threshold = _tickSync.ClientTick - 60; 
+            foreach (var tick in new List<uint>(_movementInputBuffer.Keys))
             {
-                
-            };
+                if (tick < threshold)
+                {
+                    _movementInputBuffer.Remove(tick);
+                }
+            }
+
+            foreach (var tick in new List<uint>(_shotsInputBuffer.Keys))
+            {
+                if (tick < threshold)
+                {
+                    _shotsInputBuffer.Remove(tick);
+                }
+            }
         }
     }
 }

@@ -1,6 +1,3 @@
-using System;
-using System.Linq;
-using System.Numerics;
 using Shared.ECS;
 using Shared.ECS.Components;
 using Shared.ECS.Entities;
@@ -131,8 +128,8 @@ namespace Server.Player
             projectile.AddComponent(new VelocityComponent
             {
                 X = velocity.X,
-                Y = 0,
-                Z = velocity.Y
+                Y = velocity.Y,
+                Z = velocity.Z
             });
 
             // Projectile properties

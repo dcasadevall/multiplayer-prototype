@@ -60,7 +60,7 @@ namespace SharedUnitTests.ECS.Components
             var message = new PlayerShotMessage
             {
                 Tick = 150,
-                FireDirection = new Vector2(0, 1),
+                FireDirection = new Vector3(3, 2, 1),
                 PredictedProjectileId = predictedId
             };
 
@@ -71,7 +71,7 @@ namespace SharedUnitTests.ECS.Components
             // Assert
             Assert.NotNull(deserialized);
             Assert.Equal(150u, deserialized.Tick);
-            Assert.Equal(new Vector2(0, 1), deserialized.FireDirection);
+            Assert.Equal(new Vector3(3, 2, 1), deserialized.FireDirection);
             Assert.Equal(predictedId, deserialized.PredictedProjectileId);
         }
 
@@ -80,7 +80,8 @@ namespace SharedUnitTests.ECS.Components
         {
             // Arrange
             uint currentTick = 100;
-            uint ttl = 60; // 2 seconds at 30 FPS
+            // 2 seconds at 30 FPS
+            uint ttl = 60;
 
             // Act
             var component = SelfDestroyingComponent.CreateWithTTL(currentTick, ttl);

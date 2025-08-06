@@ -50,7 +50,7 @@ namespace ServerUnitTests.Player
             var shotMsg = new PlayerShotMessage
             {
                 Tick = 5,
-                FireDirection = Vector2.UnitY,
+                FireDirection = Vector3.UnitY,
                 PredictedProjectileId = Guid.NewGuid()
             };
 
@@ -74,7 +74,7 @@ namespace ServerUnitTests.Player
             var shotMsg = new PlayerShotMessage
             {
                 Tick = 1,
-                FireDirection = Vector2.UnitX,
+                FireDirection = Vector3.UnitX,
                 PredictedProjectileId = Guid.NewGuid()
             };
 
@@ -96,7 +96,7 @@ namespace ServerUnitTests.Player
             var shotMsg = new PlayerShotMessage
             {
                 Tick = 100,
-                FireDirection = Vector2.UnitX,
+                FireDirection = Vector3.UnitX,
                 PredictedProjectileId = Guid.NewGuid()
             };
 
@@ -115,7 +115,7 @@ namespace ServerUnitTests.Player
             var shotMsg = new PlayerShotMessage
             {
                 Tick = 1,
-                FireDirection = new Vector2(10, 0),
+                FireDirection = new Vector3(10, 0, 0),
                 PredictedProjectileId = Guid.NewGuid()
             };
 

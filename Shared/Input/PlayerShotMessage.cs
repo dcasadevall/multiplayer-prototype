@@ -19,8 +19,14 @@ namespace Shared.Input
         /// <summary>
         /// The X component of the direction in which the shot was fired.
         /// </summary>
-        [JsonPropertyName("directionX")]
+        [JsonPropertyName("fireDirectionX")]
         public float DirectionX { get; set; }
+
+        /// <summary>
+        /// The Y component of the direction in which the shot was fired.
+        /// </summary>
+        [JsonPropertyName("fireDirectionY")]
+        public float DirectionY { get; set; }
 
         /// <summary>
         /// The Z component of the direction in which the shot was fired.
@@ -32,13 +38,14 @@ namespace Shared.Input
         /// The direction in which the shot was fired (normalized vector).
         /// </summary>
         [JsonIgnore]
-        public Vector2 FireDirection
+        public Vector3 FireDirection
         {
-            get => new Vector2(DirectionX, DirectionZ);
+            get => new Vector3(DirectionX, DirectionY, DirectionZ);
             set
             {
                 DirectionX = value.X;
-                DirectionZ = value.Y;
+                DirectionY = value.Y;
+                DirectionZ = value.Z;
             }
         }
 

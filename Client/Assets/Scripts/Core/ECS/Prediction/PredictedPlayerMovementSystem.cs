@@ -1,5 +1,7 @@
 using System.Collections.Generic;
 using System.Linq;
+using System.Numerics;
+using Core.ECS.Entities;
 using Core.Input;
 using Shared.ECS;
 using Shared.ECS.Components;
@@ -8,6 +10,7 @@ using Shared.ECS.Prediction;
 using Shared.ECS.TickSync;
 using Shared.Input;
 using Shared.Networking;
+using Shared.Networking.Messages;
 using ILogger = Shared.Logging.ILogger;
 using Vector3 = System.Numerics.Vector3;
 
@@ -16,21 +19,28 @@ namespace Core.ECS.Prediction
     /// <summary>
     /// Handles local player movement including input capture, prediction, and reconciliation.
     /// Only operates on the local player entity with PlayerTagComponent.
+    /// Sends the intended movement input to the server for authoritative processing.
     /// </summary>
     public class PredictedPlayerMovementSystem : ISystem
     {
+        private readonly IMessageSender _messageSender;
         private readonly IInputListener _inputListener;
         private readonly ITickSync _tickSync;
         private readonly ILogger _logger;
-        private readonly IClientConnection _clientConnection;
+        private readonly int _localPeerId;
+        
         private readonly Dictionary<uint, PredictedState> _stateBuffer = new();
 
-        // Reconciliation settings
-        private const float ReconciliationThreshold = 0.1f; // Reduced threshold for more responsive corrections
-        private const float ReconciliationSmoothingFactor = 0.15f; // How quickly to correct the error. Lower is smoother.
+        // How far off the predicted position can be before we need to reconcile with the server
+        private const float ReconciliationThreshold = 0.1f;
+        // How quickly to correct the error. Lower is smoother
+        private const float ReconciliationSmoothingFactor = 0.15f;
 
         // Stores the positional error that needs to be smoothed out.
         private Vector3 _reconciliationError = Vector3.Zero;
+        
+        // Store last input sent to the server to avoid sending duplicate inputs
+        private Vector2 _lastMovementSent = Vector2.Zero;
 
         public struct PredictedState
         {
@@ -39,23 +49,30 @@ namespace Core.ECS.Prediction
         }
 
         public PredictedPlayerMovementSystem(
-            IInputListener inputListener,
             IClientConnection clientConnection,
+            IMessageSender messageSender,
+            IInputListener inputListener,
             ITickSync tickSync,
             ILogger logger)
         {
+            _messageSender = messageSender;
             _inputListener = inputListener;
             _tickSync = tickSync;
-            _clientConnection = clientConnection;
             _logger = logger;
+            _localPeerId = clientConnection.AssignedPeerId;
         }
 
         public void Update(EntityRegistry registry, uint tickNumber, float deltaTime)
         {
             var clientTick = _tickSync.ClientTick;
-            var localPlayer = GetLocalPlayerEntity(registry);
+            var localPlayer = registry.GetLocalPlayerEntity(_localPeerId);
 
             if (localPlayer == null) return;
+            
+            // Send any new movement input to the server
+            // This could be done in a separate system,
+            // but we handle it here to keep all the local movement logic together.
+            SendMovementInputIfNecessary(clientTick);
 
             // Apply prediction and smoothing
             ProcessLocalPlayerMovement(localPlayer, clientTick, deltaTime);
@@ -67,15 +84,28 @@ namespace Core.ECS.Prediction
             PruneOldStates(_tickSync.ServerTick);
         }
 
-        private Entity GetLocalPlayerEntity(EntityRegistry registry)
+        private void SendMovementInputIfNecessary(uint clientTick)
         {
-            return registry
-                .GetAll()
-                .Where(x => x.Has<PeerComponent>())
-                .Where(x => x.Has<PlayerTagComponent>())
-                .Where(x => x.Has<PredictedComponent<PositionComponent>>())
-                .Where(x => x.Has<PredictedComponent<VelocityComponent>>())
-                .FirstOrDefault(x => x.GetRequired<PeerComponent>().PeerId == _clientConnection.AssignedPeerId);
+            // If the input listener has no movement at this tick, we don't need to send anything.
+            if (!_inputListener.TryGetMovementAtTick(clientTick, out var moveDirection))
+            {
+                return;
+            }
+            
+            // Only send an update to the server if the input state has actually changed.
+            if (moveDirection == _lastMovementSent) return;
+            
+            var playerMovementMsg = new PlayerMovementMessage
+            {
+                ClientTick = clientTick,
+                MoveDirection = moveDirection
+            };
+            
+            // Send the new input state to the server.
+            _messageSender.SendMessageToServer(MessageType.PlayerMovement, playerMovementMsg);
+
+            // Update the last sent move direction.
+            _lastMovementSent = moveDirection;
         }
 
         private void ProcessLocalPlayerMovement(Entity localPlayer, uint clientTick, float deltaTime)
@@ -97,10 +127,9 @@ namespace Core.ECS.Prediction
 
             // Calculate velocity based on current input
             var newVelocity = Vector3.Zero;
-            if (_inputListener.TryGetMovementAtTick(clientTick, out var input))
+            if (_inputListener.TryGetMovementAtTick(clientTick, out var moveDirection))
             {
-                var moveDirection = new Vector3(input.MoveDirection.X, 0, input.MoveDirection.Y);
-                newVelocity = moveDirection * InputConstants.PlayerSpeed;
+                newVelocity = new Vector3(moveDirection.X, 0, moveDirection.Y) * InputConstants.PlayerSpeed;
             }
 
             // Predict the new position for this tick
@@ -175,10 +204,9 @@ namespace Core.ECS.Prediction
                 var newVelocity = Vector3.Zero;
 
                 // Apply the historical input for this tick
-                if (_inputListener.TryGetMovementAtTick(tick, out var input))
+                if (_inputListener.TryGetMovementAtTick(tick, out var moveDirection))
                 {
-                    var moveDirection = new Vector3(input.MoveDirection.X, 0, input.MoveDirection.Y);
-                    newVelocity = moveDirection * InputConstants.PlayerSpeed;
+                    newVelocity = new Vector3(moveDirection.X, 0, moveDirection.Y) * InputConstants.PlayerSpeed;
                 }
 
                 var newPosition = previousState.Position + newVelocity * deltaTime;
