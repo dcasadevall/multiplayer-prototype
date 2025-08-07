@@ -147,7 +147,7 @@ namespace ServerUnitTests.Player
             handler.HandlePlayerShot(peerId, secondShot);
 
             // Assert
-            var projectiles = _registry.GetAll().Where(e => e.Has<ProjectileTagComponent>()).ToList();
+            var projectiles = _registry.With<ProjectileTagComponent>().ToList();
             Assert.Equal(2, projectiles.Count); // Both shots should have created projectiles
         }
 
@@ -196,7 +196,7 @@ namespace ServerUnitTests.Player
             handler.HandlePlayerShot(peerId2, shot2);
 
             // Assert
-            var projectiles = _registry.GetAll().Where(e => e.Has<ProjectileTagComponent>()).ToList();
+            var projectiles = _registry.With<ProjectileTagComponent>().ToList();
             Assert.Equal(2, projectiles.Count); // Both shots should succeed since they're different peers
         }
 
