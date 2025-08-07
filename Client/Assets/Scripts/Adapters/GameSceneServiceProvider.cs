@@ -47,8 +47,6 @@ namespace Adapters
             serviceCollection.AddSingleton<IInitializable>(sp => sp.GetRequiredService<PredictedPlayerShotSystem>());
             serviceCollection.AddSingleton<IDisposable>(sp => sp.GetRequiredService<PredictedPlayerShotSystem>());
 
-            serviceCollection.AddSingleton<ISystem, ServerPositionVisualizerSystem>();
-            
             // Entity lifecycle systems
             serviceCollection.AddSingleton<ISystem, SelfDestroyingSystem>();
             
