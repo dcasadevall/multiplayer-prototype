@@ -17,17 +17,17 @@ namespace ServerUnitTests.Player
         private readonly EntityRegistry _registry = new();
         private readonly IMessageReceiver _messageReceiver = Substitute.For<IMessageReceiver>();
         private readonly ILogger _logger = Substitute.For<ILogger>();
+        private readonly ITickSync _tickSync = Substitute.For<ITickSync>();
 
         [Fact]
         public void HandlePlayerShot_ShouldSpawnProjectile_WhenValidShotReceived()
         {
             // Arrange
-            var handler = new PlayerShotHandler(_registry, _messageReceiver, _logger);
+            var handler = new PlayerShotHandler(_registry, _messageReceiver, _tickSync, _logger);
             var peerId = 42;
 
-            // Set up server tick entity
-            var serverTickEntity = _registry.CreateEntity();
-            serverTickEntity.AddComponent(new ServerTickComponent { TickNumber = 10 });
+            // Set up server tick via tickSync mock
+            _tickSync.ServerTick.Returns(10U);
 
             // Create player entity
             var playerEntity = _registry.CreateEntity();
@@ -65,12 +65,11 @@ namespace ServerUnitTests.Player
         public void HandlePlayerShot_ShouldBlockShot_WhenCooldownNotExpired()
         {
             // Arrange
-            var handler = new PlayerShotHandler(_registry, _messageReceiver, _logger);
+            var handler = new PlayerShotHandler(_registry, _messageReceiver, _tickSync, _logger);
             var peerId = 42;
 
-            // Set up server tick entity
-            var serverTickEntity = _registry.CreateEntity();
-            serverTickEntity.AddComponent(new ServerTickComponent { TickNumber = 20 });
+            // Set up server tick via tickSync mock
+            _tickSync.ServerTick.Returns(20U);
 
             // Create player entity
             var playerEntity = _registry.CreateEntity();
@@ -112,11 +111,11 @@ namespace ServerUnitTests.Player
         public void HandlePlayerShot_ShouldAllowShot_WhenCooldownExpired()
         {
             // Arrange
-            var handler = new PlayerShotHandler(_registry, _messageReceiver, _logger);
+            var handler = new PlayerShotHandler(_registry, _messageReceiver, _tickSync, _logger);
             var peerId = 42;
 
-            var tickEntity = _registry.CreateEntity();
-            tickEntity.AddComponent(new ServerTickComponent { TickNumber = 20 });
+            // Set up server tick via tickSync mock
+            _tickSync.ServerTick.Returns(20U);
 
             // Create player entity
             var playerEntity = _registry.CreateEntity();
@@ -134,9 +133,9 @@ namespace ServerUnitTests.Player
             };
             handler.HandlePlayerShot(peerId, firstShot);
 
-            // Second shot after cooldown expires
-            // Must advance server tick
-            tickEntity.AddOrReplaceComponent(new ServerTickComponent { TickNumber = 36 });
+            // Advance server tick for cooldown expiry
+            _tickSync.ServerTick.Returns(36U);
+
             var secondShot = new PlayerShotMessage
             {
                 Tick = 36, // 16 ticks later, cooldown is 15 ticks so this should work
@@ -156,12 +155,12 @@ namespace ServerUnitTests.Player
         public void HandlePlayerShot_ShouldTrackCooldownPerPeer()
         {
             // Arrange
-            var handler = new PlayerShotHandler(_registry, _messageReceiver, _logger);
+            var handler = new PlayerShotHandler(_registry, _messageReceiver, _tickSync, _logger);
             var peerId1 = 42;
             var peerId2 = 43;
 
-            // Set up server tick
-            _registry.CreateEntity().AddComponent(new ServerTickComponent { TickNumber = 20 });
+            // Set up server tick via tickSync mock
+            _tickSync.ServerTick.Returns(20U);
 
             // Create player entities
             var player1 = _registry.CreateEntity();
@@ -205,8 +204,10 @@ namespace ServerUnitTests.Player
         public void HandlePlayerShot_ShouldNotSpawnProjectile_WhenPlayerEntityNotFound()
         {
             // Arrange
-            var handler = new PlayerShotHandler(_registry, _messageReceiver, _logger);
-            _registry.CreateEntity().AddComponent(new ServerTickComponent { TickNumber = 10 });
+            var handler = new PlayerShotHandler(_registry, _messageReceiver, _tickSync, _logger);
+
+            // Set up server tick via tickSync mock
+            _tickSync.ServerTick.Returns(10U);
 
             var shotMsg = new PlayerShotMessage
             {
@@ -227,11 +228,11 @@ namespace ServerUnitTests.Player
         public void HandlePlayerShot_ShouldNotSpawnProjectile_WhenDirectionNotNormalized()
         {
             // Arrange
-            var handler = new PlayerShotHandler(_registry, _messageReceiver, _logger);
+            var handler = new PlayerShotHandler(_registry, _messageReceiver, _tickSync, _logger);
             var peerId = 42;
 
-            // Set server tick
-            _registry.CreateEntity().AddComponent(new ServerTickComponent { TickNumber = 10 });
+            // Set up server tick via tickSync mock
+            _tickSync.ServerTick.Returns(10U);
 
             // Create player entity
             var playerEntity = _registry.CreateEntity();
@@ -261,11 +262,11 @@ namespace ServerUnitTests.Player
         public void HandlePlayerShot_ShouldNotSpawnProjectile_WhenTickIsOutOfSync(uint shotTick, uint serverTick)
         {
             // Arrange
-            var handler = new PlayerShotHandler(_registry, _messageReceiver, _logger);
+            var handler = new PlayerShotHandler(_registry, _messageReceiver, _tickSync, _logger);
             var peerId = 42;
 
-            // Set server tick
-            _registry.CreateEntity().AddComponent(new ServerTickComponent { TickNumber = serverTick });
+            // Set up server tick via tickSync mock
+            _tickSync.ServerTick.Returns(serverTick);
 
             // Create player entity
             var playerEntity = _registry.CreateEntity();
@@ -293,11 +294,13 @@ namespace ServerUnitTests.Player
         public void OnPeerDisconnected_ShouldCleanupCooldownTracking()
         {
             // Arrange
-            var handler = new PlayerShotHandler(_registry, _messageReceiver, _logger);
+            var handler = new PlayerShotHandler(_registry, _messageReceiver, _tickSync, _logger);
             var peerId = 42;
 
-            // Set up server tick and player
-            _registry.CreateEntity().AddComponent(new ServerTickComponent { TickNumber = 10 });
+            // Set up server tick via tickSync mock
+            _tickSync.ServerTick.Returns(10U);
+
+            // Create player entity
             var playerEntity = _registry.CreateEntity();
             playerEntity.AddComponent(new PeerComponent { PeerId = peerId });
             playerEntity.AddComponent(new PlayerTagComponent());

@@ -5,6 +5,7 @@ using System.Numerics;
 using Core.ECS.Entities;
 using Core.Input;
 using Shared.ECS;
+using Shared.ECS.Archetypes;
 using Shared.ECS.Components;
 using Shared.ECS.Entities;
 using Shared.ECS.Prediction;
@@ -83,11 +84,16 @@ namespace Core.ECS.Prediction
             var localPlayer = _entityRegistry.GetLocalPlayerEntity(_localPeerId);
             var playerPosition = localPlayer.GetRequired<PositionComponent>();
             var playerRotation = localPlayer.GetRequired<RotationComponent>();
-            var firePosition = playerPosition.Value;
             var shotDirection = Vector3.Transform(Vector3.UnitZ, playerRotation.Value);
 
             // Create predicted projectile entity
-            var projectile = CreatePredictedProjectile(_entityRegistry, firePosition, shotDirection, clientTick);
+            var projectile = ProjectileArchetype.Create(
+                _entityRegistry,
+                playerPosition.Value,
+                shotDirection * GameplayConstants.ProjectileSpeed,
+                clientTick,
+                _localPeerId);
+            
             var predictedProjectileId = projectile.Id;
 
             // Track the predicted projectile
@@ -97,27 +103,6 @@ namespace Core.ECS.Prediction
             SendShotMessage(clientTick, shotDirection, predictedProjectileId.Value);
 
             _logger.Debug("Fired predicted projectile {0} at tick {1}", predictedProjectileId, _tickSync.ServerTick);
-        }
-
-        private Entity CreatePredictedProjectile(EntityRegistry entityRegistry, Vector3 position, Vector3 direction, uint clientTick)
-        {
-            var projectile = entityRegistry.CreateEntity();
-            
-            // Position and movement. These are automatically predicted by VelocityPredictionSystem.
-            projectile.AddPredictedComponent(new PositionComponent { Value = position });
-            projectile.AddPredictedComponent(new VelocityComponent { Value = direction * GameplayConstants.ProjectileSpeed });
-            
-            // Projectile properties
-            // We do NOT add SpawnAuthorityComponent here, as this is a predicted entity.
-            // The server will create the authoritative entity when it processes the shot.
-            // and the SpawnAuthorityComponent will be added to it.
-            projectile.AddComponent<ProjectileTagComponent>();
-            projectile.AddComponent<LocalEntityTagComponent>();
-            projectile.AddComponent(new PrefabComponent { PrefabName = GameplayConstants.ProjectilePrefabName });
-            projectile.AddComponent(new DamageApplyingComponent { Damage = GameplayConstants.ProjectileDamage });
-            projectile.AddComponent(SelfDestroyingComponent.CreateWithTTL(clientTick, GameplayConstants.ProjectileTtlTicks));
-            
-            return projectile;
         }
 
         private void SendShotMessage(uint tick, Vector3 fireDirection, Guid predictedProjectileId)

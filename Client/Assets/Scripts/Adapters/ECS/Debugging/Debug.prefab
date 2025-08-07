@@ -148,7 +148,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   _toggleKey: 284
-  _showOnStart: 1
+  _showOnStart: 0
   _windowPosition: {x: 10, y: 10}
   _windowSize: {x: 350, y: 450}
   _historySize: 100

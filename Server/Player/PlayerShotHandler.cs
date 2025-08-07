@@ -1,10 +1,7 @@
-using System.Numerics;
 using Shared.ECS;
 using Shared.ECS.Components;
 using Shared.ECS.Archetypes;
 using Shared.ECS.Entities;
-using Shared.ECS.Prediction;
-using Shared.ECS.Replication;
 using Shared.ECS.TickSync;
 using Shared.Input;
 using Shared.Logging;
@@ -17,7 +14,11 @@ namespace Server.Player
     /// Listens for <see cref="PlayerShotMessage"/> messages from the network and handles projectile spawning.
     /// Validates shots and spawns authoritative projectiles.
     /// </summary>
-    public class PlayerShotHandler(EntityRegistry entityRegistry, IMessageReceiver messageReceiver, ILogger logger)
+    public class PlayerShotHandler(
+        EntityRegistry entityRegistry,
+        IMessageReceiver messageReceiver,
+        ITickSync tickSync,
+        ILogger logger)
         : IInitializable, IDisposable
     {
         private IDisposable? _subscription;
@@ -77,7 +78,11 @@ namespace Server.Player
                 _lastShotTicks[peerId] = shotMessage.Tick;
 
                 // Spawn the authoritative projectile
-                var projectile = SpawnProjectile(shotMessage, playerEntity);
+                var projectile = ProjectileArchetype.CreateFromPlayer(
+                    entityRegistry,
+                    playerEntity,
+                    tickSync.ServerTick,
+                    shotMessage.PredictedProjectileId);
 
                 logger.Debug("Spawned projectile {0} for peer {1} at tick {2}",
                     projectile.Id, peerId, shotMessage.Tick);
@@ -91,9 +96,7 @@ namespace Server.Player
         private bool ValidateShot(int peerId, PlayerShotMessage shotMessage)
         {
             // Get current server tick
-            var serverTick = entityRegistry.GetAll()
-                .First(x => x.Has<ServerTickComponent>())
-                .GetRequired<ServerTickComponent>().TickNumber;
+            var serverTick = tickSync.ServerTick;
 
             // // Validate tick (shouldn't be too far in the future or past
             if (shotMessage.Tick > serverTick + GameplayConstants.MaxShotTickDeviation ||
@@ -122,29 +125,6 @@ namespace Server.Player
             }
 
             return true;
-        }
-
-        private Entity SpawnProjectile(PlayerShotMessage shotMessage, Entity playerEntity)
-        {
-            var playerPosition = playerEntity.GetRequired<PositionComponent>().Value;
-            var peerId = playerEntity.GetRequired<PeerComponent>().PeerId;
-
-            // Get current server tick
-            var serverTick = entityRegistry.GetAll()
-                .First(x => x.Has<ServerTickComponent>())
-                .GetRequired<ServerTickComponent>().TickNumber;
-
-            // Position and velocity
-            var playerRotation = playerEntity.GetRequired<RotationComponent>().Value;
-            var velocity = Vector3.Transform(new Vector3(0, 0, 1), playerRotation) * GameplayConstants.ProjectileSpeed;
-
-            return ProjectileArchetype.Create(
-                entityRegistry,
-                playerPosition,
-                velocity,
-                serverTick,
-                peerId,
-                shotMessage.PredictedProjectileId);
         }
 
         /// <summary>

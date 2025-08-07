@@ -18,7 +18,7 @@ namespace Core.Networking
     {
         [Header("UI Settings")]
         [SerializeField] private KeyCode _toggleKey = KeyCode.F3;
-        [SerializeField] private bool _showOnStart = true;
+        [SerializeField] private bool _showOnStart = false;
         [SerializeField] private Vector2 _windowPosition = new Vector2(10, 10);
         [SerializeField] private Vector2 _windowSize = new Vector2(350, 250);
         
