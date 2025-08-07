@@ -136,7 +136,7 @@ namespace Server.Player
             // Position and velocity
             var velocity = shotMessage.Direction * GameplayConstants.ProjectileSpeed;
             projectile.AddPredictedComponent(new PositionComponent { Value = playerPosition.Value });
-            projectile.AddPredictedComponent(new VelocityComponent { Value = velocity * GameplayConstants.ProjectileSpeed });
+            projectile.AddPredictedComponent(new VelocityComponent { Value = velocity });
 
             // Projectile properties
             projectile.AddComponent(new ProjectileTagComponent());

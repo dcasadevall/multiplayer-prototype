@@ -78,7 +78,7 @@ namespace Core.ECS.Prediction
             velocity.Value = serverAuthorityVelocity.ServerValue.Value;
             
             // Handle position prediction/interpolation
-            if (entity.TryGet<PredictedComponent<PositionComponent>>(out var predictedPosition))
+            if (false && entity.TryGet<PredictedComponent<PositionComponent>>(out var predictedPosition))
             {
                 ProcessWithPredictedPosition(entity, predictedPosition, serverAuthorityVelocity, position, velocity, serverTick, deltaTime);
             }

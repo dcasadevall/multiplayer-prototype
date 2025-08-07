@@ -18,8 +18,12 @@ namespace Adapters.ECS.Debugging
                 if (!entity.Has<PredictedComponent<PositionComponent>>()) continue;
 
                 var predicted = entity.GetRequired<PredictedComponent<PositionComponent>>();
-                var serverPos = predicted.ServerValue.Value;
+                if (!predicted.HasServerValue)
+                {
+                    return;
+                }
 
+                var serverPos = predicted.ServerValue.Value;
                 if (!_visualizations.ContainsKey(entity.Id.Value))
                 {
                     var debugObject = GameObject.CreatePrimitive(PrimitiveType.Capsule);
