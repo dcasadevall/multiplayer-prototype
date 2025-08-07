@@ -80,10 +80,11 @@ namespace Core.ECS.Prediction
             }
             _lastShotTick = clientTick;
 
-            var shotDirection = Vector3.UnitZ;
             var localPlayer = _entityRegistry.GetLocalPlayerEntity(_localPeerId);
             var playerPosition = localPlayer.GetRequired<PositionComponent>();
+            var playerRotation = localPlayer.GetRequired<RotationComponent>();
             var firePosition = playerPosition.Value;
+            var shotDirection = Vector3.Transform(Vector3.UnitZ, playerRotation.Value);
 
             // Create predicted projectile entity
             var projectile = CreatePredictedProjectile(_entityRegistry, firePosition, shotDirection, clientTick);

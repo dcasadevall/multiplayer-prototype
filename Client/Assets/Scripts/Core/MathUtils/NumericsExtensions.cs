@@ -28,5 +28,10 @@ namespace Core.MathUtils
         {
             return vector.ToUnityVector2().normalized.ToNumericsVector2();
         }
+        
+        public static UnityEngine.Quaternion ToUnityQuaternion(this System.Numerics.Quaternion quaternion)
+        {
+            return new UnityEngine.Quaternion(quaternion.X, quaternion.Y, quaternion.Z, quaternion.W);
+        }
     }
 }

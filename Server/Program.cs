@@ -35,6 +35,7 @@ services.AddSingleton<ILogger, ConsoleLogger>();
 // Register server systems
 services.AddSingleton<ISystem, WorldDiagnosticsSystem>();
 services.AddSingleton<ISystem, VelocitySystem>();
+services.AddSingleton<ISystem, FaceMoveDirectionSystem>();
 services.AddSingleton<ISystem, HealthSystem>();
 
 // Register TickSync and ServerTickSystem

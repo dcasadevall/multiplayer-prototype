@@ -55,6 +55,7 @@ namespace Server.Player
                 playerEntity.AddComponent(new NameComponent { Name = name });
                 playerEntity.AddComponent(new PrefabComponent { PrefabName = "Player" });
                 playerEntity.AddComponent<PlayerTagComponent>();
+                playerEntity.AddComponent(new RotationComponent());
 
                 // Mark as replicated so it gets sent to clients
                 playerEntity.AddComponent<ReplicatedTagComponent>();

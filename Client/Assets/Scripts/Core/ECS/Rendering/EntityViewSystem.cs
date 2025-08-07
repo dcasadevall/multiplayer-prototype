@@ -98,6 +98,9 @@ namespace Core.ECS.Rendering
             {
                 var positionComponent = entity.Get<PositionComponent>();
                 view.transform.position = (positionComponent?.Value ?? Vector3.Zero).ToUnityVector3();
+
+                if(entity.TryGet<RotationComponent>(out var rotationComponent))
+                    view.transform.rotation = rotationComponent.Value.ToUnityQuaternion();
             }
         }
         
@@ -140,7 +143,12 @@ namespace Core.ECS.Rendering
                 var positionComponent = entity.Get<PositionComponent>();
                 view.transform.position = (positionComponent?.Value ?? Vector3.Zero).ToUnityVector3();
             }
-            
+
+            if (entity.TryGet<RotationComponent>(out var rotationComponent))
+            {
+                view.transform.rotation = rotationComponent.Value.ToUnityQuaternion();
+            }
+
             // Store the view
             _entityViews[entityId] = view;
             

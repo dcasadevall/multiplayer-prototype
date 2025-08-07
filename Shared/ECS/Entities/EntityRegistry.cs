@@ -1,4 +1,5 @@
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using Shared.ECS.Entities;
 
@@ -72,6 +73,23 @@ namespace Shared.ECS
             var newEntity = new Entity(id);
             _entities.Add(id, newEntity);
             return newEntity;
+        }
+
+        /// <summary>
+        /// WithAll returns all entities that contain all the specified component types.
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <typeparam name="T1"></typeparam>
+        /// <returns></returns>
+        public IEnumerable<Entity> WithAll<T, T1>() where T : IComponent where T1 : IComponent
+        {
+            foreach (var entity in _entities.Values)
+            {
+                if (entity.Has<T>() && entity.Has<T1>())
+                {
+                    yield return entity;
+                }
+            }
         }
     }
 }

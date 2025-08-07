@@ -42,6 +42,7 @@ namespace Adapters
             // regular counterparts to handle client-side prediction.
             serviceCollection.AddSingleton<ISystem, PredictedPlayerMovementSystem>();
             serviceCollection.AddSingleton<ISystem, VelocityPredictionSystem>();
+            serviceCollection.AddSingleton<ISystem, FaceMoveDirectionSystem>();
             serviceCollection.AddSingleton<PredictedPlayerShotSystem>();
             serviceCollection.AddSingleton<ISystem>(sp => sp.GetRequiredService<PredictedPlayerShotSystem>());
             serviceCollection.AddSingleton<IInitializable>(sp => sp.GetRequiredService<PredictedPlayerShotSystem>());

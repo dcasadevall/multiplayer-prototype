@@ -1,3 +1,4 @@
+using System.Numerics;
 using Shared.ECS;
 using Shared.ECS.Components;
 using Shared.ECS.Entities;
@@ -134,7 +135,8 @@ namespace Server.Player
                 .GetRequired<ServerTickComponent>().TickNumber;
 
             // Position and velocity
-            var velocity = shotMessage.Direction * GameplayConstants.ProjectileSpeed;
+            var playerRotation = playerEntity.GetRequired<RotationComponent>().Value;
+            var velocity = Vector3.Transform(new Vector3(0, 0, 1), playerRotation) * GameplayConstants.ProjectileSpeed;
             projectile.AddPredictedComponent(new PositionComponent { Value = playerPosition.Value });
             projectile.AddPredictedComponent(new VelocityComponent { Value = velocity });
 
