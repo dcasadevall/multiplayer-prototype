@@ -122,7 +122,7 @@ namespace Core.ECS.Prediction
                 newVelocity = new Vector3(moveDirection.X, 0, moveDirection.Y) * GameplayConstants.PlayerSpeed;
             }
 
-            // 1. Calculate the pure, uncorrected prediction for this tick.
+            // 1. Calculate the uncorrected prediction for this tick.
             // Since this is a local prediction, we use deltaTime.
             var newPosition = lastState.Position + newVelocity * deltaTime;
 
@@ -130,7 +130,6 @@ namespace Core.ECS.Prediction
             _stateBuffer[currentTick] = new PredictedState { Position = newPosition };
 
             // 2. Smoothly reduce any existing reconciliation error each frame.
-            // This is the "suspension" doing its work.
             _reconciliationError = Vector3.Lerp(_reconciliationError, Vector3.Zero, ReconciliationSmoothingFactor);
 
             // 3. The final visual position is our pure prediction plus the diminishing error.

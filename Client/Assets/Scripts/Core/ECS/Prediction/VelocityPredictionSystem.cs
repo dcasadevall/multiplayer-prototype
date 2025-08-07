@@ -60,30 +60,31 @@ namespace Core.ECS.Prediction
             if (hasServerPos && hasServerVel)
             {
                 // 1. Get the authoritative state from the server.
-                var serverPosition = predPos.ServerValue.Value;
-                var serverVelocity = predVel.ServerValue.Value;
-                // You must store the tick the server data is for in the PredictedComponent.
+                var serverPosition = predPos.ServerValue!.Value;
+                var serverVelocity = predVel.ServerValue!.Value;
+                
+                // Server data tick is the tick when the server sent this position and velocity.
                 uint serverDataTick = _tickSync.ServerTick;
 
-                // 2. EXTRAPOLATE: Calculate where the entity should be "now" based on the
+                // 2. Extrapolate: Calculate where the entity should be "now" based on the
                 // historical server data and the time that has passed.
                 var tickDifference = _tickSync.SmoothedTick > serverDataTick ? (int)(_tickSync.SmoothedTick - serverDataTick) : 0;
                 var authoritativePosition = serverPosition + serverVelocity * (tickDifference * fixedDeltaTime);
 
-                // 3. UPDATE LOCAL STATE: Snap the logical position and velocity
-                // directly to the calculated authoritative values. No Lerp.
+                // 3. Update Local State: Snap the logical position and velocity
+                // directly to the calculated authoritative values.
                 localPos.Value = authoritativePosition;
                 localVel.Value = serverVelocity;
 
-                // 4. CONSUME THE DATA: Clear the server values so we don't process this old data again.
+                // 4. Clear the server values so we don't process this old data again.
                 predPos.ServerValue = null;
                 predVel.ServerValue = null;
             }
-            // --- Dead Reckoning (When server data is stale) ---
             else
             {
                 // No fresh data. Keep the entity moving based on its last known velocity
                 // to prevent stuttering between packets.
+                // This is called dead reckoning.
                 localPos.Value += localVel.Value * fixedDeltaTime;
             }
         }
