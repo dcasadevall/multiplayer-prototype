@@ -15,9 +15,11 @@ namespace SharedUnitTests.ECS.TickSync
             // Arrange
             var connection = Substitute.For<IClientConnection>();
             connection.PingMs.Returns(60); // 60ms ping
-            var tickSync = new Shared.ECS.TickSync.TickSync();
-            // Need to initialize TickSync to avoid the IsInitialized override
-            tickSync.IsInitialized = true;
+            var tickSync = new Shared.ECS.TickSync.TickSync
+            {
+                // Need to initialize TickSync to avoid the IsInitialized override
+                IsInitialized = true
+            };
             var system = new ClientTickSystem(tickSync, connection);
 
             var registry = new EntityRegistry();
@@ -44,9 +46,11 @@ namespace SharedUnitTests.ECS.TickSync
             // Arrange
             var connection = Substitute.For<IClientConnection>();
             connection.PingMs.Returns(100); // 100ms ping
-            var tickSync = new Shared.ECS.TickSync.TickSync();
-            // Need to initialize TickSync to avoid the IsInitialized override
-            tickSync.IsInitialized = true;
+            var tickSync = new Shared.ECS.TickSync.TickSync
+            {
+                // Need to initialize TickSync to avoid the IsInitialized override
+                IsInitialized = true
+            };
             var system = new ClientTickSystem(tickSync, connection);
 
             var registry = new EntityRegistry();
@@ -71,9 +75,11 @@ namespace SharedUnitTests.ECS.TickSync
             // Arrange
             var connection = Substitute.For<IClientConnection>();
             connection.PingMs.Returns(0); // No ping
-            var tickSync = new Shared.ECS.TickSync.TickSync();
-            // Need to initialize TickSync to avoid the IsInitialized override
-            tickSync.IsInitialized = true;
+            var tickSync = new Shared.ECS.TickSync.TickSync
+            {
+                // Need to initialize TickSync to avoid the IsInitialized override
+                IsInitialized = true
+            };
             var system = new ClientTickSystem(tickSync, connection);
 
             var registry = new EntityRegistry();
