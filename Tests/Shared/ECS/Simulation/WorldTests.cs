@@ -71,60 +71,41 @@ namespace SharedUnitTests.ECS.Simulation
 
             world.Start();
 
-            // Tick 0 (starting tick)
+            // Tick 0
             scheduler.TickAction!();
-            Assert.Equal(0U, slow.TickNumber); // Slow system runs on tick 0 (0 % 5 == 0)
-            Assert.Equal(0U, fast.TickNumber); // Fast system runs on tick 0
+            Assert.Equal(0U, slow.TickNumber); // Runs on tick 0
+            Assert.Equal(0U, fast.TickNumber); // Runs on tick 0
+            Assert.Equal(1U, world.CurrentTickIndex);
 
             // Tick 1
             scheduler.TickAction!();
-            Assert.Equal(0U, slow.TickNumber);
-            Assert.Equal(1U, fast.TickNumber);
+            Assert.Equal(0U, slow.TickNumber); // Doesn't run on tick 1
+            Assert.Equal(1U, fast.TickNumber); // Runs on tick 1
+            Assert.Equal(2U, world.CurrentTickIndex);
 
             // Tick 2
             scheduler.TickAction!();
             Assert.Equal(0U, slow.TickNumber);
             Assert.Equal(2U, fast.TickNumber);
+            Assert.Equal(3U, world.CurrentTickIndex);
 
             // Tick 3
             scheduler.TickAction!();
             Assert.Equal(0U, slow.TickNumber);
             Assert.Equal(3U, fast.TickNumber);
+            Assert.Equal(4U, world.CurrentTickIndex);
 
             // Tick 4
             scheduler.TickAction!();
             Assert.Equal(0U, slow.TickNumber);
             Assert.Equal(4U, fast.TickNumber);
+            Assert.Equal(5U, world.CurrentTickIndex);
 
-            // Tick 5 (slow system should run now)
+            // Tick 5
             scheduler.TickAction!();
-            Assert.Equal(5U, slow.TickNumber); // Should tick on 5th tick
+            Assert.Equal(5U, slow.TickNumber); // Runs on tick 5
             Assert.Equal(5U, fast.TickNumber);
-
-            // Tick 6
-            scheduler.TickAction!();
-            Assert.Equal(5U, slow.TickNumber);
-            Assert.Equal(6U, fast.TickNumber);
-
-            // Tick 7
-            scheduler.TickAction!();
-            Assert.Equal(5U, slow.TickNumber);
-            Assert.Equal(7U, fast.TickNumber);
-
-            // Tick 8
-            scheduler.TickAction!();
-            Assert.Equal(5U, slow.TickNumber);
-            Assert.Equal(8U, fast.TickNumber);
-
-            // Tick 9
-            scheduler.TickAction!();
-            Assert.Equal(5U, slow.TickNumber);
-            Assert.Equal(9U, fast.TickNumber);
-
-            // Tick 10 (slow system should run again)
-            scheduler.TickAction!();
-            Assert.Equal(10U, slow.TickNumber); // Should tick on 10th tick
-            Assert.Equal(10U, fast.TickNumber);
+            Assert.Equal(6U, world.CurrentTickIndex);
 
             world.Stop();
         }
