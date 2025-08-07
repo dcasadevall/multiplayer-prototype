@@ -25,6 +25,6 @@ namespace Shared.ECS.TickSync
         /// <summary>
         /// Flag to know if the sync has been initialized (used by client)
         /// </summary>
-        internal bool IsInitialized { get; set; }
+        public bool IsInitialized { get; set; }
     }
 }

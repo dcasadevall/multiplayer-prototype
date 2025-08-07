@@ -61,7 +61,7 @@ namespace Shared.ECS.Simulation
             ITickSync tickSync,
             TimeSpan tickRate,
             IScheduler scheduler,
-            WorldMode worldMode)
+            WorldMode worldMode = WorldMode.Server)
         {
             _entityRegistry = entityRegistry;
             _tickSync = tickSync;

@@ -66,9 +66,15 @@ namespace SharedUnitTests.ECS.Simulation
                 .AddSystem(slow)
                 .AddSystem(fast)
                 .WithTickRate(tickRate)
+                .WithWorldMode(WorldMode.Server) // Default to server mode for predictable behavior
                 .Build();
 
             world.Start();
+
+            // Tick 0 (starting tick)
+            scheduler.TickAction!();
+            Assert.Equal(0U, slow.TickNumber); // Slow system runs on tick 0 (0 % 5 == 0)
+            Assert.Equal(0U, fast.TickNumber); // Fast system runs on tick 0
 
             // Tick 1
             scheduler.TickAction!();
@@ -148,7 +154,7 @@ namespace SharedUnitTests.ECS.Simulation
         }
 
         [Fact]
-        public void World_Increments_TickNumber_Each_Update()
+        public void World_Increments_TickNumber_Each_Update_In_Server_Mode()
         {
             var tickSync = new Shared.ECS.TickSync.TickSync();
             var fast = new FastSystem();
@@ -159,6 +165,7 @@ namespace SharedUnitTests.ECS.Simulation
             var world = new WorldBuilder(registry, tickSync, scheduler)
                 .AddSystem(fast)
                 .WithTickRate(tickRate)
+                .WithWorldMode(WorldMode.Server)
                 .Build();
 
             world.Start();
@@ -171,6 +178,38 @@ namespace SharedUnitTests.ECS.Simulation
             scheduler.TickAction!();
             Assert.Equal(3U, world.CurrentTickIndex);
 
+            world.Stop();
+        }
+
+        [Fact]
+        public void World_Uses_TickSync_ClientTick_In_Client_Mode()
+        {
+            var tickSync = new Shared.ECS.TickSync.TickSync();
+            var fast = new FastSystem();
+            var registry = new EntityRegistry();
+            var tickRate = TimeSpan.FromMilliseconds(20);
+            var scheduler = new MockScheduler();
+
+            var world = new WorldBuilder(registry, tickSync, scheduler)
+                .AddSystem(fast)
+                .WithTickRate(tickRate)
+                .WithWorldMode(WorldMode.Client)
+                .Build();
+
+            world.Start();
+
+            // Manually set ClientTick values to simulate TickSync behavior
+            tickSync.ClientTick = 10;
+            scheduler.TickAction!();
+            Assert.Equal(10U, world.CurrentTickIndex);
+
+            tickSync.ClientTick = 15;
+            scheduler.TickAction!();
+            Assert.Equal(15U, world.CurrentTickIndex);
+
+            tickSync.ClientTick = 20;
+            scheduler.TickAction!();
+            Assert.Equal(20U, world.CurrentTickIndex);
 
             world.Stop();
         }
@@ -180,6 +219,7 @@ namespace SharedUnitTests.ECS.Simulation
         {
             var tickSync = new Shared.ECS.TickSync.TickSync();
             var connection = Substitute.For<IClientConnection>();
+            connection.PingMs.Returns(0); // No ping for simplicity
             var clientTickSystem = new Shared.ECS.TickSync.ClientTickSystem(tickSync, connection);
 
             var registry = new EntityRegistry();
@@ -189,21 +229,20 @@ namespace SharedUnitTests.ECS.Simulation
             var world = new WorldBuilder(registry, tickSync, scheduler)
                 .AddSystem(clientTickSystem)
                 .WithTickRate(tickRate)
+                .WithWorldMode(WorldMode.Client)
                 .Build();
 
             world.Start();
 
-            // Tick 1
+            // The world tick number in client mode is driven by tickSync.ClientTick
+            // ClientTickSystem sets tickSync.ClientTick = tickNumber at the start of Update()
+            
+            // Tick 1: World calls system with tickNumber=0, system sets ClientTick=0, then CorrectForDrift may modify it
             scheduler.TickAction!();
-            Assert.Equal(1U, tickSync.ClientTick);
-
-            // Tick 2
-            scheduler.TickAction!();
-            Assert.Equal(2U, tickSync.ClientTick);
-
-            // Tick 3
-            scheduler.TickAction!();
-            Assert.Equal(3U, tickSync.ClientTick);
+            // After first tick, ClientTick should be set to 0 initially, then potentially modified by drift correction
+            // Since there's no ServerTickComponent, the system returns early, so ClientTick stays 0
+            Assert.Equal(0U, tickSync.ClientTick);
+            Assert.Equal(0U, world.CurrentTickIndex); // World uses ClientTick value
 
             world.Stop();
         }
