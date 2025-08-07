@@ -2,6 +2,7 @@ using System;
 using System.Net;
 using System.Threading;
 using LiteNetLib;
+using Shared.ECS.TickSync;
 using Shared.Logging;
 using Shared.Networking.Messages;
 using Shared.Scheduling;
@@ -25,6 +26,7 @@ namespace Shared.Networking
         private readonly NetManager _netManager;
         private readonly IMessageSender _messageSender;
         private readonly EventBasedNetListener _eventListener;
+        private readonly ITickSync _tickSync;
         private readonly ILogger _logger;
         private readonly IScheduler _scheduler;
         private IDisposable? _pollHandle;
@@ -38,18 +40,23 @@ namespace Shared.Networking
         /// <param name="netManager">The LiteNetLib NetManager instance to use for networking. Must be constructed with an EventBasedNetListener.</param>
         /// <param name="messageSender">The injected message sender for sending messages to clients.</param>
         /// <param name="eventListener">The injected eventBasedNetListener</param>
+        /// <param name="tickSync">The ECS tick sync interface for synchronizing server ticks with the ECS.</param>
         /// <param name="logger">Logger for structured logging of network events.</param>
         /// <param name="scheduler">Scheduler for polling events.</param>
         /// <exception cref="ArgumentException">Thrown if the NetManager does not use an EventBasedNetListener.</exception>
         public NetLibNetworkingServer(NetManager netManager,
             IMessageSender messageSender,
             EventBasedNetListener eventListener,
+            // I am not super happy with this dependency on the ECS system,
+            // but we want to send the initial tick to the client on connection.
+            ITickSync tickSync,
             ILogger logger,
             IScheduler scheduler)
         {
             _netManager = netManager;
             _messageSender = messageSender;
             _eventListener = eventListener;
+            _tickSync = tickSync;
             _logger = logger;
             _scheduler = scheduler;
         }
@@ -103,10 +110,12 @@ namespace Shared.Networking
         private void OnPeerConnected(NetPeer peer)
         {
             // Send ConnectedMessage to the client
-            var msg = new ConnectedMessage(
-                peer.Id,
-                DateTime.UtcNow
-            );
+            var msg = new ConnectedMessage
+            {
+                PeerId = peer.Id,
+                ConnectionTime = DateTime.UtcNow,
+                ServerTick = _tickSync.ServerTick,
+            };
 
             _messageSender.SendMessage(peer.Id, MessageType.Connected, msg, ChannelType.ReliableOrdered);
             _logger.Info(LoggedFeature.Networking, "Sent ConnectedMessage to peer {0}", peer.Id);

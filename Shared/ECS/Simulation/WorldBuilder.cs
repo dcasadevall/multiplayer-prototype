@@ -10,18 +10,17 @@ namespace Shared.ECS.Simulation
     /// </summary>
     public class WorldBuilder
     {
-        private readonly List<ISystem> _systems = new List<ISystem>();
+        private readonly List<ISystem> _systems = new();
         private readonly EntityRegistry _entityRegistry;
         private readonly ITickSync _tickSync;
         private readonly IScheduler _scheduler;
         private TimeSpan _tickRate = TimeSpan.FromMilliseconds(33.33); // 30Hz default
-        private WorldMode _worldMode = WorldMode.Server;
+        private uint _startingTick = 0;
 
         /// <summary>
         /// Initializes a new <see cref="WorldBuilder"/> with the given clock and entity registry.
         /// </summary>
         /// <param name="entityRegistry">The entity registry to use.</param>
-        /// <param name="tickSync">Tick synchronization service for managing server and client ticks.</param>
         /// <param name="scheduler">The scheduler to use for managing ticks.</param>
         public WorldBuilder(EntityRegistry entityRegistry, ITickSync tickSync, IScheduler scheduler)
         {
@@ -64,13 +63,13 @@ namespace Shared.ECS.Simulation
         }
 
         /// <summary>
-        /// Sets the world mode (Server or Client).
+        /// Sets the starting tick number for the world.
         /// </summary>
-        /// <param name="mode">The world mode.</param>
-        /// <returns>This builder for method chaining.</returns>
-        public WorldBuilder WithWorldMode(WorldMode mode)
+        /// <param name="startingTick"></param>
+        /// <returns></returns>
+        public WorldBuilder WithStartingTick(uint startingTick)
         {
-            _worldMode = mode;
+            _startingTick = startingTick;
             return this;
         }
 
@@ -81,7 +80,7 @@ namespace Shared.ECS.Simulation
         /// <returns>A new <see cref="World"/> instance.</returns>
         public World Build()
         {
-            return new World(_systems, _entityRegistry, _tickSync, _tickRate, _scheduler, _worldMode);
+            return new World(_startingTick, _systems, _entityRegistry, _tickSync, _tickRate, _scheduler);
         }
     }
 }

@@ -28,7 +28,6 @@ namespace Shared.Networking
         /// <param name="netManager">The LiteNetLib NetManager instance to use for networking.</param>
         /// <param name="listener">The injected event-based listener for handling network events.</param>
         /// <param name="scheduler">Scheduler for polling events.</param>
-        /// <param name="messageReceiver">The injected message receiver for handling messages.</param>
         public NetLibNetworkingClient(
             ILogger logger,
             NetManager netManager,
@@ -82,10 +81,9 @@ namespace Shared.Networking
                     return;
                 }
 
-                _ = msg;
                 connectedPeer = peer;
                 var messageSender = new NetLibJsonMessageSender(_netManager, _logger);
-                var connection = new ClientConnection(peer, _logger, messageSender, messageReceiver, msg.PeerId);
+                var connection = new ClientConnection(peer, msg.ServerTick, _logger, messageSender, messageReceiver, msg.PeerId);
 
                 _logger.Debug(LoggedFeature.Networking, $"Client {peer.Id} connected. Address: {peer.Address}");
                 tcs.TrySetResult(connection);
@@ -148,6 +146,7 @@ namespace Shared.Networking
             private readonly ILogger logger;
 
             public int AssignedPeerId { get; }
+            public uint StartingServerTick { get; }
             public IMessageSender MessageSender { get; }
             public IMessageReceiver MessageReceiver => _jsonMessageReceiver;
             private readonly NetLibJsonMessageReceiver _jsonMessageReceiver;
@@ -155,12 +154,14 @@ namespace Shared.Networking
             public int PingMs => _peer.Ping;
 
             public ClientConnection(NetPeer peer,
+                uint startingServerTick,
                 ILogger logger,
                 IMessageSender messageSender,
                 NetLibJsonMessageReceiver messageReceiver,
                 int assignedPeerId)
             {
                 _peer = peer;
+                StartingServerTick = startingServerTick;
                 this.logger = logger;
                 MessageSender = messageSender;
                 AssignedPeerId = assignedPeerId;

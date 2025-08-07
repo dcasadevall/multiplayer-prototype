@@ -16,26 +16,24 @@ namespace Shared.Networking.Messages
         /// </summary>
         [JsonPropertyName("peerId")]
         public int PeerId { get; set; }
-        
+
         /// <summary>
         /// Timestamp when the connection was established (server time).
         /// </summary>
         [JsonPropertyName("connectionTime")]
         public DateTime ConnectionTime { get; set; }
-        
+
+        /// <summary>
+        /// Server tick number at the time of connection.
+        /// Used to initialize the client tick.
+        /// </summary>
+        [JsonPropertyName("serverTick")]
+        public uint ServerTick { get; set; }
+
         /// <summary>
         /// Server version information for compatibility checking.
         /// </summary>
         [JsonPropertyName("serverVersion")]
         public string ServerVersion { get; set; } = "1.0.0";
-        
-        public ConnectedMessage() { }
-        
-        public ConnectedMessage(int peerId, DateTime connectionTime, string serverVersion = "1.0.0")
-        {
-            PeerId = peerId;
-            ConnectionTime = connectionTime;
-            ServerVersion = serverVersion;
-        }
     }
-} 
+}

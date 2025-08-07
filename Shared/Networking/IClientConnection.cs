@@ -15,8 +15,14 @@ namespace Shared.Networking
 
         /// <summary>
         /// The current ping time in milliseconds to the server.
+        /// This is Rtt/2
         /// </summary>
         int PingMs { get; }
+
+        /// <summary>
+        /// The Server Tick number at the time of connection.
+        /// </summary>
+        uint StartingServerTick { get; }
 
         /// <summary>
         /// The message sender for sending messages to the server or other peers.

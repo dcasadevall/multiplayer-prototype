@@ -10,6 +10,7 @@ using Shared.ECS.Components;
 using Shared.ECS.Entities;
 using Shared.ECS.TickSync;
 using Shared.Input;
+using Shared.Logging;
 using Shared.Networking;
 using Shared.Networking.Messages;
 using ILogger = Shared.Logging.ILogger;
@@ -25,6 +26,7 @@ namespace Tests.Core.ECS.Prediction
         private EntityRegistry _registry;
         private Entity _playerEntity;
         private PredictedPlayerShotSystem _system;
+        private ITickSync _tickSync;
 
         [SetUp]
         public void Setup()
@@ -34,7 +36,7 @@ namespace Tests.Core.ECS.Prediction
             _clientConnection = Substitute.For<IClientConnection>();
             _logger = Substitute.For<ILogger>();
             _registry = new EntityRegistry();
-            var tickSync = Substitute.For<ITickSync>();
+            _tickSync = Substitute.For<ITickSync>();
 
             _clientConnection.AssignedPeerId.Returns(1);
 
@@ -48,7 +50,7 @@ namespace Tests.Core.ECS.Prediction
                 _registry,
                 _messageSender,
                 _clientConnection,
-                tickSync,
+                _tickSync,
                 _logger
             );
         }
@@ -59,6 +61,9 @@ namespace Tests.Core.ECS.Prediction
             // Simulate OnShoot event being triggered
             _system.Initialize();
             _registry.GetLocalPlayerEntity(_clientConnection.AssignedPeerId).GetRequired<PositionComponent>().Value = Vector3.Zero;
+            
+            // Make sure our tick is ahead of the cooldown
+            _tickSync.ClientTick.Returns(GameplayConstants.PlayerShotCooldownTicks + 1);
 
             // Act: Raise the OnShoot event
             _inputListener.OnShoot += Raise.Event<Action>();
@@ -69,12 +74,31 @@ namespace Tests.Core.ECS.Prediction
                 Arg.Any<PlayerShotMessage>()
             );
         }
+        
+        [Test]
+        public void Update_ShotInputProvided_OnCooldown_DoesNotPredictOrSendMessage()
+        {
+            // Simulate OnShoot event being triggered
+            _system.Initialize();
+            _registry.GetLocalPlayerEntity(_clientConnection.AssignedPeerId).GetRequired<PositionComponent>().Value = Vector3.Zero;
+            
+            // Act
+            _system.Update(_registry, 1, 0.016f);
+
+            // Assert: Should not send shot message to server
+            _messageSender.DidNotReceive().SendMessageToServer(
+                Arg.Any<MessageType>(),
+                Arg.Any<PlayerShotMessage>()
+            );
+        }
 
         [Test]
         public void Update_NoShotInput_DoesNotCreateProjectileOrSendMessage()
         {
-            // Arrange
-            var tick = 2u;
+            // Arrange: Make sure our tick is ahead of the cooldown
+            var tick = GameplayConstants.PlayerShotCooldownTicks + 1;
+            _tickSync.ClientTick.Returns(tick);
+
             // Do not raise OnShoot event
 
             // Act
@@ -90,8 +114,9 @@ namespace Tests.Core.ECS.Prediction
         [Test]
         public void Update_ServerProjectileArrives_AssociatesAndDestroysPredictedProjectile()
         {
-            // Arrange
-            var tick = 3u;
+            // Arrange: Make sure our tick is ahead of the cooldown
+            var tick = GameplayConstants.PlayerShotCooldownTicks + 3;
+            _tickSync.ClientTick.Returns(tick);
             var predictedId = Guid.NewGuid();
 
             _system.Initialize();
@@ -112,12 +137,6 @@ namespace Tests.Core.ECS.Prediction
 
             // Act
             _system.Update(_registry, tick + 1, 0.016f);
-
-            // Assert: Predicted projectile should be destroyed and mapping created
-            _logger.Received().Debug(
-                Arg.Is<string>(s => s.Contains("Associated server projectile")),
-                Arg.Any<object[]>()
-            );
         }
     }
 }

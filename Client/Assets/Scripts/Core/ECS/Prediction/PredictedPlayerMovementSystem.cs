@@ -76,7 +76,7 @@ namespace Core.ECS.Prediction
             ProcessLocalPlayerMovement(localPlayer, tickNumber, deltaTime);
 
             // Check for reconciliation against server state
-            CheckReconciliation(localPlayer, deltaTime);
+            CheckReconciliation(localPlayer, tickNumber, deltaTime);
 
             // Clean up old states from the buffer
             PruneOldStates(_tickSync.ServerTick);
@@ -106,86 +106,68 @@ namespace Core.ECS.Prediction
             _lastMovementSent = moveDirection;
         }
 
-        private void ProcessLocalPlayerMovement(Entity localPlayer, uint clientTick, float deltaTime)
+        private void ProcessLocalPlayerMovement(Entity localPlayer, uint currentTick, float deltaTime)
         {
             var position = localPlayer.GetRequired<PositionComponent>();
-            var velocity = localPlayer.GetRequired<VelocityComponent>();
 
-            // Get the last known position to predict from.
-            // If no history, use the current position.
-            Vector3 lastPosition;
-            if (_stateBuffer.TryGetValue(clientTick - 1, out var lastState))
-            {
-                lastPosition = lastState.Position;
-            }
-            else
-            {
-                lastPosition = position.Value;
-            }
+            var lastState = _stateBuffer.TryGetValue(currentTick - 1, out var state)
+                ? state
+                : new PredictedState { Position = position.Value };
 
-            // Calculate velocity based on current input
             var newVelocity = Vector3.Zero;
-            if (_inputListener.TryGetMovementAtTick(clientTick, out var moveDirection))
+            if (_inputListener.TryGetMovementAtTick(currentTick, out var moveDirection))
             {
                 newVelocity = new Vector3(moveDirection.X, 0, moveDirection.Y) * GameplayConstants.PlayerSpeed;
             }
 
-            // Predict the new position for this tick
-            var newPosition = lastPosition + newVelocity * deltaTime;
+            // 1. Calculate the pure, uncorrected prediction for this tick.
+            var newPosition = lastState.Position + newVelocity * deltaTime;
 
-            // Store the purely predicted state in the buffer
-            _stateBuffer[clientTick] = new PredictedState
-            {
-                Position = newPosition,
-            };
+            // Store this pure state in our history.
+            _stateBuffer[currentTick] = new PredictedState { Position = newPosition };
 
-            // Smoothly reduce the reconciliation error over time
+            // 2. Smoothly reduce any existing reconciliation error each frame.
+            // This is the "suspension" doing its work.
             _reconciliationError = Vector3.Lerp(_reconciliationError, Vector3.Zero, ReconciliationSmoothingFactor);
 
-            // Apply the smoothed error to the predicted position for the final visual position
-            position.Value = newPosition + _reconciliationError;
-            velocity.Value = newVelocity;
+            // 3. The final visual position is our pure prediction plus the diminishing error.
+            localPlayer.AddOrReplaceComponent(new PositionComponent { Value = newPosition + _reconciliationError });
+            localPlayer.AddOrReplaceComponent(new VelocityComponent { Value = newVelocity });
         }
 
-        private void CheckReconciliation(Entity localPlayer, float deltaTime)
+        private void CheckReconciliation(Entity localPlayer, uint currentTick, float deltaTime)
         {
-            var predictedPosition = localPlayer.GetRequired<PredictedComponent<PositionComponent>>();
-            var serverTick = _tickSync.ServerTick;
+            var predictedComponent = localPlayer.GetRequired<PredictedComponent<PositionComponent>>();
+            if (!predictedComponent.HasServerValue) return;
 
-            // We only reconcile if we have a new server state for a tick we have already predicted.
-            if (!predictedPosition.HasServerValue || serverTick == 0 || !_stateBuffer.TryGetValue(serverTick, out var predictedStateOnServerTick))
-                return;
+            // The server tick that this position data represents
+            uint serverDataTick = _tickSync.ServerTick;
+    
+            // We need to have a predicted state for this tick to compare against
+            if (!_stateBuffer.TryGetValue(serverDataTick, out var predictedStateOnThatTick)) return;
 
-            var serverPosition = predictedPosition.ServerValue!.Value;
-            var serverVelocity = localPlayer.GetRequired<PredictedComponent<VelocityComponent>>().ServerValue.Value;
-
-            // Calculate the prediction error
-            var error = Vector3.Distance(predictedStateOnServerTick.Position, serverPosition);
+            var serverPosition = predictedComponent.ServerValue!.Value;
+            var error = Vector3.Distance(predictedStateOnThatTick.Position, serverPosition);
 
             if (error > ReconciliationThreshold)
             {
-                _logger.Debug($"Reconciliation needed at tick {serverTick}. Error: {error:F3}");
+                _logger.Debug($"Reconciliation needed at tick {serverDataTick}. Error: {error:F3}");
 
-                // Get the current visual position before correcting history
+                // Store current visual position before correction
                 var currentVisualPosition = localPlayer.GetRequired<PositionComponent>().Value;
 
-                // Correct the historical state and re-simulate future inputs
-                CorrectStateAndResimulate(serverTick, serverPosition, serverVelocity, deltaTime);
+                // Correct and re-simulate using the same deltaTime as original predictions
+                CorrectStateAndResimulate(serverDataTick, serverPosition, deltaTime);
 
-                // Get the newly re-simulated position for the current client tick
-                if (_stateBuffer.TryGetValue(_tickSync.ClientTick, out var reSimulatedCurrentState))
+                // Calculate new error after re-simulation
+                if (_stateBuffer.TryGetValue(currentTick, out var correctedCurrentState))
                 {
-                    // Instead of snapping, calculate the error between where we are now
-                    // and where we should be. This error will be smoothed out over time.
-                    _reconciliationError = currentVisualPosition - reSimulatedCurrentState.Position;
+                    _reconciliationError = currentVisualPosition - correctedCurrentState.Position;
                 }
             }
-            
-            // Mark the server value as processed by clearing it
-            predictedPosition.ServerValue = null;
         }
 
-        private void CorrectStateAndResimulate(uint authoritativeTick, Vector3 authoritativePosition, Vector3 authoritativeVelocity, float deltaTime)
+        private void CorrectStateAndResimulate(uint authoritativeTick, Vector3 authoritativePosition, float deltaTime)
         {
             // Correct the state at the authoritative tick with server data
             _stateBuffer[authoritativeTick] = new PredictedState

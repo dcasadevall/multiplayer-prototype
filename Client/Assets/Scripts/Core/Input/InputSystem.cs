@@ -1,8 +1,8 @@
 using System;
 using System.Collections.Generic;
 using Core.MathUtils;
+using Shared.ECS;
 using Shared.ECS.TickSync;
-using Shared.Scheduling;
 using UnityEngine;
 using Vector2 = System.Numerics.Vector2;
 
@@ -13,7 +13,7 @@ namespace Core.Input
     /// It uses buffers to store the past tick input.
     /// IT also handles the shooting input and raises an event when the player shoots.
     /// </summary>
-    public class InputListener : ITickable, IInputListener
+    public class InputSystem : ISystem, IInputListener
     {
         public event Action OnShoot;
 
@@ -21,27 +21,28 @@ namespace Core.Input
         private readonly Dictionary<uint, Vector2> _movementInputBuffer = new();
         private readonly ITickSync _tickSync;
 
-        public InputListener(ITickSync tickSync)
+        public InputSystem(ITickSync tickSync)
         {
             _tickSync = tickSync;
         }
-
+        
+        public void Update(EntityRegistry registry, uint tickNumber, float deltaTime)
+        {
+            HandleMovementInput(tickNumber);
+            HandleShotInput();
+            RemoveStaleInputs(tickNumber);
+        }
+        
         public bool TryGetMovementAtTick(uint tick, out Vector2 moveDirection) => _movementInputBuffer.TryGetValue(tick, out moveDirection);
 
-        public void Tick()
-        {
-            HandleMovementInput();
-            HandleShotInput();
-            RemoveStaleInputs();
-        }
-
-        private void HandleMovementInput()
+        /// <summary>
+        /// Reads the current input and stores it in a buffer for client-side predictions
+        /// </summary>
+        /// <param name="tickNumber"></param>
+        private void HandleMovementInput(uint tickNumber)
         {
             var move = new Vector2(UnityEngine.Input.GetAxisRaw("Horizontal"), UnityEngine.Input.GetAxisRaw("Vertical")).Normalized();
-            var tick = _tickSync.ClientTick;
-
-            // Store the input in the buffer for client-side prediction.
-            _movementInputBuffer[tick] = move;
+            _movementInputBuffer[tickNumber] = move;
         }
 
         private void HandleShotInput()
@@ -51,11 +52,11 @@ namespace Core.Input
             OnShoot?.Invoke();
         }
 
-        private void RemoveStaleInputs()
+        private void RemoveStaleInputs(uint tickNumber)
         {
             // Remove inputs that are older than the current tick minus a certain threshold.
             // This is to prevent the buffer from growing indefinitely.
-            var threshold = _tickSync.ClientTick - 60; 
+            var threshold = tickNumber - 60; 
             foreach (var tick in new List<uint>(_movementInputBuffer.Keys))
             {
                 if (tick < threshold)

@@ -30,6 +30,12 @@ namespace Adapters
             // This includes the replication system, tick sync, entity view system, etc.
             serviceCollection.RegisterEcsServices();
             
+            // Input System. Before other systems can run, we need to ensure
+            // that the input is available for that tick.
+            serviceCollection.AddSingleton<InputSystem>();
+            serviceCollection.AddSingleton<ISystem>(sp => sp.GetRequiredService<InputSystem>());
+            serviceCollection.AddSingleton<IInputListener>(sp => sp.GetRequiredService<InputSystem>());
+            
             // Prediction systems
             serviceCollection.AddSingleton<ISystem, PredictedPlayerMovementSystem>();
             serviceCollection.AddSingleton<ISystem, VelocityPredictionSystem>();
@@ -40,11 +46,6 @@ namespace Adapters
             
             // Entity lifecycle systems
             serviceCollection.AddSingleton<ISystem, SelfDestroyingSystem>();
-            
-            // Input
-            serviceCollection.AddSingleton<InputListener>();
-            serviceCollection.AddSingleton<IInputListener>(sp => sp.GetRequiredService<InputListener>());
-            serviceCollection.AddSingleton<ITickable>(sp => sp.GetRequiredService<InputListener>());
             
             serviceCollection.AddSingleton<ClientWorldManager>();
             serviceCollection.AddSingleton<IInitializable>(sp => sp.GetRequiredService<ClientWorldManager>());

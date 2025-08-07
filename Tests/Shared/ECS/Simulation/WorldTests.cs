@@ -1,6 +1,7 @@
+using NSubstitute;
 using Shared.ECS;
 using Shared.ECS.Simulation;
-using Shared.ECS.TickSync;
+using Shared.Networking;
 using Shared.Scheduling;
 using Xunit;
 
@@ -55,12 +56,12 @@ namespace SharedUnitTests.ECS.Simulation
         [Fact]
         public void Systems_Tick_At_Configured_Intervals()
         {
+            var tickSync = new Shared.ECS.TickSync.TickSync();
             var slow = new SlowSystem();
             var fast = new FastSystem();
             var registry = new EntityRegistry();
             var tickRate = TimeSpan.FromMilliseconds(20);
             var scheduler = new MockScheduler();
-            var tickSync = new TickSync();
             var world = new WorldBuilder(registry, tickSync, scheduler)
                 .AddSystem(slow)
                 .AddSystem(fast)
@@ -70,61 +71,51 @@ namespace SharedUnitTests.ECS.Simulation
             world.Start();
 
             // Tick 1
-            tickSync.ClientTick = 1;
             scheduler.TickAction!();
             Assert.Equal(0U, slow.TickNumber);
             Assert.Equal(1U, fast.TickNumber);
 
             // Tick 2
-            tickSync.ClientTick = 2;
             scheduler.TickAction!();
             Assert.Equal(0U, slow.TickNumber);
             Assert.Equal(2U, fast.TickNumber);
 
             // Tick 3
-            tickSync.ClientTick = 3;
             scheduler.TickAction!();
             Assert.Equal(0U, slow.TickNumber);
             Assert.Equal(3U, fast.TickNumber);
 
             // Tick 4
-            tickSync.ClientTick = 4;
             scheduler.TickAction!();
             Assert.Equal(0U, slow.TickNumber);
             Assert.Equal(4U, fast.TickNumber);
 
             // Tick 5 (slow system should run now)
-            tickSync.ClientTick = 5;
             scheduler.TickAction!();
             Assert.Equal(5U, slow.TickNumber); // Should tick on 5th tick
             Assert.Equal(5U, fast.TickNumber);
 
             // Tick 6
-            tickSync.ClientTick = 6;
             scheduler.TickAction!();
             Assert.Equal(5U, slow.TickNumber);
             Assert.Equal(6U, fast.TickNumber);
 
             // Tick 7
-            tickSync.ClientTick = 7;
             scheduler.TickAction!();
             Assert.Equal(5U, slow.TickNumber);
             Assert.Equal(7U, fast.TickNumber);
 
             // Tick 8
-            tickSync.ClientTick = 8;
             scheduler.TickAction!();
             Assert.Equal(5U, slow.TickNumber);
             Assert.Equal(8U, fast.TickNumber);
 
             // Tick 9
-            tickSync.ClientTick = 9;
             scheduler.TickAction!();
             Assert.Equal(5U, slow.TickNumber);
             Assert.Equal(9U, fast.TickNumber);
 
             // Tick 10 (slow system should run again)
-            tickSync.ClientTick = 10;
             scheduler.TickAction!();
             Assert.Equal(10U, slow.TickNumber); // Should tick on 10th tick
             Assert.Equal(10U, fast.TickNumber);
@@ -135,11 +126,11 @@ namespace SharedUnitTests.ECS.Simulation
         [Fact]
         public void System_Receives_Correct_DeltaTime()
         {
+            var tickSync = new Shared.ECS.TickSync.TickSync();
             var fast = new FastSystem();
             var registry = new EntityRegistry();
             var tickRate = TimeSpan.FromMilliseconds(20);
             var scheduler = new MockScheduler();
-            var tickSync = new TickSync();
             var world = new WorldBuilder(registry, tickSync, scheduler)
                 .AddSystem(fast)
                 .WithTickRate(tickRate)
@@ -157,18 +148,17 @@ namespace SharedUnitTests.ECS.Simulation
         }
 
         [Fact]
-        public void World_Increments_TickNumber_Only_In_Server_Mode()
+        public void World_Increments_TickNumber_Each_Update()
         {
+            var tickSync = new Shared.ECS.TickSync.TickSync();
             var fast = new FastSystem();
             var registry = new EntityRegistry();
             var tickRate = TimeSpan.FromMilliseconds(20);
             var scheduler = new MockScheduler();
-            var tickSync = new TickSync();
 
             var world = new WorldBuilder(registry, tickSync, scheduler)
                 .AddSystem(fast)
                 .WithTickRate(tickRate)
-                .WithWorldMode(WorldMode.Server)
                 .Build();
 
             world.Start();
@@ -181,37 +171,39 @@ namespace SharedUnitTests.ECS.Simulation
             scheduler.TickAction!();
             Assert.Equal(3U, world.CurrentTickIndex);
 
+
             world.Stop();
         }
 
         [Fact]
-        public void World_Sets_TickNumber_To_ClientTick_In_Client_Mode()
+        public void ClientTickSystem_Sets_ClientTick_To_Current_World_Tick()
         {
-            var fast = new FastSystem();
+            var tickSync = new Shared.ECS.TickSync.TickSync();
+            var connection = Substitute.For<IClientConnection>();
+            var clientTickSystem = new Shared.ECS.TickSync.ClientTickSystem(tickSync, connection);
+
             var registry = new EntityRegistry();
             var tickRate = TimeSpan.FromMilliseconds(20);
             var scheduler = new MockScheduler();
-            var tickSync = new TickSync();
 
             var world = new WorldBuilder(registry, tickSync, scheduler)
-                .AddSystem(fast)
+                .AddSystem(clientTickSystem)
                 .WithTickRate(tickRate)
-                .WithWorldMode(WorldMode.Client)
                 .Build();
 
             world.Start();
 
-            tickSync.ClientTick = 10;
+            // Tick 1
             scheduler.TickAction!();
-            Assert.Equal(10U, world.CurrentTickIndex);
+            Assert.Equal(1U, tickSync.ClientTick);
 
-            tickSync.ClientTick = 42;
+            // Tick 2
             scheduler.TickAction!();
-            Assert.Equal(42U, world.CurrentTickIndex);
+            Assert.Equal(2U, tickSync.ClientTick);
 
-            tickSync.ClientTick = 99;
+            // Tick 3
             scheduler.TickAction!();
-            Assert.Equal(99U, world.CurrentTickIndex);
+            Assert.Equal(3U, tickSync.ClientTick);
 
             world.Stop();
         }
