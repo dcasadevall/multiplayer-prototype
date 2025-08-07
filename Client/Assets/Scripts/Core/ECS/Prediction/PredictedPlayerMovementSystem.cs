@@ -168,6 +168,9 @@ namespace Core.ECS.Prediction
                     _reconciliationError = currentVisualPosition - correctedCurrentState.Position;
                 }
             }
+            
+            // Clear the server value after processing
+            predictedComponent.ServerValue = null;
         }
 
         private void CorrectStateAndResimulate(uint authoritativeTick, Vector3 authoritativePosition)

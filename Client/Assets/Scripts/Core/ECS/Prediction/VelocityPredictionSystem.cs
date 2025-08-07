@@ -11,18 +11,16 @@ using Vector3 = System.Numerics.Vector3;
 namespace Core.ECS.Prediction
 {
     /// <summary>
-    /// Handles velocity-based prediction and interpolation for all entities except the local player.
-    /// Applies server-authoritative movement with smooth interpolation for remote entities.
+    /// Updates the authoritative gameplay state for remote entities.
+    /// This system runs on the fixed tick rate and does NOT perform any visual smoothing.
+    /// It uses server data to calculate the "true" position via extrapolation
+    /// and performs dead reckoning when server data is stale.
     /// </summary>
     public class VelocityPredictionSystem : ISystem
     {
         private readonly ITickSync _tickSync;
         private readonly ILogger _logger;
         private readonly IClientConnection _clientConnection;
-        
-        // Interpolation settings
-        private const float InterpolationSpeed = 0.5f;
-        private const float MaxSnapDistance = 2.0f;
 
         public VelocityPredictionSystem(IClientConnection clientConnection, ITickSync tickSync, ILogger logger)
         {
@@ -31,102 +29,62 @@ namespace Core.ECS.Prediction
             _clientConnection = clientConnection;
         }
 
-        public void Update(EntityRegistry registry, uint tickNumber, float deltaTime)
+        public void Update(EntityRegistry registry, uint tickNumber, float fixedDeltaTime)
         {
-            var currentTick = _tickSync.ClientTick;
-            var serverTick = _tickSync.ServerTick;
-            
-            // Find all entities with predicted velocity, excluding the local player
-            var predictedEntities = registry
-                .GetAll()
-                .Where(x => x.Has<PredictedComponent<VelocityComponent>>())
-                .Where(x => x.Has<PositionComponent>())
-                .Where(x => x.Has<VelocityComponent>())
-                .Where(x => !IsLocalPlayer(x))
-                .ToList();
+            var remoteEntities = registry.GetAll()
+                .Where(x => x.Has<PositionComponent>() && x.Has<VelocityComponent>())
+                .Where(x => !IsLocalPlayer(x));
 
-            foreach (var entity in predictedEntities)
+            foreach (var entity in remoteEntities)
             {
-                ProcessPredictedEntity(entity, currentTick, serverTick, deltaTime);
+                ProcessRemoteEntity(entity, fixedDeltaTime);
             }
         }
 
         private bool IsLocalPlayer(Entity entity)
         {
-            if (!entity.Has<PlayerTagComponent>() || !entity.Has<PeerComponent>())
-                return false;
-                
-            var peerComponent = entity.GetRequired<PeerComponent>();
-            return peerComponent.PeerId == _clientConnection.AssignedPeerId;
+            if (!entity.TryGet(out PeerComponent peer)) return false;
+            return peer.PeerId == _clientConnection.AssignedPeerId;
         }
 
-        private void ProcessPredictedEntity(Entity entity, uint currentTick, uint serverTick, float deltaTime)
+        private void ProcessRemoteEntity(Entity entity, float fixedDeltaTime)
         {
-            var serverAuthorityVelocity = entity.GetRequired<PredictedComponent<VelocityComponent>>();
-            var position = entity.GetRequired<PositionComponent>();
-            var velocity = entity.GetRequired<VelocityComponent>();
-            
-            // Check if we have server data to work with
-            if (!serverAuthorityVelocity.HasServerValue)
-            {
-                // No server data yet, just apply current velocity
-                position.Value += velocity.Value * deltaTime;
-                return;
-            }
-            
-            // Update velocity from server data
-            velocity.Value = serverAuthorityVelocity.ServerValue.Value;
-            
-            // Handle position prediction/interpolation
-            if (false && entity.TryGet<PredictedComponent<PositionComponent>>(out var predictedPosition))
-            {
-                ProcessWithPredictedPosition(entity, predictedPosition, serverAuthorityVelocity, position, velocity, serverTick, deltaTime);
-            }
-            else
-            {
-                // No predicted position, just apply velocity
-                position.Value += velocity.Value * deltaTime;
-            }
-        }
+            var localPos = entity.GetRequired<PositionComponent>();
+            var localVel = entity.GetRequired<VelocityComponent>();
 
-        private void ProcessWithPredictedPosition(
-            Entity entity,
-            PredictedComponent<PositionComponent> predictedPosition,
-            PredictedComponent<VelocityComponent> predictedVelocity,
-            PositionComponent position,
-            VelocityComponent velocity,
-            uint serverTick,
-            float deltaTime)
-        {
-            if (!predictedPosition.HasServerValue)
+            // Try to get the server's authoritative state.
+            var hasServerPos = entity.TryGet(out PredictedComponent<PositionComponent> predPos) && predPos.HasServerValue;
+            var hasServerVel = entity.TryGet(out PredictedComponent<VelocityComponent> predVel) && predVel.HasServerValue;
+
+            // --- State Update and Extrapolation (When fresh server data arrives) ---
+            if (hasServerPos && hasServerVel)
             {
-                // No server position data, just apply velocity
-                position.Value += velocity.Value * deltaTime;
-                return;
+                // 1. Get the authoritative state from the server.
+                var serverPosition = predPos.ServerValue.Value;
+                var serverVelocity = predVel.ServerValue.Value;
+                // You must store the tick the server data is for in the PredictedComponent.
+                uint serverDataTick = _tickSync.ServerTick;
+
+                // 2. EXTRAPOLATE: Calculate where the entity should be "now" based on the
+                // historical server data and the time that has passed.
+                var tickDifference = _tickSync.SmoothedTick > serverDataTick ? (int)(_tickSync.SmoothedTick - serverDataTick) : 0;
+                var authoritativePosition = serverPosition + serverVelocity * (tickDifference * fixedDeltaTime);
+
+                // 3. UPDATE LOCAL STATE: Snap the logical position and velocity
+                // directly to the calculated authoritative values. No Lerp.
+                localPos.Value = authoritativePosition;
+                localVel.Value = serverVelocity;
+
+                // 4. CONSUME THE DATA: Clear the server values so we don't process this old data again.
+                predPos.ServerValue = null;
+                predVel.ServerValue = null;
             }
-            
-            var serverPosition = predictedPosition.ServerValue.Value;
-            var serverVelocity = predictedVelocity.ServerValue.Value;
-            
-            // Calculate extrapolated position based on server data and time difference
-            var tickDifference = _tickSync.SmoothedTick > serverTick ? (int)(_tickSync.SmoothedTick - serverTick) : 0;
-            
-            // Predict where the entity should be now based on server data
-            var predictedCurrentPosition = serverPosition + serverVelocity * (tickDifference * deltaTime);
-            
-            // Check if we need to snap due to large distance
-            var distance = Vector3.Distance(position.Value, predictedCurrentPosition);
-            
-            if (distance > MaxSnapDistance)
-            {
-                // Large error - snap immediately
-                position.Value = predictedCurrentPosition;
-                _logger.Debug("Snapped entity {0} due to large distance: {1:F2}", entity.Id, distance);
-            }
+            // --- Dead Reckoning (When server data is stale) ---
             else
             {
-                // Small error - smooth interpolation
-                position.Value = Vector3.Lerp(position.Value, predictedCurrentPosition, InterpolationSpeed);
+                // No fresh data. Keep the entity moving based on its last known velocity
+                // to prevent stuttering between packets.
+                localPos.Value += localVel.Value * fixedDeltaTime;
             }
         }
     }
