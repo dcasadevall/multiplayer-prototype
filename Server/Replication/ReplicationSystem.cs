@@ -24,7 +24,7 @@ namespace Server.Replication
     // NOTE: It's okay to replicate every tick, but in a real game we would likely want to reduce this frequency
     // to avoid flooding the network with large snapshots.
     // We would send deltas and chunk large snapshots.
-    [TickInterval(1)]
+    [TickInterval(10)]
     public class ReplicationSystem : ISystem
     {
         private readonly IMessageSender _messageSender;

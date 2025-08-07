@@ -1,5 +1,6 @@
 using System;
 using System.Linq;
+using Adapters.ECS.Debugging;
 using Core.ECS;
 using Core.ECS.Prediction;
 using Core.ECS.Simulation;
@@ -37,12 +38,16 @@ namespace Adapters
             serviceCollection.AddSingleton<IInputListener>(sp => sp.GetRequiredService<InputSystem>());
             
             // Prediction systems
+            // Some systems (like VelocityPredictionSystem vs VelocitySystem) are used instead of their
+            // regular counterparts to handle client-side prediction.
             serviceCollection.AddSingleton<ISystem, PredictedPlayerMovementSystem>();
             serviceCollection.AddSingleton<ISystem, VelocityPredictionSystem>();
             serviceCollection.AddSingleton<PredictedPlayerShotSystem>();
             serviceCollection.AddSingleton<ISystem>(sp => sp.GetRequiredService<PredictedPlayerShotSystem>());
             serviceCollection.AddSingleton<IInitializable>(sp => sp.GetRequiredService<PredictedPlayerShotSystem>());
             serviceCollection.AddSingleton<IDisposable>(sp => sp.GetRequiredService<PredictedPlayerShotSystem>());
+
+            serviceCollection.AddSingleton<ISystem, ServerPositionVisualizerSystem>();
             
             // Entity lifecycle systems
             serviceCollection.AddSingleton<ISystem, SelfDestroyingSystem>();

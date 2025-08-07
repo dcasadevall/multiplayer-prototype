@@ -1,3 +1,5 @@
+using System;
+
 namespace Shared
 {
     /// <summary>
@@ -28,6 +30,11 @@ namespace Shared
         /// Tick rate for the world simulation.
         /// This defines how often the world updates its state.
         /// </summary>
-        public static int WorldTickRate { get; } = 30; // 30 ticks per second
+        public static int WorldTicksPerSecond { get; } = 30;
+
+        /// <summary>
+        /// The fixed delta time for the world simulation.
+        /// </summary>
+        public static TimeSpan FixedDeltaTime { get; } = TimeSpan.FromSeconds(1.0f / WorldTicksPerSecond);
     }
 }

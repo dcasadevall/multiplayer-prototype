@@ -45,7 +45,7 @@ namespace Core.ECS.Simulation
             
             // Create a world using the WorldBuilder pattern (like the server)
             var worldBuilder = new WorldBuilder(_entityRegistry, _tickSync, _scheduler)
-                .WithFrequency(SharedConstants.WorldTickRate)
+                .WithFrequency(SharedConstants.WorldTicksPerSecond)
                 .WithWorldMode(WorldMode.Client);
             
             // Add all registered systems to the world
@@ -55,7 +55,7 @@ namespace Core.ECS.Simulation
             _world = worldBuilder.Build();
             _world.Start();
             
-            Debug.Log($"ClientWorldManager: ECS world initialized with {SharedConstants.WorldTickRate} " +
+            Debug.Log($"ClientWorldManager: ECS world initialized with {SharedConstants.WorldTicksPerSecond} " +
                       $"ticks per second and {_systems.Count()} systems");
         }
         

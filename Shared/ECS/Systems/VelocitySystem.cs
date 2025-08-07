@@ -11,7 +11,7 @@ namespace Shared.ECS.Systems
     /// Runs every tick to ensure smooth movement.
     /// </summary>
     [TickInterval(1)] // Run every tick
-    public class MovementSystem : ISystem
+    public class VelocitySystem : ISystem
     {
         public void Update(EntityRegistry entityRegistry, uint tickNumber, float deltaTime)
         {
@@ -25,7 +25,7 @@ namespace Shared.ECS.Systems
                     entity.TryGet<VelocityComponent>(out var velocity))
                 {
                     // Update position based on velocity and delta time
-                    position.Value += velocity.Value * deltaTime;
+                    position.Value += velocity.Value * (float)SharedConstants.FixedDeltaTime.TotalSeconds;
                 }
             }
         }

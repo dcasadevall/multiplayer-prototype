@@ -34,7 +34,7 @@ services.AddSingleton<ILogger, ConsoleLogger>();
 
 // Register server systems
 services.AddSingleton<ISystem, WorldDiagnosticsSystem>();
-services.AddSingleton<ISystem, MovementSystem>();
+services.AddSingleton<ISystem, VelocitySystem>();
 services.AddSingleton<ISystem, HealthSystem>();
 
 // Register TickSync and ServerTickSystem
@@ -102,7 +102,7 @@ sceneLoader.Load(path);
 // Create a fixed timestep world running at the specified frequency
 // Add all the systems registered in the service provider
 var worldBuilder = new WorldBuilder(entityRegistry, tickSync, scheduler)
-    .WithFrequency(SharedConstants.WorldTickRate)
+    .WithFrequency(SharedConstants.WorldTicksPerSecond)
     .WithWorldMode(WorldMode.Server);
 
 var systems = serviceProvider.GetServices<ISystem>().ToList();

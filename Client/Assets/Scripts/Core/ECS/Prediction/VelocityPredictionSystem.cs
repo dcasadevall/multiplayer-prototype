@@ -62,12 +62,12 @@ namespace Core.ECS.Prediction
 
         private void ProcessPredictedEntity(Entity entity, uint currentTick, uint serverTick, float deltaTime)
         {
-            var predictedVelocity = entity.GetRequired<PredictedComponent<VelocityComponent>>();
+            var serverAuthorityVelocity = entity.GetRequired<PredictedComponent<VelocityComponent>>();
             var position = entity.GetRequired<PositionComponent>();
             var velocity = entity.GetRequired<VelocityComponent>();
             
             // Check if we have server data to work with
-            if (!predictedVelocity.HasServerValue)
+            if (!serverAuthorityVelocity.HasServerValue)
             {
                 // No server data yet, just apply current velocity
                 position.Value += velocity.Value * deltaTime;
@@ -75,12 +75,12 @@ namespace Core.ECS.Prediction
             }
             
             // Update velocity from server data
-            velocity.Value = predictedVelocity.ServerValue.Value;
+            velocity.Value = serverAuthorityVelocity.ServerValue.Value;
             
             // Handle position prediction/interpolation
             if (entity.TryGet<PredictedComponent<PositionComponent>>(out var predictedPosition))
             {
-                ProcessWithPredictedPosition(entity, predictedPosition, predictedVelocity, position, velocity, currentTick, serverTick, deltaTime);
+                ProcessWithPredictedPosition(entity, predictedPosition, serverAuthorityVelocity, position, velocity, serverTick, deltaTime);
             }
             else
             {
@@ -95,7 +95,6 @@ namespace Core.ECS.Prediction
             PredictedComponent<VelocityComponent> predictedVelocity,
             PositionComponent position,
             VelocityComponent velocity,
-            uint currentTick,
             uint serverTick,
             float deltaTime)
         {

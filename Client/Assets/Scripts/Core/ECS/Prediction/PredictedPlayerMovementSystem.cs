@@ -3,6 +3,7 @@ using System.Linq;
 using System.Numerics;
 using Core.ECS.Entities;
 using Core.Input;
+using Shared;
 using Shared.ECS;
 using Shared.ECS.Components;
 using Shared.ECS.Entities;
@@ -76,7 +77,7 @@ namespace Core.ECS.Prediction
             ProcessLocalPlayerMovement(localPlayer, tickNumber, deltaTime);
 
             // Check for reconciliation against server state
-            CheckReconciliation(localPlayer, tickNumber, deltaTime);
+            CheckReconciliation(localPlayer, tickNumber);
 
             // Clean up old states from the buffer
             PruneOldStates(_tickSync.ServerTick);
@@ -121,6 +122,7 @@ namespace Core.ECS.Prediction
             }
 
             // 1. Calculate the pure, uncorrected prediction for this tick.
+            // Since this is a local prediction, we use deltaTime.
             var newPosition = lastState.Position + newVelocity * deltaTime;
 
             // Store this pure state in our history.
@@ -135,7 +137,7 @@ namespace Core.ECS.Prediction
             localPlayer.AddOrReplaceComponent(new VelocityComponent { Value = newVelocity });
         }
 
-        private void CheckReconciliation(Entity localPlayer, uint currentTick, float deltaTime)
+        private void CheckReconciliation(Entity localPlayer, uint currentTick)
         {
             var predictedComponent = localPlayer.GetRequired<PredictedComponent<PositionComponent>>();
             if (!predictedComponent.HasServerValue) return;
@@ -157,7 +159,7 @@ namespace Core.ECS.Prediction
                 var currentVisualPosition = localPlayer.GetRequired<PositionComponent>().Value;
 
                 // Correct and re-simulate using the same deltaTime as original predictions
-                CorrectStateAndResimulate(serverDataTick, serverPosition, deltaTime);
+                CorrectStateAndResimulate(serverDataTick, serverPosition);
 
                 // Calculate new error after re-simulation
                 if (_stateBuffer.TryGetValue(currentTick, out var correctedCurrentState))
@@ -167,7 +169,7 @@ namespace Core.ECS.Prediction
             }
         }
 
-        private void CorrectStateAndResimulate(uint authoritativeTick, Vector3 authoritativePosition, float deltaTime)
+        private void CorrectStateAndResimulate(uint authoritativeTick, Vector3 authoritativePosition)
         {
             // Correct the state at the authoritative tick with server data
             _stateBuffer[authoritativeTick] = new PredictedState
@@ -187,7 +189,9 @@ namespace Core.ECS.Prediction
                     newVelocity = new Vector3(moveDirection.X, 0, moveDirection.Y) * GameplayConstants.PlayerSpeed;
                 }
 
-                var newPosition = previousState.Position + newVelocity * deltaTime;
+                // Use FixedDeltaTime to ensure consistent simulation
+                // If we used deltaTime, it would vary per frame and break the prediction.
+                var newPosition = previousState.Position + newVelocity * (float)SharedConstants.FixedDeltaTime.TotalSeconds;
                 _stateBuffer[tick] = new PredictedState
                 {
                     Position = newPosition,

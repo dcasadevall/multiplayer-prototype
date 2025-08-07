@@ -65,14 +65,14 @@ namespace Shared.ECS.TickSync
             }
 
             // Correct for drift based on the current ping and fixed delta time.
-            CorrectForDrift(deltaTime);
+            CorrectForDrift();
         }
 
-        private void CorrectForDrift(float fixedDeltaTime)
+        private void CorrectForDrift()
         {
             // A. Calculate the ideal offset from the server based on latency.
             var pingInSeconds = _connection.PingMs / 1000.0f;
-            var targetOffset = (int)(pingInSeconds / fixedDeltaTime) + TickBuffer;
+            var targetOffset = (int)(pingInSeconds / SharedConstants.FixedDeltaTime.TotalSeconds) + TickBuffer;
 
             // B. Get our current, real offset.
             var currentOffset = (int)_tickSync.ClientTick - (int)_tickSync.ServerTick;
