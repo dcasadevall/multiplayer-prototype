@@ -117,9 +117,6 @@ namespace Core.ECS.Prediction
             projectile.AddComponent(new DamageApplyingComponent { Damage = GameplayConstants.ProjectileDamage });
             projectile.AddComponent(SelfDestroyingComponent.CreateWithTTL(clientTick, GameplayConstants.ProjectileTtlTicks));
             
-            // Make it replicated (will be overridden by server data when it arrives)
-            projectile.AddComponent(new ReplicatedTagComponent());
-            
             return projectile;
         }
 

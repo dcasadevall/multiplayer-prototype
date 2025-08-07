@@ -1,6 +1,7 @@
 using System.Numerics;
 using Shared.ECS;
 using Shared.ECS.Components;
+using Shared.ECS.Archetypes;
 using Shared.ECS.Entities;
 using Shared.ECS.Prediction;
 using Shared.ECS.Replication;
@@ -125,8 +126,7 @@ namespace Server.Player
 
         private Entity SpawnProjectile(PlayerShotMessage shotMessage, Entity playerEntity)
         {
-            var projectile = entityRegistry.CreateEntity();
-            var playerPosition = playerEntity.GetRequired<PositionComponent>();
+            var playerPosition = playerEntity.GetRequired<PositionComponent>().Value;
             var peerId = playerEntity.GetRequired<PeerComponent>().PeerId;
 
             // Get current server tick
@@ -137,27 +137,14 @@ namespace Server.Player
             // Position and velocity
             var playerRotation = playerEntity.GetRequired<RotationComponent>().Value;
             var velocity = Vector3.Transform(new Vector3(0, 0, 1), playerRotation) * GameplayConstants.ProjectileSpeed;
-            projectile.AddPredictedComponent(new PositionComponent { Value = playerPosition.Value });
-            projectile.AddPredictedComponent(new VelocityComponent { Value = velocity });
 
-            // Projectile properties
-            projectile.AddComponent(new ProjectileTagComponent());
-            projectile.AddComponent(new PrefabComponent { PrefabName = GameplayConstants.ProjectilePrefabName });
-            projectile.AddComponent(new DamageApplyingComponent { Damage = GameplayConstants.ProjectileDamage });
-            projectile.AddComponent(SelfDestroyingComponent.CreateWithTTL(serverTick, GameplayConstants.ProjectileTtlTicks));
-
-            // Spawn authority
-            projectile.AddComponent(new SpawnAuthorityComponent
-            {
-                SpawnedByPeerId = peerId,
-                LocalEntityId = shotMessage.PredictedProjectileId,
-                SpawnTick = shotMessage.Tick
-            });
-
-            // Make it replicated so other clients receive it
-            projectile.AddComponent(new ReplicatedTagComponent());
-
-            return projectile;
+            return ProjectileArchetype.Create(
+                entityRegistry,
+                playerPosition,
+                velocity,
+                serverTick,
+                peerId,
+                shotMessage.PredictedProjectileId);
         }
 
         /// <summary>

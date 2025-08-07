@@ -1,8 +1,6 @@
 using LiteNetLib;
 using Shared.ECS;
-using Shared.ECS.Components;
-using Shared.ECS.Prediction;
-using Shared.ECS.Replication;
+using Shared.ECS.Archetypes;
 using Shared.Logging;
 using Shared.Scheduling;
 
@@ -40,25 +38,12 @@ namespace Server.Player
 
             try
             {
-                // Create a new player entity
-                var playerEntity = entityRegistry.CreateEntity();
-
-                playerEntity.AddPredictedComponent(new PositionComponent { X = x, Y = y, Z = z });
-                playerEntity.AddPredictedComponent(new VelocityComponent());
-
-                playerEntity.AddComponent(new HealthComponent { MaxHealth = 100, CurrentHealth = 100 });
-
-                // Add client ID component to link the entity to the client
-                // Generate a random name for the player
                 var name = $"Player_{peer.Id}";
-                playerEntity.AddComponent(new PeerComponent { PeerId = peer.Id, PeerName = name });
-                playerEntity.AddComponent(new NameComponent { Name = name });
-                playerEntity.AddComponent(new PrefabComponent { PrefabName = "Player" });
-                playerEntity.AddComponent<PlayerTagComponent>();
-                playerEntity.AddComponent(new RotationComponent());
-
-                // Mark as replicated so it gets sent to clients
-                playerEntity.AddComponent<ReplicatedTagComponent>();
+                var playerEntity = PlayerArchetype.Create(
+                    entityRegistry,
+                    peer.Id,
+                    name,
+                    new System.Numerics.Vector3(x, y, z));
 
                 logger.Info(LoggedFeature.Networking, "Created player entity {0} for peer {1}", playerEntity.Id, peer.Id);
 

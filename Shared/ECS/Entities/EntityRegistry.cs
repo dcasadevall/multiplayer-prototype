@@ -76,6 +76,22 @@ namespace Shared.ECS
         }
 
         /// <summary>
+        /// WithAll returns all entities that contain the specified component type.
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <returns></returns>
+        public IEnumerable<Entity> With<T>() where T : IComponent
+        {
+            foreach (var entity in _entities.Values)
+            {
+                if (entity.Has<T>())
+                {
+                    yield return entity;
+                }
+            }
+        }
+
+        /// <summary>
         /// WithAll returns all entities that contain all the specified component types.
         /// </summary>
         /// <typeparam name="T"></typeparam>
@@ -86,6 +102,24 @@ namespace Shared.ECS
             foreach (var entity in _entities.Values)
             {
                 if (entity.Has<T>() && entity.Has<T1>())
+                {
+                    yield return entity;
+                }
+            }
+        }
+
+        /// <summary>
+        /// WithAll returns all entities that contain all the specified component types.
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <typeparam name="T1"></typeparam>
+        /// <typeparam name="T2"></typeparam>
+        /// <returns></returns>
+        public IEnumerable<Entity> WithAll<T, T1, T2>() where T : IComponent where T1 : IComponent where T2 : IComponent
+        {
+            foreach (var entity in _entities.Values)
+            {
+                if (entity.Has<T>() && entity.Has<T1>() && entity.Has<T2>())
                 {
                     yield return entity;
                 }

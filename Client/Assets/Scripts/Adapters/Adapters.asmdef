@@ -2,7 +2,8 @@
     "name": "Adapters",
     "rootNamespace": "",
     "references": [
-        "GUID:f85e4fd8f46474b15ace7d824c89b3d8"
+        "GUID:f85e4fd8f46474b15ace7d824c89b3d8",
+        "GUID:5d99b562ecf9648dc8051e80fc945954"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],

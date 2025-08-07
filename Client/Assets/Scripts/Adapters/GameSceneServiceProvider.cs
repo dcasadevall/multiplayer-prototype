@@ -2,6 +2,7 @@ using System;
 using System.Linq;
 using Adapters.ECS.Debugging;
 using Adapters.Health;
+using Adapters.Rendering;
 using Core.ECS;
 using Core.ECS.Prediction;
 using Core.ECS.Simulation;
@@ -51,6 +52,7 @@ namespace Adapters
             
             // Health / Damage systems
             serviceCollection.AddSingleton<ISystem, HealthBarRenderSystem>();
+            serviceCollection.AddSingleton<ISystem, ProjectileRenderSystem>();
 
             // Entity lifecycle systems
             serviceCollection.AddSingleton<ISystem, SelfDestroyingSystem>();

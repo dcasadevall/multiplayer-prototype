@@ -12,6 +12,7 @@ using Shared.Networking;
 using Shared.Scheduling;
 using Microsoft.Extensions.Configuration;
 using Server.Player;
+using Shared.Physics;
 
 // Add Configuration
 var configuration = new ConfigurationBuilder()
@@ -36,12 +37,13 @@ services.AddSingleton<ILogger, ConsoleLogger>();
 services.AddSingleton<ISystem, WorldDiagnosticsSystem>();
 services.AddSingleton<ISystem, VelocitySystem>();
 services.AddSingleton<ISystem, FaceMoveDirectionSystem>();
+services.AddSingleton<ISystem, CollisionSystem>();
 services.AddSingleton<ISystem, HealthSystem>();
 
 // Register TickSync and ServerTickSystem
 // This should be the LAST system before the replication system
 var tickSync = new TickSync();
-services.AddSingleton<ISystem>(sp => new ServerTickSystem(tickSync));
+services.AddSingleton<ISystem>(_ => new ServerTickSystem(tickSync));
 services.AddSingleton<ITickSync>(tickSync);
 
 services.AddSingleton<ISystem, ReplicationSystem>();
@@ -80,6 +82,7 @@ services.AddSingleton<INetworkingServer, NetLibNetworkingServer>();
 services.AddSingleton<PlayerMovementHandler>();
 services.AddSingleton<IInitializable, PlayerMovementHandler>();
 services.AddSingleton<IDisposable, PlayerMovementHandler>();
+
 // Server Input handling: Shots
 services.AddSingleton<PlayerShotHandler>();
 services.AddSingleton<IInitializable, PlayerShotHandler>();
