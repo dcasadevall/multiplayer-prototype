@@ -62,6 +62,7 @@ namespace Shared.ECS.TickSync
             if (!_tickSync.IsInitialized)
             {
                 _tickSync.ClientTick = _tickSync.ServerTick;
+                _tickSync.IsInitialized = true;
             }
 
             // Correct for drift based on the current ping and fixed delta time.
