@@ -1,6 +1,7 @@
 using System;
 using System.Linq;
 using Adapters.ECS.Debugging;
+using Adapters.Health;
 using Core.ECS;
 using Core.ECS.Prediction;
 using Core.ECS.Simulation;
@@ -47,6 +48,9 @@ namespace Adapters
             serviceCollection.AddSingleton<ISystem>(sp => sp.GetRequiredService<PredictedPlayerShotSystem>());
             serviceCollection.AddSingleton<IInitializable>(sp => sp.GetRequiredService<PredictedPlayerShotSystem>());
             serviceCollection.AddSingleton<IDisposable>(sp => sp.GetRequiredService<PredictedPlayerShotSystem>());
+            
+            // Health / Damage systems
+            serviceCollection.AddSingleton<ISystem, HealthBarRenderSystem>();
 
             // Entity lifecycle systems
             serviceCollection.AddSingleton<ISystem, SelfDestroyingSystem>();
