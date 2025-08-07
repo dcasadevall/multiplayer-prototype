@@ -20,11 +20,6 @@ namespace Shared.Networking
         int PingMs { get; }
 
         /// <summary>
-        /// The Server Tick number at the time of connection.
-        /// </summary>
-        uint StartingServerTick { get; }
-
-        /// <summary>
         /// The message sender for sending messages to the server or other peers.
         /// </summary>
         IMessageSender MessageSender { get; }

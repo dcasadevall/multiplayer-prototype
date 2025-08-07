@@ -24,13 +24,6 @@ namespace Shared.Networking.Messages
         public DateTime ConnectionTime { get; set; }
 
         /// <summary>
-        /// Server tick number at the time of connection.
-        /// Used to initialize the client tick.
-        /// </summary>
-        [JsonPropertyName("serverTick")]
-        public uint ServerTick { get; set; }
-
-        /// <summary>
         /// Server version information for compatibility checking.
         /// </summary>
         [JsonPropertyName("serverVersion")]

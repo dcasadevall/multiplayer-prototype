@@ -102,7 +102,8 @@ sceneLoader.Load(path);
 // Create a fixed timestep world running at the specified frequency
 // Add all the systems registered in the service provider
 var worldBuilder = new WorldBuilder(entityRegistry, tickSync, scheduler)
-    .WithFrequency(SharedConstants.WorldTickRate);
+    .WithFrequency(SharedConstants.WorldTickRate)
+    .WithWorldMode(WorldMode.Server);
 
 var systems = serviceProvider.GetServices<ISystem>().ToList();
 systems.ForEach(x => worldBuilder.AddSystem(x));

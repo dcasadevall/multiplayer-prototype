@@ -21,5 +21,10 @@ namespace Shared.ECS.TickSync
         /// Used for interpolation in visuals.
         /// </summary>
         public float SmoothedTick { get; set; }
+
+        /// <summary>
+        /// Flag to know if the sync has been initialized (used by client)
+        /// </summary>
+        internal bool IsInitialized { get; set; }
     }
 }

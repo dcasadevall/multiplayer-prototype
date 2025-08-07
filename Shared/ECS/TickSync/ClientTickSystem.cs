@@ -58,6 +58,13 @@ namespace Shared.ECS.TickSync
             _tickSync.ServerTick = serverTickComponent.TickNumber;
             _tickSync.SmoothedTick = Lerping.Lerp(_tickSync.SmoothedTick, _tickSync.ServerTick, 0.1f);
 
+            // If we are not initialized, set the client tick to the server tick
+            if (!_tickSync.IsInitialized)
+            {
+                _tickSync.ClientTick = _tickSync.ServerTick;
+            }
+
+            // Correct for drift based on the current ping and fixed delta time.
             CorrectForDrift(deltaTime);
         }
 

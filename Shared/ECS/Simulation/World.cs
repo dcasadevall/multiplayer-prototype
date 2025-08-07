@@ -30,6 +30,7 @@ namespace Shared.ECS.Simulation
     {
         private readonly List<SystemSchedule> _scheduledSystems = new List<SystemSchedule>();
         private readonly IScheduler _scheduler;
+        private readonly WorldMode _worldMode;
         private readonly EntityRegistry _entityRegistry;
         private readonly ITickSync _tickSync;
 
@@ -46,37 +47,34 @@ namespace Shared.ECS.Simulation
         /// </summary>
         public uint CurrentTickIndex => _tickNumber;
 
-        private bool isClient = false;
-
         /// <summary>
         /// Initializes a new <see cref="World"/> with the given systems and configuration.
         /// </summary>
-        /// <param name="startingTick">The initial tick number to start from.</param>
         /// <param name="systems">The systems to register with this world.</param>
         /// <param name="entityRegistry">Registry used for managing entities in this world.</param>
+        /// <param name="tickSync">Tick synchronization service for managing server and client ticks.</param>
         /// <param name="tickRate">The time between ticks (e.g., 33ms for 30Hz).</param>
         /// <param name="scheduler">The scheduler to use for driving ticks.</param>
-        internal World(uint startingTick,
-            IEnumerable<ISystem> systems,
+        /// <param name="worldMode">The mode this world will be running on.</param>
+        internal World(IEnumerable<ISystem> systems,
             EntityRegistry entityRegistry,
             ITickSync tickSync,
             TimeSpan tickRate,
-            IScheduler scheduler)
+            IScheduler scheduler,
+            WorldMode worldMode)
         {
             _entityRegistry = entityRegistry;
             _tickSync = tickSync;
             _tickRate = tickRate;
             _fixedDeltaTime = (float)tickRate.TotalSeconds;
-            _tickNumber = startingTick;
             _scheduler = scheduler;
+            _worldMode = worldMode;
 
             // Create scheduled systems
             foreach (var system in systems)
             {
                 _scheduledSystems.Add(new SystemSchedule(system));
             }
-
-            isClient = startingTick > 0;
         }
 
         /// <summary>
@@ -143,7 +141,7 @@ namespace Shared.ECS.Simulation
                 }
             }
 
-            if (!isClient)
+            if (_worldMode == WorldMode.Server)
             {
                 _tickNumber++;
             }

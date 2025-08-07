@@ -5,7 +5,6 @@ using Shared;
 using Shared.ECS;
 using Shared.ECS.Simulation;
 using Shared.ECS.TickSync;
-using Shared.Networking;
 using Shared.Scheduling;
 using UnityEngine;
 
@@ -27,18 +26,15 @@ namespace Core.ECS.Simulation
         private readonly ITickSync _tickSync;
         private readonly IScheduler _scheduler;
         private readonly IEnumerable<ISystem> _systems;
-        private readonly uint _startingTick = 0;
         private World _world;
 
         public ClientWorldManager(EntityRegistry entityRegistry, 
-            IClientConnection clientConnection,
             ITickSync tickSync,
             IScheduler scheduler, 
             IEnumerable<ISystem> systems)
         {
             _entityRegistry = entityRegistry;
             _tickSync = tickSync;
-            _startingTick = clientConnection.StartingServerTick;
             _scheduler = scheduler;
             _systems = systems;
         }
@@ -50,7 +46,7 @@ namespace Core.ECS.Simulation
             // Create a world using the WorldBuilder pattern (like the server)
             var worldBuilder = new WorldBuilder(_entityRegistry, _tickSync, _scheduler)
                 .WithFrequency(SharedConstants.WorldTickRate)
-                .WithStartingTick(_startingTick);
+                .WithWorldMode(WorldMode.Client);
             
             // Add all registered systems to the world
             _systems.ToList().ForEach(system => worldBuilder.AddSystem(system));
