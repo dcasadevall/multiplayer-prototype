@@ -5,9 +5,14 @@ namespace Shared.Scheduling
 {
     /// <summary>
     /// A scheduler that uses <see cref="System.Threading.Timer"/> to execute a task at a fixed rate.
-    /// This implementation ensures that executions of the task do not overlap. If a task execution
-    /// takes longer than the specified period, the next execution will be delayed until the current
-    /// one is complete.
+    /// This implementation has two key behaviors:
+    /// 1.  **Non-Overlapping Execution**: `System.Threading.Timer` guarantees that the callback will not be
+    ///     called again until the previous execution is complete. This prevents re-entrancy issues.
+    /// 2.  **Catch-up on Delay**: If a task execution takes longer than the specified period, the timer will
+    ///     fall behind. Once the long-running task completes, the timer will attempt to "catch up" by
+    ///     executing the missed ticks in rapid succession without delay until it is back on schedule.
+    ///     For a real-time simulation, this means the simulation must consistently run faster than the tick rate
+    ///     to avoid "spiral of death" performance issues.
     /// </summary>
     public class TimerScheduler : IScheduler
     {

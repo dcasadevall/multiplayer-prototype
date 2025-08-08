@@ -30,20 +30,20 @@ namespace Shared.ECS.Archetypes
             uint spawnTick)
         {
             var playerPosition = shootingPlayerEntity.GetRequired<PositionComponent>().Value;
-            var peerId = shootingPlayerEntity.GetRequired<PeerComponent>().PeerId;
-            var spawnPosition = playerPosition +
-                                Vector3.UnitY * GameplayConstants.ProjectileSpawnHeight +
-                                Vector3.UnitZ * GameplayConstants.ProjectileSpawnForward;
-
-            // Position and velocity
             var playerRotation = shootingPlayerEntity.GetRequired<RotationComponent>().Value;
-            var velocity = Vector3.Transform(new Vector3(0, 0, 1), playerRotation) * GameplayConstants.ProjectileSpeed;
-            var spawnRotation = playerRotation;
+            var peerId = shootingPlayerEntity.GetRequired<PeerComponent>().PeerId;
+
+            // Transform the spawn offsets by the player's rotation to get the correct world-space position
+            var spawnOffset = new Vector3(0, GameplayConstants.ProjectileSpawnHeight, GameplayConstants.ProjectileSpawnForward);
+            var rotatedOffset = Vector3.Transform(spawnOffset, playerRotation);
+            var spawnPosition = playerPosition + rotatedOffset;
+            
+            var velocity = Vector3.Transform(Vector3.UnitZ, playerRotation) * GameplayConstants.ProjectileSpeed;
 
             return Create(
                 registry,
                 spawnPosition,
-                spawnRotation,
+                playerRotation,
                 velocity,
                 spawnTick,
                 peerId,

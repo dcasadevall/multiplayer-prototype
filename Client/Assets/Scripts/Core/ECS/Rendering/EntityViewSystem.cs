@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using Core.MathUtils;
 using Shared.ECS;
 using Shared.ECS.Components;
@@ -72,7 +73,7 @@ namespace Core.ECS.Rendering
         public void Update(EntityRegistry registry, uint tickNumber, float deltaTime)
         {
             // Process all entities with position components
-            foreach (var entity in registry.GetAll())
+            foreach (var entity in registry.GetAll().ToList())
             {
                 if (entity.Has<PositionComponent>())
                 {
@@ -185,21 +186,11 @@ namespace Core.ECS.Rendering
                 return;
             }
             
-            // If it does, we need to destroy the local counterpart
-            if (_entityViews.TryGetValue(localMatchedEntity.Id, out var localView))
-            {
-                // We do not destroy the entity itself, just the view
-                // This system will destroy entities without an associated view
-                // Object.Destroy(localView);
-                // _entityViews.Remove(localMatchedEntity.Id);
-                entityRegistry.DestroyEntity(localMatchedEntity.Id);
-                _logger.Debug(LoggedFeature.Replication, 
-                    $"EntityViewSystem: Destroyed local view for entity {localMatchedEntity.Id}");
-            }
-            else
-            {
-                _logger.Warn(LoggedFeature.Ecs, $"EntityViewSystem: No local view found for entity {localMatchedEntity.Id}");
-            }
+            // This system will handle removing the view from the registry
+            // and cleaning up the GameObject once the entity is destroyed.
+            entityRegistry.DestroyEntity(localMatchedEntity.Id);
+            _logger.Debug(LoggedFeature.Replication, 
+                $"EntityViewSystem: Destroyed local view for entity {localMatchedEntity.Id}");
         }
         
         /// <summary>

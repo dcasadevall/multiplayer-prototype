@@ -8,6 +8,7 @@ using Shared.ECS.TickSync;
 using Shared.Input;
 using Shared.Logging;
 using Shared.Networking;
+using Shared.Physics;
 using Shared.Scheduling;
 
 namespace Server.Player
@@ -97,6 +98,14 @@ namespace Server.Player
                     LocalEntityId = shotMessage.PredictedProjectileId,
                     SpawnTick = shotMessage.Tick
                 });
+
+                var rot = playerEntity.GetRequired<RotationComponent>().Value;
+                var pos = projectile.GetRequired<PositionComponent>().Value;
+                var vel = projectile.GetRequired<VelocityComponent>().Value;
+                logger.Info($"[Debug] Player Rotation: {rot.X:F2}, {rot.Y:F2}, {rot.Z:F2}, {rot.W:F2}");
+                logger.Info($"[Debug] Projectile Spawn Pos: {pos.X:F2}, {pos.Y:F2}, {pos.Z:F2}");
+                logger.Info($"[Debug] Projectile Velocity: {vel.X:F2}, {vel.Y:F2}, {vel.Z:F2}");
+
 
                 logger.Debug("Spawned projectile {0} for peer {1} at tick {2}",
                     projectile.Id, peerId, shotMessage.Tick);

@@ -125,9 +125,12 @@ namespace Shared.ECS.Simulation
         /// The main fixed timestep simulation loop.
         ///
         /// <para>
-        /// Runs at a constant rate, processing one simulation step per iteration.
-        /// Each step increments the tick index and updates systems that are due to run
-        /// based on their tick intervals. This ensures deterministic behavior.
+        /// This method is called by the <see cref="IScheduler"/> at a fixed rate.
+        /// It processes one simulation step ("tick") per call. It is crucial to understand that
+        /// the `_fixedDeltaTime` passed to systems is a constant value, calculated from the desired tick rate.
+        /// It does **not** represent the actual wall-clock time that has passed since the last tick, which
+        /// could vary due to system load. This ensures that the simulation is deterministic and independent
+        /// of the execution speed, which is a core principle of fixed timestep game loops.
         /// </para>
         /// </summary>
         private void Tick()

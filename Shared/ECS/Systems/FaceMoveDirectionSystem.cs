@@ -13,7 +13,7 @@ namespace Shared.ECS.Systems
             foreach (var entity in registry.WithAll<VelocityComponent, RotationComponent>())
             {
                 var velocity = entity.GetRequired<VelocityComponent>().Value;
-                if (velocity == Vector3.Zero) continue;
+                if (velocity.LengthSquared() < float.Epsilon) continue;
 
                 var direction = Vector3.Normalize(velocity);
                 var rotation = Quaternion.CreateFromYawPitchRoll(

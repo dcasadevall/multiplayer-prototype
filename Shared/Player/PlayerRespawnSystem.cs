@@ -25,7 +25,7 @@ namespace Shared.Player
         /// <param name="deltaTime">Delta time for the tick.</param>
         public void Update(EntityRegistry registry, uint tickNumber, float deltaTime)
         {
-            var deadPlayers = registry.WithAll<PlayerTagComponent, DeadPlayerComponent>().ToList();
+            var deadPlayers = registry.With<DeadPlayerComponent>().ToList();
             foreach (var player in deadPlayers)
             {
                 var deadComponent = player.GetRequired<DeadPlayerComponent>();

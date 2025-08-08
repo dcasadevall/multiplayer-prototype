@@ -8,108 +8,69 @@ using UnityEngine;
 namespace Core.Scheduling
 {
     /// <summary>
-    /// Unity implementation of IScheduler that ensures tasks run on the main thread.
-    /// Uses coroutines to schedule periodic tasks and ensures they execute in Unity's update loop.
+    /// Unity implementation of <see cref="IScheduler"/> that ensures tasks run on the main thread using coroutines.
+    /// This scheduler guarantees execution within Unity's update loop, which is required for any interaction
+    /// with Unity's UI and other game components.
+    /// that if a scheduled task takes longer than the period to execute, the next invocation will be delayed.
+    /// It will wait for the full period after the long task completes, effectively "dropping" ticks to
+    /// prevent a "spiral of death" and prioritize application responsiveness over strict adherence to the schedule.
+    /// This is in contrast to the server's <see cref="Shared.Scheduling.TimerScheduler"/>, which will attempt
+    /// to catch up by running missed ticks in rapid succession.
     /// </summary>
     public class UnityMainThreadScheduler : MonoBehaviour, IScheduler
     {
-        private class ScheduledTask : IDisposable
+        private class CoroutineDisposable : IDisposable
         {
-            private readonly Action _task;
-            private readonly float _periodSeconds;
-            private readonly CancellationTokenSource _linkedSource;
-            private readonly MonoBehaviour _coroutineRunner;
-            private Coroutine _coroutine;
+            private readonly MonoBehaviour _runner;
+            private readonly Coroutine _coroutine;
+            private bool _disposed;
 
-            public ScheduledTask(Action task, float periodSeconds, CancellationToken cancellationToken, MonoBehaviour coroutineRunner)
+            public CoroutineDisposable(MonoBehaviour runner, Coroutine coroutine)
             {
-                _task = task;
-                _periodSeconds = periodSeconds;
-                _coroutineRunner = coroutineRunner;
-                _linkedSource = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
-                
-                // Start the coroutine immediately
-                _coroutine = _coroutineRunner.StartCoroutine(RunTaskPeriodically());
-            }
-
-            private IEnumerator RunTaskPeriodically()
-            {
-                while (!_linkedSource.IsCancellationRequested)
-                {
-                    try
-                    {
-                        _task.Invoke();
-                    }
-                    catch (Exception e)
-                    {
-                        Debug.LogError($"Error in scheduled task: {e}");
-                    }
-
-                    yield return new WaitForSeconds(_periodSeconds);
-                }
+                _runner = runner;
+                _coroutine = coroutine;
             }
 
             public void Dispose()
             {
-                if (_coroutine == null)
-                {
-                    return;
-                }
+                if (_disposed) return;
                 
-                _linkedSource.Cancel();
-                _linkedSource.Dispose();
-                _coroutineRunner?.StopCoroutine(_coroutine);
-                _coroutine = null;
+                if (_runner != null && _coroutine != null)
+                {
+                    _runner.StopCoroutine(_coroutine);
+                }
+                _disposed = true;
             }
         }
 
-        private readonly List<ScheduledTask> _activeTasks = new();
-
-        /// <summary>
-        /// Schedules a task to be executed periodically at a fixed rate on Unity's main thread.
-        /// </summary>
-        /// <param name="task">The task to be executed.</param>
-        /// <param name="initialDelay">The delay before the first execution.</param>
-        /// <param name="period">The time between successive executions.</param>
-        /// <param name="cancellationToken">Token to cancel the scheduled task.</param>
-        /// <returns>An IDisposable that can be used to cancel the scheduled task.</returns>
-        public IDisposable ScheduleAtFixedRate(Action task, TimeSpan initialDelay, TimeSpan period, CancellationToken cancellationToken = default)
+        public IDisposable ScheduleAtFixedRate(Action action, TimeSpan initialDelay, TimeSpan period, CancellationToken cancellationToken = default)
         {
-            // Create a new task that first waits for the initial delay
-            var wrappedTask = new Action(() =>
+            var coroutine = StartCoroutine(RunActionPeriodically(action, initialDelay, period, cancellationToken));
+            return new CoroutineDisposable(this, coroutine);
+        }
+
+        private static IEnumerator RunActionPeriodically(Action action, TimeSpan initialDelay, TimeSpan period, CancellationToken cancellationToken)
+        {
+            if (initialDelay > TimeSpan.Zero)
             {
-                if (initialDelay > TimeSpan.Zero)
+                yield return new WaitForSeconds((float)initialDelay.TotalSeconds);
+            }
+
+            var waitForPeriod = new WaitForSeconds((float)period.TotalSeconds);
+
+            while (!cancellationToken.IsCancellationRequested)
+            {
+                try
                 {
-                    // For the initial delay, we'll use a coroutine
-                    StartCoroutine(DelayedStart(task, initialDelay));
+                    action.Invoke();
                 }
-                else
+                catch (Exception e)
                 {
-                    task();
+                    Debug.LogError($"[UnityMainThreadScheduler] Error in scheduled action: {e}");
                 }
-            });
 
-            // Create and store the scheduled task
-            var scheduledTask = new ScheduledTask(
-                wrappedTask, 
-                (float)period.TotalSeconds,
-                cancellationToken,
-                this);
-            
-            _activeTasks.Add(scheduledTask);
-            return scheduledTask;
-        }
-
-        private IEnumerator DelayedStart(Action task, TimeSpan delay)
-        {
-            yield return new WaitForSeconds((float)delay.TotalSeconds);
-            task();
-        }
-
-        private void OnDestroy()
-        {
-            _activeTasks.ForEach(x => x.Dispose());
-            _activeTasks.Clear();
+                yield return waitForPeriod;
+            }
         }
     }
 }
