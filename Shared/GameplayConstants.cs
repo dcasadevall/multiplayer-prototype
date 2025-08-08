@@ -27,6 +27,6 @@ namespace Shared
 
         // Projectile bounds constants
         public static readonly Vector3 ProjectileLocalBoundsCenter = new(0f, 0f, 0.25f);
-        public static readonly Vector3 ProjectileLocalBoundsSize = new(0.3f, 0.3f, 1f);
+        public static readonly Vector3 ProjectileLocalBoundsSize = new(0.3f, 0.3f, 0.4f);
     }
 }

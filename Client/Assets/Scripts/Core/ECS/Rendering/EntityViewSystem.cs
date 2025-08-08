@@ -97,10 +97,11 @@ namespace Core.ECS.Rendering
             if (!_entityViews.ContainsKey(entityId))
             {
                 CreateEntityView(entity);
-                // Destroy any local counterpart if the entity
-                // has SpawnAuthority
-                DestroyLocalEntityView(registry, entity);
             }
+            
+            // Destroy any local counterpart if the entity
+            // has SpawnAuthority
+            TryDestroyLocalEntityView(registry, entity);
             
             // Update the view's position
             if (_entityViews.TryGetValue(entityId, out var view))
@@ -170,7 +171,7 @@ namespace Core.ECS.Rendering
         /// </summary>
         /// <param name="entityRegistry"></param>
         /// <param name="entity"></param>
-        private void DestroyLocalEntityView(EntityRegistry entityRegistry, Entity entity)
+        private void TryDestroyLocalEntityView(EntityRegistry entityRegistry, Entity entity)
         {
             // Does this entity have a SpawnAuthorityComponent?
             if (!entity.TryGet<SpawnAuthorityComponent>(out var spawnAuthorityComponent))
@@ -189,9 +190,11 @@ namespace Core.ECS.Rendering
             {
                 // We do not destroy the entity itself, just the view
                 // This system will destroy entities without an associated view
-                Object.Destroy(localView);
-                _entityViews.Remove(localMatchedEntity.Id);
-                Debug.Log($"EntityViewSystem: Destroyed local view for entity {localMatchedEntity.Id}");
+                // Object.Destroy(localView);
+                // _entityViews.Remove(localMatchedEntity.Id);
+                entityRegistry.DestroyEntity(localMatchedEntity.Id);
+                _logger.Debug(LoggedFeature.Replication, 
+                    $"EntityViewSystem: Destroyed local view for entity {localMatchedEntity.Id}");
             }
             else
             {
