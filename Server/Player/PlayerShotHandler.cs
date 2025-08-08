@@ -117,13 +117,6 @@ namespace Server.Player
                 }
             }
 
-            // Validate direction (should be normalized)
-            if (Math.Abs(shotMessage.Direction.Length() - 1.0f) > 0.1f)
-            {
-                logger.Warn("Invalid fire direction magnitude: {0}", shotMessage.Direction.Length());
-                return false;
-            }
-
             return true;
         }
 

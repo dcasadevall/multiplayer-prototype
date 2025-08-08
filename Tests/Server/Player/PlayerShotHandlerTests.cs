@@ -39,7 +39,6 @@ namespace ServerUnitTests.Player
             var shotMessage = new PlayerShotMessage
             {
                 Tick = 10,
-                Direction = Vector3.UnitZ,
                 PredictedProjectileId = Guid.NewGuid()
             };
 
@@ -82,7 +81,6 @@ namespace ServerUnitTests.Player
             var firstShot = new PlayerShotMessage
             {
                 Tick = 20,
-                Direction = Vector3.UnitZ,
                 PredictedProjectileId = Guid.NewGuid()
             };
             handler.HandlePlayerShot(peerId, firstShot);
@@ -91,7 +89,6 @@ namespace ServerUnitTests.Player
             var secondShot = new PlayerShotMessage
             {
                 Tick = 25, // Only 5 ticks later, but cooldown is 15 ticks
-                Direction = Vector3.UnitZ,
                 PredictedProjectileId = Guid.NewGuid()
             };
 
@@ -128,7 +125,6 @@ namespace ServerUnitTests.Player
             var firstShot = new PlayerShotMessage
             {
                 Tick = 20,
-                Direction = Vector3.UnitZ,
                 PredictedProjectileId = Guid.NewGuid()
             };
             handler.HandlePlayerShot(peerId, firstShot);
@@ -139,7 +135,6 @@ namespace ServerUnitTests.Player
             var secondShot = new PlayerShotMessage
             {
                 Tick = 36, // 16 ticks later, cooldown is 15 ticks so this should work
-                Direction = Vector3.UnitZ,
                 PredictedProjectileId = Guid.NewGuid()
             };
 
@@ -179,7 +174,6 @@ namespace ServerUnitTests.Player
             var shot1 = new PlayerShotMessage
             {
                 Tick = 20,
-                Direction = Vector3.UnitZ,
                 PredictedProjectileId = Guid.NewGuid()
             };
             handler.HandlePlayerShot(peerId1, shot1);
@@ -188,7 +182,6 @@ namespace ServerUnitTests.Player
             var shot2 = new PlayerShotMessage
             {
                 Tick = 21,
-                Direction = Vector3.UnitX,
                 PredictedProjectileId = Guid.NewGuid()
             };
 
@@ -212,44 +205,11 @@ namespace ServerUnitTests.Player
             var shotMsg = new PlayerShotMessage
             {
                 Tick = 10,
-                Direction = Vector3.UnitX,
                 PredictedProjectileId = Guid.NewGuid()
             };
 
             // Act (no player entity exists for this peer ID)
             handler.HandlePlayerShot(999, shotMsg);
-
-            // Assert
-            var projectiles = _registry.GetAll().Where(e => e.Has<ProjectileTagComponent>()).ToList();
-            Assert.Empty(projectiles);
-        }
-
-        [Fact]
-        public void HandlePlayerShot_ShouldNotSpawnProjectile_WhenDirectionNotNormalized()
-        {
-            // Arrange
-            var handler = new PlayerShotHandler(_registry, _messageReceiver, _tickSync, _logger);
-            var peerId = 42;
-
-            // Set up server tick via tickSync mock
-            _tickSync.ServerTick.Returns(10U);
-
-            // Create player entity
-            var playerEntity = _registry.CreateEntity();
-            playerEntity.AddComponent(new PeerComponent { PeerId = peerId });
-            playerEntity.AddComponent(new PlayerTagComponent());
-            playerEntity.AddComponent(new PositionComponent { X = 1, Y = 2, Z = 3 });
-            playerEntity.AddComponent(new RotationComponent());
-
-            var shotMsg = new PlayerShotMessage
-            {
-                Tick = 10,
-                Direction = new Vector3(10, 0, 0), // Not normalized
-                PredictedProjectileId = Guid.NewGuid()
-            };
-
-            // Act
-            handler.HandlePlayerShot(peerId, shotMsg);
 
             // Assert
             var projectiles = _registry.GetAll().Where(e => e.Has<ProjectileTagComponent>()).ToList();
@@ -278,7 +238,6 @@ namespace ServerUnitTests.Player
             var shotMsg = new PlayerShotMessage
             {
                 Tick = shotTick,
-                Direction = Vector3.UnitZ,
                 PredictedProjectileId = Guid.NewGuid()
             };
 
@@ -311,7 +270,6 @@ namespace ServerUnitTests.Player
             var shotMsg = new PlayerShotMessage
             {
                 Tick = 10,
-                Direction = Vector3.UnitZ,
                 PredictedProjectileId = Guid.NewGuid()
             };
             handler.HandlePlayerShot(peerId, shotMsg);
@@ -329,7 +287,6 @@ namespace ServerUnitTests.Player
             var secondShot = new PlayerShotMessage
             {
                 Tick = 11, // Immediately after, but cooldown should be cleared
-                Direction = Vector3.UnitZ,
                 PredictedProjectileId = Guid.NewGuid()
             };
 

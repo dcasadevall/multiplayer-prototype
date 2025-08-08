@@ -1,11 +1,14 @@
 using System;
 using System.Collections.Generic;
 using Core.MathUtils;
+using log4net;
 using Shared.ECS;
 using Shared.ECS.Components;
 using Shared.ECS.Entities;
 using Shared.ECS.Simulation;
+using Shared.Logging;
 using UnityEngine;
+using ILogger = Shared.Logging.ILogger;
 using Object = UnityEngine.Object;
 using Vector3 = System.Numerics.Vector3;
 
@@ -28,14 +31,16 @@ namespace Core.ECS.Rendering
     [TickInterval(1)] // Update every frame
     public class EntityViewSystem : ISystem, IEntityViewRegistry, IDisposable
     {
+        private readonly ILogger _logger;
         private readonly Dictionary<EntityId, GameObject> _entityViews = new();
         private readonly Transform _worldRoot;
         
         /// <summary>
         /// Constructs a new EntityViewSystem.
         /// </summary>
-        public EntityViewSystem()
+        public EntityViewSystem(ILogger logger)
         {
+            _logger = logger;
             _worldRoot = new GameObject("ECS World Root").transform;
         }
 
@@ -71,19 +76,20 @@ namespace Core.ECS.Rendering
             {
                 if (entity.Has<PositionComponent>())
                 {
-                    UpdateEntityView(entity);
+                    UpdateEntityView(registry, entity);
                 }
             }
             
             // Clean up views for entities that no longer exist
             CleanupOrphanedViews(registry);
         }
-        
+
         /// <summary>
         /// Updates the Unity GameObject for a given entity.
         /// </summary>
+        /// <param name="registry"></param>
         /// <param name="entity">The entity to update.</param>
-        private void UpdateEntityView(Entity entity)
+        private void UpdateEntityView(EntityRegistry registry, Entity entity)
         {
             var entityId = entity.Id;
             
@@ -91,6 +97,9 @@ namespace Core.ECS.Rendering
             if (!_entityViews.ContainsKey(entityId))
             {
                 CreateEntityView(entity);
+                // Destroy any local counterpart if the entity
+                // has SpawnAuthority
+                DestroyLocalEntityView(registry, entity);
             }
             
             // Update the view's position
@@ -153,6 +162,41 @@ namespace Core.ECS.Rendering
             _entityViews[entityId] = view;
             
             Debug.Log($"EntityViewSystem: Created view for entity {entityId}");
+        }
+
+        /// <summary>
+        /// Trys to locate the local counterpart of a remotely spawned entity
+        /// and destroys it if it exists.
+        /// </summary>
+        /// <param name="entityRegistry"></param>
+        /// <param name="entity"></param>
+        private void DestroyLocalEntityView(EntityRegistry entityRegistry, Entity entity)
+        {
+            // Does this entity have a SpawnAuthorityComponent?
+            if (!entity.TryGet<SpawnAuthorityComponent>(out var spawnAuthorityComponent))
+            {
+                return;
+            }
+            
+            // If it does, we need to check if the local entity exists
+            if (!entityRegistry.TryGet(new EntityId(spawnAuthorityComponent.LocalEntityId), out var localMatchedEntity))
+            {
+                return;
+            }
+            
+            // If it does, we need to destroy the local counterpart
+            if (_entityViews.TryGetValue(localMatchedEntity.Id, out var localView))
+            {
+                // We do not destroy the entity itself, just the view
+                // This system will destroy entities without an associated view
+                Object.Destroy(localView);
+                _entityViews.Remove(localMatchedEntity.Id);
+                Debug.Log($"EntityViewSystem: Destroyed local view for entity {localMatchedEntity.Id}");
+            }
+            else
+            {
+                _logger.Warn(LoggedFeature.Ecs, $"EntityViewSystem: No local view found for entity {localMatchedEntity.Id}");
+            }
         }
         
         /// <summary>

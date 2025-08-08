@@ -15,6 +15,7 @@ namespace Shared.Input
         public const int ProjectileDamage = 25;
         public const uint MaxShotTickDeviation = 10; // Allow up to 10 ticks of deviation for shot validation
         public const float ProjectileSpawnHeight = 2.0f;
+        public const float ProjectileSpawnForward = 0.5f;
         public const string ProjectilePrefabName = "LaserShot";
         public static readonly Vector3 ProjectileColliderBoxCenter = new(0f, 0f, 0.25f);
         public static readonly Vector3 ProjectileColliderBoxSize = new(0.3f, 0.3f, 0.9f);

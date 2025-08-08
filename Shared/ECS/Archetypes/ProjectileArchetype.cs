@@ -30,15 +30,19 @@ namespace Shared.ECS.Archetypes
         {
             var playerPosition = shootingPlayerEntity.GetRequired<PositionComponent>().Value;
             var peerId = shootingPlayerEntity.GetRequired<PeerComponent>().PeerId;
-            var spawnPosition = playerPosition + Vector3.UnitY * GameplayConstants.ProjectileSpawnHeight;
+            var spawnPosition = playerPosition +
+                                Vector3.UnitY * GameplayConstants.ProjectileSpawnHeight +
+                                Vector3.UnitZ * GameplayConstants.ProjectileSpawnForward;
 
             // Position and velocity
             var playerRotation = shootingPlayerEntity.GetRequired<RotationComponent>().Value;
             var velocity = Vector3.Transform(new Vector3(0, 0, 1), playerRotation) * GameplayConstants.ProjectileSpeed;
+            var spawnRotation = playerRotation;
 
             return Create(
                 registry,
                 spawnPosition,
+                spawnRotation,
                 velocity,
                 spawnTick,
                 peerId,
@@ -52,6 +56,7 @@ namespace Shared.ECS.Archetypes
         public static Entity Create(
             EntityRegistry registry,
             Vector3 spawnPosition,
+            Quaternion spawnRotation,
             Vector3 velocity,
             uint spawnTick,
             int spawnedByPeerId,
@@ -60,6 +65,7 @@ namespace Shared.ECS.Archetypes
             var projectile = registry.CreateEntity();
 
             // Predicted spatial components
+            projectile.AddPredictedComponent(new RotationComponent { Value = spawnRotation });
             projectile.AddPredictedComponent(new PositionComponent { Value = spawnPosition });
             projectile.AddPredictedComponent(new VelocityComponent { Value = velocity });
 
@@ -67,6 +73,8 @@ namespace Shared.ECS.Archetypes
             projectile.AddComponent(new ProjectileTagComponent());
             projectile.AddComponent(new DamageApplyingComponent { Damage = GameplayConstants.ProjectileDamage });
             projectile.AddComponent(SelfDestroyingComponent.CreateWithTTL(spawnTick, GameplayConstants.ProjectileTtlTicks));
+            projectile.AddComponent(new PrefabComponent { PrefabName = GameplayConstants.ProjectilePrefabName });
+            projectile.AddComponent(new NameComponent { Name = $"Laser_{spawnedByPeerId}" });
 
             // If we have a predicted local entity ID, we associate it with the projectile
             // This is used to link client-side predicted projectiles with server-side entities

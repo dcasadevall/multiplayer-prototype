@@ -63,7 +63,6 @@ namespace SharedUnitTests.ECS.Components
             var message = new PlayerShotMessage
             {
                 Tick = 150,
-                Direction = new Vector3(3, 2, 1),
                 PredictedProjectileId = predictedId
             };
 
@@ -74,7 +73,6 @@ namespace SharedUnitTests.ECS.Components
             // Assert
             Assert.NotNull(deserialized);
             Assert.Equal(150u, deserialized.Tick);
-            Assert.Equal(new Vector3(3, 2, 1), deserialized.Direction);
             Assert.Equal(predictedId, deserialized.PredictedProjectileId);
         }
 

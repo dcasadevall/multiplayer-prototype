@@ -4,6 +4,7 @@ using Shared.ECS.Components;
 using Shared.ECS.Entities;
 using Shared.ECS.Prediction;
 using Shared.ECS.Replication;
+using Shared.Input;
 
 namespace Shared.ECS.Archetypes
 {
@@ -31,7 +32,7 @@ namespace Shared.ECS.Archetypes
             playerEntity.AddComponent(new HealthComponent { MaxHealth = 100, CurrentHealth = 100 });
             playerEntity.AddComponent(new PeerComponent { PeerId = peerId, PeerName = name });
             playerEntity.AddComponent(new NameComponent { Name = name });
-            playerEntity.AddComponent(new PrefabComponent { PrefabName = "Player" });
+            playerEntity.AddComponent(new PrefabComponent { PrefabName = GameplayConstants.PlayerPrefabName });
             playerEntity.AddComponent<PlayerTagComponent>();
             playerEntity.AddComponent(new RotationComponent());
 
