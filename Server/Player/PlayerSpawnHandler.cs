@@ -75,8 +75,13 @@ namespace Server.Player
             var playerEntity = entityRegistry.GetPlayerEntity(peer.Id);
             if (playerEntity == null)
             {
-                logger.Warn(LoggedFeature.Player, "Player {0} does not have a player entity", peer.Id);
-                return;
+                // Check the dead component if player is not found
+                playerEntity = entityRegistry.GetDeadPlayerEntity(peer.Id);
+                if (playerEntity == null)
+                {
+                    logger.Warn(LoggedFeature.Player, "No player entity found for peer {0} on disconnect", peer.Id);
+                    return;
+                }
             }
 
             // Remove the player entity from the registry

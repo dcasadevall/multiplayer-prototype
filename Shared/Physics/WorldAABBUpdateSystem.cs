@@ -17,7 +17,7 @@ namespace Shared.Physics
             foreach (var entity in entities)
             {
                 var position = entity.GetRequired<PositionComponent>().Value;
-                var rotation = entity.GetRequired<RotationComponent>().Value;
+                var rotation = Quaternion.Normalize(entity.GetRequired<RotationComponent>().Value);
                 var bounds = entity.GetRequired<LocalBoundsComponent>();
 
                 var halfSize = bounds.Size / 2f;

@@ -1,10 +1,8 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
 using NSubstitute;
 using Shared.ECS;
 using Shared.ECS.Components;
 using Shared.Health;
+using Shared.Logging;
 using Shared.Physics;
 using Xunit;
 
@@ -18,7 +16,8 @@ namespace SharedUnitTests.Health
             // Arrange
             var registry = new EntityRegistry();
             var collisionDetector = Substitute.For<ICollisionDetector>();
-            var system = new DamageSystem(collisionDetector);
+            var logger = Substitute.For<ILogger>();
+            var system = new DamageSystem(collisionDetector, logger);
 
             // Create target entity with health
             var target = registry.CreateEntity();
@@ -45,7 +44,8 @@ namespace SharedUnitTests.Health
         {
             var registry = new EntityRegistry();
             var collisionDetector = Substitute.For<ICollisionDetector>();
-            var system = new DamageSystem(collisionDetector);
+            var logger = Substitute.For<ILogger>();
+            var system = new DamageSystem(collisionDetector, logger);
 
             var target = registry.CreateEntity(); // No health component
 
@@ -65,15 +65,15 @@ namespace SharedUnitTests.Health
         {
             var registry = new EntityRegistry();
             var collisionDetector = Substitute.For<ICollisionDetector>();
-            var system = new DamageSystem(collisionDetector);
+            var logger = Substitute.For<ILogger>();
+            var system = new DamageSystem(collisionDetector, logger);
 
             var target = registry.CreateEntity();
             target.AddComponent(new HealthComponent(100));
             target.AddComponent(new PeerComponent { PeerId = 1 });
 
             var projectile = registry.CreateEntity();
-            projectile.AddComponent(new DamageApplyingComponent { Damage = 25, CanDamageSelf = false });
-            projectile.AddComponent(new SpawnAuthorityComponent { SpawnedByPeerId = 1 });
+            projectile.AddComponent(new DamageApplyingComponent { Damage = 25, CanDamageSelf = false, SourceEntityId = target.Id.Value });
 
             collisionDetector.GetCollisionsFor(projectile.Id).Returns([new EntityId(target.Id.Value)]);
 

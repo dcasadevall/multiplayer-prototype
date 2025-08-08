@@ -1,5 +1,7 @@
 using System.Linq;
+using System.Numerics;
 using Shared.ECS;
+using Shared.ECS.Archetypes;
 using Shared.ECS.Components;
 using Shared.Health;
 using Shared.Player;
@@ -15,9 +17,12 @@ namespace SharedUnitTests.Player
             var registry = new EntityRegistry();
             var system = new PlayerDeathSystem();
 
-            var player = registry.CreateEntity();
-            player.AddComponent(new PlayerTagComponent());
-            player.AddComponent(new HealthComponent(100) { CurrentHealth = 0 });
+            var player = PlayerArchetype.Create(registry, 1, Vector3.Zero);
+            player.AddOrReplaceComponent(new HealthComponent
+            {
+                MaxHealth = 100,
+                CurrentHealth = 0
+            });
 
             system.Update(registry, 42, 0.016f);
 
@@ -34,9 +39,12 @@ namespace SharedUnitTests.Player
             var registry = new EntityRegistry();
             var system = new PlayerDeathSystem();
 
-            var player = registry.CreateEntity();
-            player.AddComponent(new PlayerTagComponent());
-            player.AddComponent(new HealthComponent(100) { CurrentHealth = 0 });
+            var player = PlayerArchetype.Create(registry, 1, Vector3.Zero);
+            player.AddOrReplaceComponent(new HealthComponent
+            {
+                MaxHealth = 100,
+                CurrentHealth = 0
+            });
 
             system.Update(registry, 1, 0.016f);
             system.Update(registry, 2, 0.016f);

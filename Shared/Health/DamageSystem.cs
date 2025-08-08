@@ -1,6 +1,7 @@
 using System.Linq;
 using Shared.ECS;
 using Shared.ECS.Components;
+using Shared.Logging;
 using Shared.Physics;
 
 namespace Shared.Health
@@ -13,14 +14,17 @@ namespace Shared.Health
     public class DamageSystem : ISystem
     {
         private readonly ICollisionDetector _collisionDetector;
+        private readonly ILogger _logger;
 
         /// <summary>
         /// Constructs a DamageSystem with the given collision detector.
         /// </summary>
         /// <param name="collisionDetector">Collision detector used to find impacted entities.</param>
-        public DamageSystem(ICollisionDetector collisionDetector)
+        /// <param name="logger">Logger for logging damage events.</param>
+        public DamageSystem(ICollisionDetector collisionDetector, ILogger logger)
         {
             _collisionDetector = collisionDetector;
+            _logger = logger;
         }
 
         /// <summary>
@@ -40,7 +44,7 @@ namespace Shared.Health
                     continue;
 
                 var damageComponent = projectile.GetRequired<DamageApplyingComponent>();
-                var projectileOwner = projectile.Get<SpawnAuthorityComponent>();
+                var didCollide = false;
 
                 foreach (var collisionId in collisions)
                 {
@@ -51,18 +55,24 @@ namespace Shared.Health
                         continue;
 
                     // Prevent friendly fire if not allowed
-                    if (projectileOwner != null && targetEntity.Has<PeerComponent>() &&
-                        targetEntity.GetRequired<PeerComponent>().PeerId == projectileOwner.SpawnedByPeerId &&
+                    if (targetEntity.Id.Value == damageComponent.SourceEntityId &&
                         !damageComponent.CanDamageSelf)
                     {
                         continue;
                     }
 
+                    // INTENTIONAL: Multiple collisions same frame with multiple entities are allowed.
+                    didCollide = true;
                     var healthComponent = targetEntity.GetRequired<HealthComponent>();
                     healthComponent.CurrentHealth -= damageComponent.Damage;
                 }
 
-                registry.DestroyEntity(projectile.Id);
+                // Destroy the projectile after applying damage
+                if (didCollide)
+                {
+                    _logger.Debug("Destroying projectile {0} after applying damage", projectile.Id);
+                    registry.DestroyEntity(projectile.Id);
+                }
             }
         }
     }

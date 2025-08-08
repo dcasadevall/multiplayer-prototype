@@ -32,7 +32,8 @@ namespace Shared.Player
 
                 // Create a "dead player" entity to track death state for respawn logic.
                 var deadPlayer = registry.CreateEntity();
-                deadPlayer.AddComponent(new DeadPlayerComponent { DiedAtTick = tickNumber });
+                var peerComponent = player.GetRequired<PeerComponent>();
+                deadPlayer.AddComponent(new DeadPlayerComponent { DiedAtTick = tickNumber, PeerId = peerComponent.PeerId });
             }
         }
     }
