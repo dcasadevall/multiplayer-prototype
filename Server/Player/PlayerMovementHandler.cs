@@ -1,9 +1,11 @@
 using System.Numerics;
+using Shared;
 using Shared.ECS;
 using Shared.ECS.Components;
 using Shared.Input;
 using Shared.Logging;
 using Shared.Networking;
+using Shared.Physics;
 using Shared.Scheduling;
 
 namespace Server.Player

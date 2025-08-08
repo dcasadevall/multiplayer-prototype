@@ -6,9 +6,11 @@ namespace Server.Scenes
 {
     public class EntityDescription
     {
-        [JsonPropertyName("components")] public Dictionary<string, JsonElement> Components { get; set; } = new();
+        [JsonPropertyName("components")]
+        public Dictionary<string, JsonElement> Components { get; set; } = new();
 
-        [JsonPropertyName("tags")] public List<string> Tags { get; set; } = new();
+        [JsonPropertyName("tags")]
+        public List<string> Tags { get; set; } = new();
     }
 
     public class SceneLoader(IWorldSnapshotConsumer snapshotConsumer)
@@ -62,8 +64,8 @@ namespace Server.Scenes
             // Adjust this mapping as appropriate for your project
             return key switch
             {
-                "PositionComponent" => "Shared.ECS.Components.PositionComponent, Shared",
-                "HealthComponent" => "Shared.ECS.Components.HealthComponent, Shared",
+                "PositionComponent" => "Shared.Physics.PositionComponent, Shared",
+                "HealthComponent" => "Shared.Health.HealthComponent, Shared",
                 "ReplicatedTagComponent" => "Shared.ECS.Components.ReplicatedTagComponent, Shared",
                 _ => key
             };

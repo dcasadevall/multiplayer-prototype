@@ -69,9 +69,21 @@ namespace Shared.Physics
             _intersections[source].Add(target);
         }
 
+        // <inheritdoc />
         public bool AreColliding(EntityId firstEntity, EntityId secondEntity)
         {
             return _intersections.TryGetValue(firstEntity, out var targets) && targets.Contains(secondEntity);
+        }
+
+        // <inheritdoc />
+        public List<EntityId> GetCollisionsFor(EntityId entityId)
+        {
+            if (_intersections.TryGetValue(entityId, out var collisions))
+            {
+                return collisions;
+            }
+
+            return new List<EntityId>();
         }
     }
 }

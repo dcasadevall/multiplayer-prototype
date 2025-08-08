@@ -12,7 +12,9 @@ using Shared.Networking;
 using Shared.Scheduling;
 using Microsoft.Extensions.Configuration;
 using Server.Player;
+using Shared.Health;
 using Shared.Physics;
+using Shared.Player;
 
 // Add Configuration
 var configuration = new ConfigurationBuilder()
@@ -43,6 +45,11 @@ services.AddSingleton<ISystem, VelocitySystem>();
 services.AddSingleton<CollisionSystem>();
 services.AddSingleton<ISystem>(sp => sp.GetRequiredService<CollisionSystem>());
 services.AddSingleton<ICollisionDetector>(sp => sp.GetRequiredService<CollisionSystem>());
+
+// Gameplay
+services.AddSingleton<ISystem, DamageSystem>();
+services.AddSingleton<ISystem, PlayerDeathSystem>();
+services.AddSingleton<ISystem, PlayerRespawnSystem>();
 
 // Register TickSync and ServerTickSystem
 // This should be the LAST system before the replication system

@@ -2,6 +2,7 @@ using System;
 using System.Linq;
 using Shared.ECS.Components;
 using Shared.ECS.Simulation;
+using Shared.Health;
 
 namespace Shared.ECS.Systems
 {

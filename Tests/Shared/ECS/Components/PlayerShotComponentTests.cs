@@ -2,6 +2,7 @@ using System;
 using System.Numerics;
 using System.Text.Json;
 using Shared.ECS.Components;
+using Shared.Health;
 using Shared.Input;
 using Xunit;
 
@@ -19,6 +20,7 @@ namespace SharedUnitTests.ECS.Components
             var component = new DamageApplyingComponent
             {
                 Damage = 25,
+                SourceEntityId = Guid.NewGuid(),
                 CanDamageSelf = false
             };
 
@@ -29,6 +31,7 @@ namespace SharedUnitTests.ECS.Components
             // Assert
             Assert.NotNull(deserialized);
             Assert.Equal(25, deserialized.Damage);
+            Assert.Equal(component.SourceEntityId, deserialized.SourceEntityId);
             Assert.False(deserialized.CanDamageSelf);
         }
 

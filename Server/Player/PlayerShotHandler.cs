@@ -1,7 +1,9 @@
+using Shared;
 using Shared.ECS;
 using Shared.ECS.Components;
 using Shared.ECS.Archetypes;
 using Shared.ECS.Entities;
+using Shared.ECS.Simulation;
 using Shared.ECS.TickSync;
 using Shared.Input;
 using Shared.Logging;
@@ -67,7 +69,7 @@ namespace Server.Player
                     return;
                 }
 
-                var playerEntity = GetPlayerEntity(peerId);
+                var playerEntity = entityRegistry.GetPlayerEntity(peerId);
                 if (playerEntity == null)
                 {
                     logger.Warn("Player {0} does not have a player entity", peerId);
@@ -121,7 +123,7 @@ namespace Server.Player
             // Validate cooldown - prevent shot spamming
             if (_lastShotTicks.TryGetValue(peerId, out var lastShotTick))
             {
-                if (shotMessage.Tick < lastShotTick + GameplayConstants.PlayerShotCooldownTicks)
+                if (shotMessage.Tick < lastShotTick + GameplayConstants.PlayerShotCooldown.ToNumTicks())
                 {
                     logger.Warn("Shot from peer {0} blocked by server cooldown. Last shot: {1}, Current: {2}",
                         peerId, lastShotTick, shotMessage.Tick);
@@ -140,19 +142,6 @@ namespace Server.Player
         {
             _lastShotTicks.Remove(peerId);
             logger.Debug("Cleaned up shot tracking for disconnected peer {0}", peerId);
-        }
-
-        /// <summary>
-        /// Gets the player entity for the given peer ID.
-        /// Used for validation and position checking.
-        /// </summary>
-        private Entity? GetPlayerEntity(int peerId)
-        {
-            return entityRegistry
-                .GetAll()
-                .Where(x => x.Has<PeerComponent>())
-                .Where(x => x.Has<PlayerTagComponent>())
-                .FirstOrDefault(x => x.GetRequired<PeerComponent>().PeerId == peerId);
         }
     }
 }

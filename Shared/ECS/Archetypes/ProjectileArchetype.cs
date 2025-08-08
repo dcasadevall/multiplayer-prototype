@@ -3,7 +3,10 @@ using Shared.ECS.Components;
 using Shared.ECS.Entities;
 using Shared.ECS.Prediction;
 using Shared.ECS.Replication;
+using Shared.ECS.Simulation;
+using Shared.Health;
 using Shared.Input;
+using Shared.Physics;
 
 namespace Shared.ECS.Archetypes
 {
@@ -43,7 +46,8 @@ namespace Shared.ECS.Archetypes
                 spawnRotation,
                 velocity,
                 spawnTick,
-                peerId
+                peerId,
+                shootingPlayerEntity.Id
             );
         }
 
@@ -56,7 +60,8 @@ namespace Shared.ECS.Archetypes
             Quaternion spawnRotation,
             Vector3 velocity,
             uint spawnTick,
-            int spawnedByPeerId)
+            int spawnedByPeerId,
+            EntityId sourceEntityId)
         {
             var projectile = registry.CreateEntity();
 
@@ -66,14 +71,19 @@ namespace Shared.ECS.Archetypes
             projectile.AddPredictedComponent(new VelocityComponent { Value = velocity });
 
             // Gameplay/state components
-            projectile.AddComponent(new ProjectileTagComponent());
-            projectile.AddComponent(new DamageApplyingComponent { Damage = GameplayConstants.ProjectileDamage });
-            projectile.AddComponent(SelfDestroyingComponent.CreateWithTTL(spawnTick, GameplayConstants.ProjectileTtlTicks));
+            projectile.AddComponent<ProjectileTagComponent>();
+            projectile.AddComponent(new DamageApplyingComponent
+            {
+                Damage = GameplayConstants.ProjectileDamage,
+                SourceEntityId = sourceEntityId.Value
+            });
+
+            projectile.AddComponent(SelfDestroyingComponent.CreateWithTTL(spawnTick, GameplayConstants.ProjectileTtl.ToNumTicks()));
             projectile.AddComponent(new PrefabComponent { PrefabName = GameplayConstants.ProjectilePrefabName });
             projectile.AddComponent(new NameComponent { Name = $"Laser_{spawnedByPeerId}" });
 
             // Network replication
-            projectile.AddComponent(new ReplicatedTagComponent());
+            projectile.AddComponent<ReplicatedTagComponent>();
 
             return projectile;
         }

@@ -1,16 +1,12 @@
 using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Numerics;
 using Core.ECS.Entities;
 using Core.ECS.Rendering;
 using Core.Input;
+using Shared;
 using Shared.ECS;
 using Shared.ECS.Archetypes;
 using Shared.ECS.Components;
-using Shared.ECS.Entities;
-using Shared.ECS.Prediction;
-using Shared.ECS.Replication;
+using Shared.ECS.Simulation;
 using Shared.ECS.TickSync;
 using Shared.Input;
 using Shared.Logging;
@@ -75,7 +71,7 @@ namespace Core.ECS.Prediction
             var clientTick = _tickSync.ClientTick;
             
             // Check cooldown
-            if (clientTick < _lastShotTick + GameplayConstants.PlayerShotCooldownTicks)
+            if (clientTick < _lastShotTick + GameplayConstants.PlayerShotCooldown.ToNumTicks())
             {
                 return;
             }

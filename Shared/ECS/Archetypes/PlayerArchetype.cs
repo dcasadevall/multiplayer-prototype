@@ -4,7 +4,9 @@ using Shared.ECS.Components;
 using Shared.ECS.Entities;
 using Shared.ECS.Prediction;
 using Shared.ECS.Replication;
+using Shared.Health;
 using Shared.Input;
+using Shared.Physics;
 
 namespace Shared.ECS.Archetypes
 {
@@ -19,7 +21,6 @@ namespace Shared.ECS.Archetypes
         public static Entity Create(
             EntityRegistry registry,
             int peerId,
-            string name,
             Vector3 spawnPosition)
         {
             var playerEntity = registry.CreateEntity();
@@ -29,6 +30,7 @@ namespace Shared.ECS.Archetypes
             playerEntity.AddPredictedComponent(new VelocityComponent());
 
             // Gameplay/state components
+            var name = $"Player_{peerId}";
             playerEntity.AddComponent(new HealthComponent { MaxHealth = 100, CurrentHealth = 100 });
             playerEntity.AddComponent(new PeerComponent { PeerId = peerId, PeerName = name });
             playerEntity.AddComponent(new NameComponent { Name = name });

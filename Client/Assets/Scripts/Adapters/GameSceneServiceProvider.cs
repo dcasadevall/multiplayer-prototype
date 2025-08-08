@@ -8,8 +8,10 @@ using Core.Input;
 using Microsoft.Extensions.DependencyInjection;
 using Shared.ECS;
 using Shared.ECS.Systems;
+using Shared.Health;
 using Shared.Networking;
 using Shared.Physics;
+using Shared.Player;
 using Shared.Scheduling;
 
 namespace Adapters
@@ -61,6 +63,8 @@ namespace Adapters
 
             // Health / Damage systems
             serviceCollection.AddSingleton<ISystem, HealthBarRenderSystem>();
+            serviceCollection.AddSingleton<ISystem, DamageSystem>();
+            serviceCollection.AddSingleton<ISystem, PlayerDeathSystem>();
 
             // Entity lifecycle systems
             serviceCollection.AddSingleton<ISystem, SelfDestroyingSystem>();

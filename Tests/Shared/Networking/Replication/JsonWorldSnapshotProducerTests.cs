@@ -3,7 +3,9 @@ using NSubstitute;
 using Shared.ECS;
 using Shared.ECS.Components;
 using Shared.ECS.Replication;
+using Shared.Health;
 using Shared.Logging;
+using Shared.Physics;
 using Xunit;
 
 namespace SharedUnitTests.Networking.Replication

@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using Shared.ECS;
 
 namespace Shared.Physics
@@ -14,5 +15,12 @@ namespace Shared.Physics
         /// <param name="secondEntity"></param>
         /// <returns></returns>
         bool AreColliding(EntityId firstEntity, EntityId secondEntity);
+
+        /// <summary>
+        /// Returns all entities that are colliding with the given entity.
+        /// </summary>
+        /// <param name="entityId"></param>
+        /// <returns></returns>
+        List<EntityId> GetCollisionsFor(EntityId entityId);
     }
 }

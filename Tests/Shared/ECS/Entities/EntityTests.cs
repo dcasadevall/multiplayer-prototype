@@ -2,6 +2,8 @@ using System.Numerics;
 using Shared.ECS;
 using Shared.ECS.Components;
 using Shared.ECS.Entities;
+using Shared.Health;
+using Shared.Physics;
 using Xunit;
 
 namespace SharedUnitTests.ECS.Entities
@@ -26,7 +28,7 @@ namespace SharedUnitTests.ECS.Entities
         {
             // Arrange
             var entity = new Entity(EntityId.New());
-            var position = new PositionComponent{ Value = new Vector3(1, 2, 3)};
+            var position = new PositionComponent { Value = new Vector3(1, 2, 3) };
 
             // Act
             entity.AddComponent(position);
@@ -40,7 +42,7 @@ namespace SharedUnitTests.ECS.Entities
         {
             // Arrange
             var entity = new Entity(EntityId.New());
-            var position = new PositionComponent{ Value = new Vector3(1, 2, 3) };
+            var position = new PositionComponent { Value = new Vector3(1, 2, 3) };
             entity.AddComponent(position);
 
             // Act
@@ -164,8 +166,8 @@ namespace SharedUnitTests.ECS.Entities
         {
             // Arrange
             var entity = new Entity(EntityId.New());
-            var position1 = new PositionComponent{ Value = new Vector3(1, 2, 3)};
-            var position2 = new PositionComponent{ Value = new Vector3(4, 5, 6)};
+            var position1 = new PositionComponent { Value = new Vector3(1, 2, 3) };
+            var position2 = new PositionComponent { Value = new Vector3(4, 5, 6) };
 
             entity.AddComponent(position1);
 

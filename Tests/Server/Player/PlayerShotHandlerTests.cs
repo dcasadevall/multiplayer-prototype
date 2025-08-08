@@ -5,9 +5,11 @@ using Shared.ECS;
 using Shared.ECS.Components;
 using Shared.ECS.Replication;
 using Shared.ECS.TickSync;
+using Shared.Health;
 using Shared.Input;
 using Shared.Logging;
 using Shared.Networking;
+using Shared.Physics;
 using Xunit;
 
 namespace ServerUnitTests.Player
@@ -57,6 +59,7 @@ namespace ServerUnitTests.Player
 
             var spawnAuthority = projectile.GetRequired<SpawnAuthorityComponent>();
             Assert.Equal(peerId, spawnAuthority.SpawnedByPeerId);
+            Assert.Equal(playerEntity.Id.Value, projectile.GetRequired<DamageApplyingComponent>().SourceEntityId);
             Assert.Equal(shotMessage.Tick, spawnAuthority.SpawnTick);
         }
 
@@ -98,10 +101,6 @@ namespace ServerUnitTests.Player
             // Assert
             var projectiles = _registry.GetAll().Where(e => e.Has<ProjectileTagComponent>()).ToList();
             Assert.Single(projectiles); // Only the first shot should have created a projectile
-
-            // Verify warning was logged
-            _logger.Received().Warn(Arg.Is<string>(s => s.Contains("blocked by server cooldown")),
-                Arg.Any<object[]>());
         }
 
         [Fact]

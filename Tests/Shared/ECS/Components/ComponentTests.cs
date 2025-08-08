@@ -1,5 +1,7 @@
 using System.Numerics;
 using Shared.ECS.Components;
+using Shared.Health;
+using Shared.Physics;
 using Xunit;
 
 namespace SharedUnitTests.ECS.Components

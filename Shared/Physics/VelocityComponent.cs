@@ -1,12 +1,13 @@
 using System.Numerics;
 using System.Text.Json.Serialization;
+using Shared.ECS;
 
-namespace Shared.ECS.Components
+namespace Shared.Physics
 {
     /// <summary>
-    /// Stores the 3D position of an entity.
+    ///     Stores the 3D velocity of an entity.
     /// </summary>
-    public class PositionComponent : IComponent
+    public class VelocityComponent : IComponent
     {
         [JsonPropertyName("x")]
         public float X { get; set; }
@@ -20,7 +21,7 @@ namespace Shared.ECS.Components
         [JsonIgnore]
         public Vector3 Value
         {
-            get => new(X, Y, Z);
+            get => new Vector3(X, Y, Z);
             set
             {
                 X = value.X;
@@ -29,11 +30,11 @@ namespace Shared.ECS.Components
             }
         }
 
-        public PositionComponent()
+        public VelocityComponent()
         {
         }
 
-        public PositionComponent(Vector3 value)
+        public VelocityComponent(Vector3 value)
         {
             X = value.X;
             Y = value.Y;

@@ -7,6 +7,7 @@ namespace Shared.Logging
     public enum LoggedFeature
     {
         General,
+        Player,
         Networking,
         Ecs,
         Game,
