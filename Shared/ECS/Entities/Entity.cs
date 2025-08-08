@@ -59,6 +59,24 @@ namespace Shared.ECS.Entities
         }
 
         /// <summary>
+        /// Gets or creates a component of the given type from the entity.
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <returns></returns>
+        public T GetOrCreate<T>() where T : class, IComponent, new()
+        {
+            if (TryGet(out T component))
+            {
+                return component;
+            }
+
+            // If the component is not found, create a new one and add it
+            var newComponent = new T();
+            AddComponent(newComponent);
+            return newComponent;
+        }
+
+        /// <summary>
         /// Try to get a component from the entity.
         /// </summary>
         /// <typeparam name="T">The type of the component to get.</typeparam>

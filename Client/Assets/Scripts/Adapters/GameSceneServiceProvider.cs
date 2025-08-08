@@ -56,10 +56,12 @@ namespace Adapters
             
             // There are some common systems that are used for both client and server.
             // We could decide to put these inside the shared RegisterECSServices method.
+            serviceCollection.AddSingleton<ISystem, WorldAABBUpdateSystem>();
             serviceCollection.AddSingleton<ISystem, FaceMoveDirectionSystem>();
             serviceCollection.AddSingleton<CollisionSystem>();
             serviceCollection.AddSingleton<ISystem>(sp => sp.GetRequiredService<CollisionSystem>());
             serviceCollection.AddSingleton<ICollisionDetector>(sp => sp.GetRequiredService<CollisionSystem>());
+            serviceCollection.AddSingleton<ISystem, WorldAABBRenderSystem>();
 
             // Health / Damage systems
             serviceCollection.AddSingleton<ISystem, HealthBarRenderSystem>();

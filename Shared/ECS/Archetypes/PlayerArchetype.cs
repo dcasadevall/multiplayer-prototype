@@ -35,11 +35,12 @@ namespace Shared.ECS.Archetypes
             playerEntity.AddComponent(new PrefabComponent { PrefabName = GameplayConstants.PlayerPrefabName });
             playerEntity.AddComponent<PlayerTagComponent>();
             playerEntity.AddComponent(new RotationComponent());
-            playerEntity.AddComponent(new BoxColliderComponent
+            playerEntity.AddComponent(new LocalBoundsComponent
             {
-                Center = GameplayConstants.PlayerColliderBoxCenter,
-                Size = GameplayConstants.PlayerColliderBoxSize
+                Center = GameplayConstants.PlayerLocalBoundsCenter,
+                Size = GameplayConstants.PlayerLocalBoundsSize
             });
+            playerEntity.AddComponent<CollidingTagComponent>();
 
             // Network replication
             playerEntity.AddComponent<ReplicatedTagComponent>();

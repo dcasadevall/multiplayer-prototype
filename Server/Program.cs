@@ -40,6 +40,7 @@ services.AddSingleton<ISystem, WorldDiagnosticsSystem>();
 services.AddSingleton<ISystem, HealthSystem>();
 
 // Physics / Movement
+services.AddSingleton<ISystem, WorldAABBUpdateSystem>();
 services.AddSingleton<ISystem, FaceMoveDirectionSystem>();
 services.AddSingleton<ISystem, VelocitySystem>();
 services.AddSingleton<CollisionSystem>();

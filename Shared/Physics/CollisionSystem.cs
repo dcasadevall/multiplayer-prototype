@@ -8,7 +8,7 @@ namespace Shared.Physics
 {
     /// <summary>
     /// A very basic, not optimized collision detection system.
-    /// This system detects collisions between entities that have a <see cref="BoxColliderComponent"/>.
+    /// This system detects collisions between entities that have a <see cref="WorldAABBComponent"/>.
     /// It checks for intersections between the bounding boxes of entities and stores the results.
     ///
     /// <param>
@@ -25,7 +25,7 @@ namespace Shared.Physics
         {
             _intersections.Clear();
 
-            var collidableEntities = registry.With<BoxColliderComponent>().ToList();
+            var collidableEntities = registry.WithAll<WorldAABBComponent, CollidingTagComponent>().ToList();
             for (int i = 0; i < collidableEntities.Count; i++)
             {
                 for (int j = i + 1; j < collidableEntities.Count; j++)
@@ -44,19 +44,12 @@ namespace Shared.Physics
 
         private bool IsIntersecting(Entity a, Entity b)
         {
-            var posA = a.Has<PositionComponent>() ? a.GetRequired<PositionComponent>().Value : System.Numerics.Vector3.Zero;
-            var colA = a.GetRequired<BoxColliderComponent>();
-            var minA = posA + colA.Center - colA.Size / 2;
-            var maxA = posA + colA.Center + colA.Size / 2;
+            var boxA = a.GetRequired<WorldAABBComponent>();
+            var boxB = b.GetRequired<WorldAABBComponent>();
 
-            var posB = b.Has<PositionComponent>() ? b.GetRequired<PositionComponent>().Value : System.Numerics.Vector3.Zero;
-            var colB = b.GetRequired<BoxColliderComponent>();
-            var minB = posB + colB.Center - colB.Size / 2;
-            var maxB = posB + colB.Center + colB.Size / 2;
-
-            return (minA.X <= maxB.X && maxA.X >= minB.X) &&
-                   (minA.Y <= maxB.Y && maxA.Y >= minB.Y) &&
-                   (minA.Z <= maxB.Z && maxA.Z >= minB.Z);
+            return (boxA.Min.X <= boxB.Max.X && boxA.Max.X >= boxB.Min.X) &&
+                   (boxA.Min.Y <= boxB.Max.Y && boxA.Max.Y >= boxB.Min.Y) &&
+                   (boxA.Min.Z <= boxB.Max.Z && boxA.Max.Z >= boxB.Min.Z);
         }
 
         private void AddIntersection(EntityId source, EntityId target)
