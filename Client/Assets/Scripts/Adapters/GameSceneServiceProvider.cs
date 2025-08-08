@@ -9,6 +9,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Shared.ECS;
 using Shared.ECS.Systems;
 using Shared.Networking;
+using Shared.Physics;
 using Shared.Scheduling;
 
 namespace Adapters
@@ -37,17 +38,27 @@ namespace Adapters
             serviceCollection.AddSingleton<ISystem>(sp => sp.GetRequiredService<InputSystem>());
             serviceCollection.AddSingleton<IInputListener>(sp => sp.GetRequiredService<InputSystem>());
             
-            // Prediction systems
+            // ----- Prediction systems -----
             // Some systems (like VelocityPredictionSystem vs VelocitySystem) are used instead of their
             // regular counterparts to handle client-side prediction.
+            
+            // Prediction: Player and other entities movement
             serviceCollection.AddSingleton<ISystem, PredictedPlayerMovementSystem>();
             serviceCollection.AddSingleton<ISystem, VelocityPredictionSystem>();
-            serviceCollection.AddSingleton<ISystem, FaceMoveDirectionSystem>();
+            
+            // Prediction: Player shots
             serviceCollection.AddSingleton<PredictedPlayerShotSystem>();
             serviceCollection.AddSingleton<ISystem>(sp => sp.GetRequiredService<PredictedPlayerShotSystem>());
             serviceCollection.AddSingleton<IInitializable>(sp => sp.GetRequiredService<PredictedPlayerShotSystem>());
             serviceCollection.AddSingleton<IDisposable>(sp => sp.GetRequiredService<PredictedPlayerShotSystem>());
             
+            // There are some common systems that are used for both client and server.
+            // We could decide to put these inside the shared RegisterECSServices method.
+            serviceCollection.AddSingleton<ISystem, FaceMoveDirectionSystem>();
+            serviceCollection.AddSingleton<CollisionSystem>();
+            serviceCollection.AddSingleton<ISystem>(sp => sp.GetRequiredService<CollisionSystem>());
+            serviceCollection.AddSingleton<ICollisionDetector>(sp => sp.GetRequiredService<CollisionSystem>());
+
             // Health / Damage systems
             serviceCollection.AddSingleton<ISystem, HealthBarRenderSystem>();
 

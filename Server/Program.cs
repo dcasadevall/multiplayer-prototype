@@ -35,10 +35,14 @@ services.AddSingleton<ILogger, ConsoleLogger>();
 
 // Register server systems
 services.AddSingleton<ISystem, WorldDiagnosticsSystem>();
-services.AddSingleton<ISystem, VelocitySystem>();
-services.AddSingleton<ISystem, FaceMoveDirectionSystem>();
-services.AddSingleton<ISystem, CollisionSystem>();
 services.AddSingleton<ISystem, HealthSystem>();
+
+// Physics / Movement
+services.AddSingleton<ISystem, FaceMoveDirectionSystem>();
+services.AddSingleton<ISystem, VelocitySystem>();
+services.AddSingleton<CollisionSystem>();
+services.AddSingleton<ISystem>(sp => sp.GetRequiredService<CollisionSystem>());
+services.AddSingleton<ICollisionDetector>(sp => sp.GetRequiredService<CollisionSystem>());
 
 // Register TickSync and ServerTickSystem
 // This should be the LAST system before the replication system
