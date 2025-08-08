@@ -13,7 +13,7 @@ namespace Core.Physics
     /// </summary>
     public class WorldAABBRenderSystem : ISystem
     {
-        private readonly Dictionary<EntityId, AABBVisualizer> _visualizers = new Dictionary<EntityId, AABBVisualizer>();
+        private readonly Dictionary<EntityId, AABBVisualizer> _visualizers = new();
 
         public void Update(EntityRegistry registry, uint tickNumber, float deltaTime)
         {

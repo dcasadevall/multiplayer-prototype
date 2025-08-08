@@ -1,4 +1,5 @@
 using System.Numerics;
+using System.Text.Json.Serialization;
 using Shared.ECS;
 
 namespace Shared.Physics
@@ -10,15 +11,24 @@ namespace Shared.Physics
     /// </summary>
     public class LocalBoundsComponent : IComponent
     {
-        /// <summary>
-        /// The center of the bounds in local space.
-        /// </summary>
+        [JsonIgnore]
         public Vector3 Center { get; set; }
-
-        /// <summary>
-        /// The full size of the bounds in local space.
-        /// </summary>
+        [JsonIgnore]
         public Vector3 Size { get; set; }
+
+        [JsonPropertyName("cx")]
+        public float CenterX { get => Center.X; set => Center = new Vector3(value, Center.Y, Center.Z); }
+        [JsonPropertyName("cy")]
+        public float CenterY { get => Center.Y; set => Center = new Vector3(Center.X, value, Center.Z); }
+        [JsonPropertyName("cz")]
+        public float CenterZ { get => Center.Z; set => Center = new Vector3(Center.X, Center.Y, value); }
+        
+        [JsonPropertyName("sx")]
+        public float SizeX { get => Size.X; set => Size = new Vector3(value, Size.Y, Size.Z); }
+        [JsonPropertyName("sy")]
+        public float SizeY { get => Size.Y; set => Size = new Vector3(Size.X, value, Size.Z); }
+        [JsonPropertyName("sz")]
+        public float SizeZ { get => Size.Z; set => Size = new Vector3(Size.X, Size.Y, value); }
     }
 }
 
