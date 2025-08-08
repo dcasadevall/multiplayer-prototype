@@ -20,13 +20,11 @@ namespace Shared.ECS.Archetypes
         /// <param name="registry"></param>
         /// <param name="shootingPlayerEntity"></param>
         /// <param name="spawnTick"></param>
-        /// <param name="predictedLocalEntityId"></param>
         /// <returns></returns>
         public static Entity CreateFromPlayer(
             EntityRegistry registry,
             Entity shootingPlayerEntity,
-            uint spawnTick,
-            System.Guid? predictedLocalEntityId = null)
+            uint spawnTick)
         {
             var playerPosition = shootingPlayerEntity.GetRequired<PositionComponent>().Value;
             var peerId = shootingPlayerEntity.GetRequired<PeerComponent>().PeerId;
@@ -45,8 +43,7 @@ namespace Shared.ECS.Archetypes
                 spawnRotation,
                 velocity,
                 spawnTick,
-                peerId,
-                predictedLocalEntityId
+                peerId
             );
         }
 
@@ -59,8 +56,7 @@ namespace Shared.ECS.Archetypes
             Quaternion spawnRotation,
             Vector3 velocity,
             uint spawnTick,
-            int spawnedByPeerId,
-            System.Guid? predictedLocalEntityId = null)
+            int spawnedByPeerId)
         {
             var projectile = registry.CreateEntity();
 
@@ -75,23 +71,6 @@ namespace Shared.ECS.Archetypes
             projectile.AddComponent(SelfDestroyingComponent.CreateWithTTL(spawnTick, GameplayConstants.ProjectileTtlTicks));
             projectile.AddComponent(new PrefabComponent { PrefabName = GameplayConstants.ProjectilePrefabName });
             projectile.AddComponent(new NameComponent { Name = $"Laser_{spawnedByPeerId}" });
-
-            // If we have a predicted local entity ID, we associate it with the projectile
-            // This is used to link client-side predicted projectiles with server-side entities
-            if (predictedLocalEntityId.HasValue)
-            {
-                projectile.AddComponent(new SpawnAuthorityComponent
-                {
-                    SpawnedByPeerId = spawnedByPeerId,
-                    LocalEntityId = predictedLocalEntityId.Value,
-                    SpawnTick = spawnTick
-                });
-            }
-            else
-            {
-                // If no predicted local entity ID is provided, this is a client-side predicted projectile
-                projectile.AddComponent<LocalEntityTagComponent>();
-            }
 
             // Network replication
             projectile.AddComponent(new ReplicatedTagComponent());

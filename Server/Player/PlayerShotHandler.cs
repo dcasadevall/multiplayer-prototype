@@ -78,11 +78,23 @@ namespace Server.Player
                 _lastShotTicks[peerId] = shotMessage.Tick;
 
                 // Spawn the authoritative projectile
+                // Currently, it spawns at the server position for the player at the
+                // tick of receiving the shot message.
+                // we need a buffer of player positions at X tick so we can
+                // spawn the projectile at the correct position.
                 var projectile = ProjectileArchetype.CreateFromPlayer(
                     entityRegistry,
                     playerEntity,
-                    tickSync.ServerTick,
-                    shotMessage.PredictedProjectileId);
+                    tickSync.ServerTick);
+
+                // Server adds the spawn authority component
+                // This will cause the local client to destroy its predicted projectile
+                projectile.AddComponent(new SpawnAuthorityComponent
+                {
+                    SpawnedByPeerId = peerId,
+                    LocalEntityId = shotMessage.PredictedProjectileId,
+                    SpawnTick = shotMessage.Tick
+                });
 
                 logger.Debug("Spawned projectile {0} for peer {1} at tick {2}",
                     projectile.Id, peerId, shotMessage.Tick);

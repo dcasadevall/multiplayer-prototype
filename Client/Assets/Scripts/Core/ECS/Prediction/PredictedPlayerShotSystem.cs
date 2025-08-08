@@ -88,6 +88,10 @@ namespace Core.ECS.Prediction
                 localPlayer, 
                 clientTick); 
             
+            // This projectile will be destroyed once the server sends the authoritative projectile entity.
+            // Adding LocalEntityTagComponent will take care of that.
+            projectile.AddComponent<LocalEntityTagComponent>();
+            
             // Send shot message to server
             var predictedProjectileId = projectile.Id;
             SendShotMessage(clientTick, predictedProjectileId.Value);
