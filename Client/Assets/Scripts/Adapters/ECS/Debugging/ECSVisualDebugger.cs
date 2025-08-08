@@ -5,6 +5,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Shared.ECS;
 using Shared.ECS.Components;
 using Shared.ECS.Entities;
+using Shared.Physics;
 using UnityEngine;
 using ILogger = Shared.Logging.ILogger;
 #pragma warning disable CS0618 // Type or member is obsolete

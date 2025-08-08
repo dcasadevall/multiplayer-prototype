@@ -1,11 +1,9 @@
 using System.Numerics;
-using Shared.ECS;
 using Shared.ECS.Components;
 using Shared.ECS.Entities;
 using Shared.ECS.Prediction;
 using Shared.ECS.Replication;
 using Shared.Health;
-using Shared.Input;
 using Shared.Physics;
 
 namespace Shared.ECS.Archetypes
@@ -37,6 +35,11 @@ namespace Shared.ECS.Archetypes
             playerEntity.AddComponent(new PrefabComponent { PrefabName = GameplayConstants.PlayerPrefabName });
             playerEntity.AddComponent<PlayerTagComponent>();
             playerEntity.AddComponent(new RotationComponent());
+            playerEntity.AddComponent(new BoxColliderComponent
+            {
+                Center = GameplayConstants.PlayerColliderBoxCenter,
+                Size = GameplayConstants.PlayerColliderBoxSize
+            });
 
             // Network replication
             playerEntity.AddComponent<ReplicatedTagComponent>();

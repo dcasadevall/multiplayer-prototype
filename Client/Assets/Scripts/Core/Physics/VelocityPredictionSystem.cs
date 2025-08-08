@@ -5,10 +5,9 @@ using Shared.ECS.Entities;
 using Shared.ECS.Prediction;
 using Shared.ECS.TickSync;
 using Shared.Networking;
-using ILogger = Shared.Logging.ILogger;
-using Vector3 = System.Numerics.Vector3;
+using Shared.Physics;
 
-namespace Core.ECS.Prediction
+namespace Core.Physics
 {
     /// <summary>
     /// Updates the authoritative gameplay state for remote entities.
@@ -19,13 +18,11 @@ namespace Core.ECS.Prediction
     public class VelocityPredictionSystem : ISystem
     {
         private readonly ITickSync _tickSync;
-        private readonly ILogger _logger;
         private readonly IClientConnection _clientConnection;
 
-        public VelocityPredictionSystem(IClientConnection clientConnection, ITickSync tickSync, ILogger logger)
+        public VelocityPredictionSystem(IClientConnection clientConnection, ITickSync tickSync)
         {
             _tickSync = tickSync;
-            _logger = logger;
             _clientConnection = clientConnection;
         }
 

@@ -1,7 +1,6 @@
 using System;
 using Core.ECS.Entities;
 using Core.ECS.Rendering;
-using Core.Input;
 using Shared;
 using Shared.ECS;
 using Shared.ECS.Archetypes;
@@ -15,7 +14,7 @@ using Shared.Networking.Messages;
 using Shared.Scheduling;
 using ILogger = Shared.Logging.ILogger;
 
-namespace Core.ECS.Prediction
+namespace Core.Input
 {
     /// <summary>
     /// System that handles client-side projectile creation and shoot cooldown.

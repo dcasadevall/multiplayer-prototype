@@ -1,6 +1,5 @@
 using System.Numerics;
-using Core.ECS.Prediction;
-using Core.Input;
+using Core.Physics;
 using NSubstitute;
 using NUnit.Framework;
 using Shared.ECS;
@@ -9,7 +8,7 @@ using Shared.ECS.Entities;
 using Shared.ECS.Prediction;
 using Shared.ECS.TickSync;
 using Shared.Networking;
-using ILogger = Shared.Logging.ILogger;
+using Shared.Physics;
 
 namespace Tests.Core.ECS.Prediction
 {
@@ -17,7 +16,6 @@ namespace Tests.Core.ECS.Prediction
     {
         private IClientConnection _clientConnection;
         private TickSync _tickSync;
-        private ILogger _logger;
         private EntityRegistry _registry;
         private Entity _remoteEntity;
         private VelocityPredictionSystem _system;
@@ -26,7 +24,6 @@ namespace Tests.Core.ECS.Prediction
         public void Setup()
         {
             _clientConnection = Substitute.For<IClientConnection>();
-            _logger = Substitute.For<ILogger>();
             _tickSync = new TickSync();
             _registry = new EntityRegistry();
 
@@ -41,8 +38,7 @@ namespace Tests.Core.ECS.Prediction
 
             _system = new VelocityPredictionSystem(
                 _clientConnection,
-                _tickSync,
-                _logger
+                _tickSync
             );
         }
 

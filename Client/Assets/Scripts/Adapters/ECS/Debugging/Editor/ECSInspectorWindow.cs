@@ -7,6 +7,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Shared.ECS;
 using Shared.ECS.Components;
 using Shared.ECS.Entities;
+using Shared.Physics;
 using UnityEditor;
 using UnityEngine;
 

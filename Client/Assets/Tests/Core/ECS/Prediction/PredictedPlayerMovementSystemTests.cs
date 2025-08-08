@@ -1,5 +1,4 @@
 using System.Numerics;
-using Core.ECS.Prediction;
 using Core.Input;
 using NSubstitute;
 using NUnit.Framework;
@@ -11,6 +10,7 @@ using Shared.ECS.TickSync;
 using Shared.Input;
 using Shared.Networking;
 using Shared.Networking.Messages;
+using Shared.Physics;
 using ILogger = Shared.Logging.ILogger;
 
 namespace Tests.Core.ECS.Prediction

@@ -11,6 +11,10 @@ namespace Shared
         public const string PlayerPrefabName = "Player";
         public static readonly TimeSpan PlayerRespawnTime = TimeSpan.FromSeconds(4);
 
+        // Player collider constants
+        public static readonly Vector3 PlayerColliderBoxCenter = Vector3.Zero;
+        public static readonly Vector3 PlayerColliderBoxSize = new(1, 2, 1);
+
         // Projectile constants
         public const float ProjectileSpeed = 8f;
         public const int ProjectileDamage = 25;
@@ -21,6 +25,7 @@ namespace Shared
         public static readonly TimeSpan ProjectileTtl = TimeSpan.FromSeconds(4);
         public static readonly TimeSpan PlayerShotCooldown = TimeSpan.FromSeconds(0.5);
 
+        // Projectile collider constants
         public static readonly Vector3 ProjectileColliderBoxCenter = new(0f, 0f, 0.25f);
         public static readonly Vector3 ProjectileColliderBoxSize = new(0.3f, 0.3f, 0.9f);
     }

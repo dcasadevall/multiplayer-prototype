@@ -81,6 +81,11 @@ namespace Shared.ECS.Archetypes
             projectile.AddComponent(SelfDestroyingComponent.CreateWithTTL(spawnTick, GameplayConstants.ProjectileTtl.ToNumTicks()));
             projectile.AddComponent(new PrefabComponent { PrefabName = GameplayConstants.ProjectilePrefabName });
             projectile.AddComponent(new NameComponent { Name = $"Laser_{spawnedByPeerId}" });
+            projectile.AddComponent(new BoxColliderComponent
+            {
+                Center = GameplayConstants.ProjectileColliderBoxCenter,
+                Size = GameplayConstants.ProjectileColliderBoxSize,
+            });
 
             // Network replication
             projectile.AddComponent<ReplicatedTagComponent>();

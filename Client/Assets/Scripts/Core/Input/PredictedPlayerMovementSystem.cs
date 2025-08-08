@@ -1,22 +1,20 @@
 using System.Collections.Generic;
 using System.Linq;
 using Core.ECS.Entities;
-using Core.Input;
 using Shared;
 using Shared.ECS;
-using Shared.ECS.Components;
 using Shared.ECS.Entities;
 using Shared.ECS.Prediction;
 using Shared.ECS.TickSync;
 using Shared.Input;
 using Shared.Networking;
 using Shared.Networking.Messages;
-using UnityEngine;
+using Shared.Physics;
 using ILogger = Shared.Logging.ILogger;
 using Vector2 = System.Numerics.Vector2;
 using Vector3 = System.Numerics.Vector3;
 
-namespace Core.ECS.Prediction
+namespace Core.Input
 {
     /// <summary>
     /// Handles local player movement including input capture, prediction, and reconciliation.
