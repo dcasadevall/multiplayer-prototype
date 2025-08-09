@@ -2,7 +2,7 @@ using System.Collections.Generic;
 using Core.ECS.Rendering;
 using Shared.Damage;
 using Shared.ECS;
-using Shared.ECS.Components;
+using Shared.ECS.Entities;
 using UnityEngine;
 
 namespace Adapters.Health

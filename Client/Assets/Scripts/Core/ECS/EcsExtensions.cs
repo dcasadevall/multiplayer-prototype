@@ -48,10 +48,6 @@ namespace Core.ECS
             services.AddSingleton<ISystem>(sp => sp.GetService<EntityViewSystem>());
             services.AddSingleton<IDisposable>(sp => sp.GetService<EntityViewSystem>());
             services.AddSingleton<IEntityViewRegistry>(sp => sp.GetService<EntityViewSystem>());
-            
-            
-            // Register json replication types
-            services.RegisterJsonReplicationTypes();
         }
     }
 }

@@ -1,8 +1,8 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using Core.ECS.Replication;
 using Microsoft.Extensions.DependencyInjection;
+using Shared.ECS.Replication;
 using Shared.Networking;
 using UnityEngine;
 using ILogger = Shared.Logging.ILogger;
@@ -95,7 +95,7 @@ namespace Adapters.Debugging.Networking
             
             // Add to history
             _pingHistory.Enqueue(_currentPing);
-            _replicationIntervals.Enqueue(_replicationStats.TimeBetweenSnapshots);
+            _replicationIntervals.Enqueue(_replicationStats.TimeBetweenDeltas);
             
             // Trim history
             while (_pingHistory.Count > _historySize)
@@ -155,9 +155,9 @@ namespace Adapters.Debugging.Networking
             
             if (_replicationStats != null)
             {
-                var intervalColor = GetReplicationIntervalColor(_replicationStats.TimeBetweenSnapshots);
+                var intervalColor = GetReplicationIntervalColor(_replicationStats.TimeBetweenDeltas);
                 GUI.color = intervalColor;
-                GUILayout.Label($"Replication Interval: {_replicationStats.TimeBetweenSnapshots.TotalMilliseconds} ms");
+                GUILayout.Label($"Replication Interval: {_replicationStats.TimeBetweenDeltas.TotalMilliseconds} ms");
                 GUI.color = Color.white;
             }
             
@@ -182,7 +182,7 @@ namespace Adapters.Debugging.Networking
                 var intervals = _replicationIntervals.Select(i => (float)i.TotalMilliseconds).ToArray();
                 var minInterval = intervals.Min();
                 var maxInterval = intervals.Max();
-                DrawMiniGraph(intervals, GetReplicationIntervalColor(_replicationStats.TimeBetweenSnapshots), minInterval, maxInterval);
+                DrawMiniGraph(intervals, GetReplicationIntervalColor(_replicationStats.TimeBetweenDeltas), minInterval, maxInterval);
             }
         }
         
