@@ -1,4 +1,5 @@
-using System.Text.Json.Serialization;
+using Shared.ECS;
+using Shared.ECS.Replication;
 
 namespace Shared.ECS.Components
 {
@@ -12,14 +13,12 @@ namespace Shared.ECS.Components
         /// The tick at which this entity should be destroyed.
         /// When the world tick reaches this value, the entity will be removed.
         /// </summary>
-        [JsonPropertyName("destroyAtTick")]
         public uint DestroyAtTick { get; set; }
 
         /// <summary>
         /// Whether this entity has been marked for destruction.
         /// Used to prevent multiple destruction attempts.
         /// </summary>
-        [JsonIgnore]
         public bool IsMarkedForDestruction { get; set; } = false;
 
         public SelfDestroyingComponent() { }
@@ -38,6 +37,16 @@ namespace Shared.ECS.Components
         public static SelfDestroyingComponent CreateWithTTL(uint currentTick, uint ticksToLive)
         {
             return new SelfDestroyingComponent(currentTick + ticksToLive);
+        }
+
+        public void Serialize(IComponentWriter writer)
+        {
+            writer.Put(DestroyAtTick);
+        }
+
+        public void Deserialize(IComponentReader reader)
+        {
+            DestroyAtTick = reader.GetUInt();
         }
     }
 }

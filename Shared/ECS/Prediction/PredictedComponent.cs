@@ -1,4 +1,4 @@
-using System.Text.Json.Serialization;
+using Shared.ECS.Replication;
 
 namespace Shared.ECS.Prediction
 {
@@ -23,13 +23,24 @@ namespace Shared.ECS.Prediction
         /// <summary>
         /// The last server-authoritative value for this component.
         /// </summary>
-        [JsonPropertyName("serverValue")]
         public T? ServerValue { get; set; }
 
         /// <summary>
         /// Whether this predicted component has received authoritative data from the server.
         /// </summary>
-        [JsonIgnore]
         public bool HasServerValue => ServerValue != null;
+
+        public void Serialize(IComponentWriter writer)
+        {
+            writer.Put(HasServerValue);
+            if (HasServerValue)
+                writer.Put(ServerValue);
+        }
+
+        public void Deserialize(IComponentReader reader)
+        {
+            if (reader.GetBool())
+                ServerValue = reader.GetComponent<T>();
+        }
     }
 }

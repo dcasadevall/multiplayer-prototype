@@ -1,4 +1,5 @@
-using System.Text.Json.Serialization;
+using Shared.ECS;
+using Shared.ECS.Replication;
 
 namespace Shared.ECS.Components
 {
@@ -16,7 +17,16 @@ namespace Shared.ECS.Components
         /// <summary>
         /// The name of the prefab resource associated with this entity.
         /// </summary>
-        [JsonPropertyName("prefabName")]
         public string PrefabName { get; set; } = string.Empty;
+
+        public void Serialize(IComponentWriter writer)
+        {
+            writer.Put(PrefabName);
+        }
+
+        public void Deserialize(IComponentReader reader)
+        {
+            PrefabName = reader.GetString();
+        }
     }
 }

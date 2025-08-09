@@ -20,6 +20,15 @@ namespace Server.Scenes
 
     public class SceneLoader(EntityRegistry entityRegistry)
     {
+        private class JsonPosition
+        {
+            public float X { get; set; }
+            public float Y { get; set; }
+            public float Z { get; set; }
+        }
+
+        private static readonly JsonSerializerOptions _jsonOptions = new() { PropertyNameCaseInsensitive = true };
+
         /// <summary>
         /// Loads a scene from a JSON file and applies it to the registry using the snapshot consumer.
         /// </summary>
@@ -38,8 +47,9 @@ namespace Server.Scenes
             {
                 if (desc.Archetype == "Bot")
                 {
-                    var position = JsonSerializer.Deserialize<PositionComponent>(desc.Components["PositionComponent"].GetRawText());
-                    BotArchetype.Create(entityRegistry, position?.Value ?? Vector3.Zero);
+                    var jsonPosition = JsonSerializer.Deserialize<JsonPosition>(desc.Components["PositionComponent"].GetRawText(), _jsonOptions);
+                    var position = jsonPosition != null ? new Vector3(jsonPosition.X, jsonPosition.Y, jsonPosition.Z) : Vector3.Zero;
+                    BotArchetype.Create(entityRegistry, position);
                 }
             }
         }

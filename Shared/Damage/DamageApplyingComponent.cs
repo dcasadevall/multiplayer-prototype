@@ -1,6 +1,6 @@
 using System;
-using System.Text.Json.Serialization;
 using Shared.ECS;
+using Shared.ECS.Replication;
 
 namespace Shared.Damage
 {
@@ -13,19 +13,30 @@ namespace Shared.Damage
         /// <summary>
         /// The amount of damage this entity deals when it hits a target.
         /// </summary>
-        [JsonPropertyName("damage")]
         public int Damage { get; set; }
 
         /// <summary>
         /// The ID of the entity that spawned this damaging entity.
         /// </summary>
-        [JsonPropertyName("sourceEntityId")]
         public Guid SourceEntityId { get; set; }
 
         /// <summary>
         /// Whether this damage can affect the entity that spawned it (friendly fire).
         /// </summary>
-        [JsonPropertyName("canDamageSelf")]
         public bool CanDamageSelf { get; set; } = false;
+
+        public void Serialize(IComponentWriter writer)
+        {
+            writer.Put(Damage);
+            writer.Put(SourceEntityId);
+            writer.Put(CanDamageSelf);
+        }
+
+        public void Deserialize(IComponentReader reader)
+        {
+            Damage = reader.GetInt();
+            SourceEntityId = reader.GetGuid();
+            CanDamageSelf = reader.GetBool();
+        }
     }
 }

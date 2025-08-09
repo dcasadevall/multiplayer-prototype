@@ -1,4 +1,5 @@
-using System.Text.Json.Serialization;
+using Shared.ECS;
+using Shared.ECS.Replication;
 
 namespace Shared.ECS.Components
 {
@@ -7,7 +8,16 @@ namespace Shared.ECS.Components
     /// </summary>
     public class NameComponent : IComponent
     {
-        [JsonPropertyName("name")]
         public string Name { get; set; } = string.Empty;
+
+        public void Serialize(IComponentWriter writer)
+        {
+            writer.Put(Name);
+        }
+
+        public void Deserialize(IComponentReader reader)
+        {
+            Name = reader.GetString();
+        }
     }
 }

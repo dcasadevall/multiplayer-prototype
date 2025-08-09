@@ -1,5 +1,6 @@
 using System.Numerics;
 using Shared.ECS;
+using Shared.ECS.Components;
 using Shared.ECS.Entities;
 using Shared.ECS.Replication;
 using Shared.Physics;
@@ -7,7 +8,7 @@ using Xunit;
 
 namespace SharedUnitTests.ECS.Entities
 {
-    public class TestServerComponent : IComponent, IServerComponent { }
+    public class TestServerComponent : TagComponent, IServerComponent { }
 
     public class EntityRegistryTests
     {

@@ -1,4 +1,5 @@
-using System.Text.Json.Serialization;
+using Shared.ECS;
+using Shared.ECS.Replication;
 
 namespace Shared.ECS.TickSync
 {
@@ -12,7 +13,16 @@ namespace Shared.ECS.TickSync
         /// <summary>
         /// The tick number for the server.
         /// </summary>
-        [JsonPropertyName("tickNumber")]
         public uint TickNumber { get; set; }
+
+        public void Serialize(IComponentWriter writer)
+        {
+            writer.Put(TickNumber);
+        }
+
+        public void Deserialize(IComponentReader reader)
+        {
+            TickNumber = reader.GetUInt();
+        }
     }
 }

@@ -13,7 +13,7 @@ namespace SharedUnitTests.ECS.Replication
         public void SerializeAndDeserialize_FullDelta_ReturnsEqualDelta()
         {
             // Arrange
-            var serializer = new JsonComponentSerializer();
+            var serializer = new BinaryComponentSerializer();
             var originalDelta = new EntityDelta
             {
                 EntityId = Guid.NewGuid(),

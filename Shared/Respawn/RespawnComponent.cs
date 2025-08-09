@@ -1,4 +1,5 @@
 using Shared.ECS;
+using Shared.ECS.Replication;
 
 namespace Shared.Respawn
 {
@@ -12,5 +13,15 @@ namespace Shared.Respawn
         /// The tick at which the entity should be respawned.
         /// </summary>
         public uint RespawnAtTick { get; set; }
+
+        public void Serialize(IComponentWriter writer)
+        {
+            writer.Put(RespawnAtTick);
+        }
+
+        public void Deserialize(IComponentReader reader)
+        {
+            RespawnAtTick = reader.GetUInt();
+        }
     }
 }

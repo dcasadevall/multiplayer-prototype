@@ -23,7 +23,7 @@ namespace Shared.Networking
         {
             // Message factory and component serializer
             services.AddSingleton<MessageFactory>();
-            services.AddSingleton<IComponentSerializer, JsonComponentSerializer>();
+            services.AddSingleton<IComponentSerializer, BinaryComponentSerializer>();
 
             // Register Networking Client and Server abstractions
             services.AddSingleton<NetLibNetworkingClient>();

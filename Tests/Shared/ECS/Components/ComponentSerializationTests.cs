@@ -1,7 +1,7 @@
-using System;
 using System.Numerics;
-using System.Text.Json;
+using LiteNetLib.Utils;
 using Shared.ECS.Components;
+using Shared.ECS.Replication;
 using Shared.Physics;
 using Xunit;
 
@@ -9,8 +9,6 @@ namespace SharedUnitTests.ECS.Components
 {
     public class ComponentSerializationTests
     {
-        private readonly JsonSerializerOptions _options = new() { WriteIndented = true };
-
         public static IEnumerable<object[]> RotationTestData()
         {
             yield return [Quaternion.Identity]; // No rotation
@@ -28,51 +26,65 @@ namespace SharedUnitTests.ECS.Components
         {
             // Arrange
             var original = new RotationComponent { Value = rotation };
+            var writer = new NetDataWriter();
+            var reader = new NetDataReader();
+            var componentWriter = new NetDataWriterAdapter(writer);
+            var componentReader = new NetDataReaderAdapter(reader);
 
             // Act
-            var json = JsonSerializer.Serialize(original, _options);
-            var deserialized = JsonSerializer.Deserialize<RotationComponent>(json, _options);
+            original.Serialize(componentWriter);
+            reader.SetSource(writer);
+            var deserialized = new RotationComponent();
+            deserialized.Deserialize(componentReader);
 
             // Assert
             Assert.NotNull(deserialized);
-            Assert.Equal(original.X, deserialized.X, 5);
-            Assert.Equal(original.Y, deserialized.Y, 5);
-            Assert.Equal(original.Z, deserialized.Z, 5);
-            Assert.Equal(original.W, deserialized.W, 5);
+            Assert.Equal(original.Value.X, deserialized.Value.X, 5);
+            Assert.Equal(original.Value.Y, deserialized.Value.Y, 5);
+            Assert.Equal(original.Value.Z, deserialized.Value.Z, 5);
+            Assert.Equal(original.Value.W, deserialized.Value.W, 5);
         }
 
         [Fact]
         public void PositionComponent_SerializesAndDeserializesCorrectly()
         {
             // Arrange
-            var original = new PositionComponent { X = 1.23f, Y = 4.56f, Z = 7.89f };
+            var original = new PositionComponent { Value = new Vector3(1.23f, 4.56f, 7.89f) };
+            var writer = new NetDataWriter();
+            var reader = new NetDataReader();
+            var componentWriter = new NetDataWriterAdapter(writer);
+            var componentReader = new NetDataReaderAdapter(reader);
 
             // Act
-            var json = JsonSerializer.Serialize(original, _options);
-            var deserialized = JsonSerializer.Deserialize<PositionComponent>(json, _options);
+            original.Serialize(componentWriter);
+            reader.SetSource(writer);
+            var deserialized = new PositionComponent();
+            deserialized.Deserialize(componentReader);
 
             // Assert
             Assert.NotNull(deserialized);
-            Assert.Equal(original.X, deserialized.X, 5);
-            Assert.Equal(original.Y, deserialized.Y, 5);
-            Assert.Equal(original.Z, deserialized.Z, 5);
+            Assert.Equal(original.Value, deserialized.Value);
         }
 
         [Fact]
         public void VelocityComponent_SerializesAndDeserializesCorrectly()
         {
             // Arrange
-            var original = new VelocityComponent { X = -9.87f, Y = -6.54f, Z = -3.21f };
+            var original = new VelocityComponent { Value = new Vector3(-9.87f, -6.54f, -3.21f) };
+            var writer = new NetDataWriter();
+            var reader = new NetDataReader();
+            var componentWriter = new NetDataWriterAdapter(writer);
+            var componentReader = new NetDataReaderAdapter(reader);
 
             // Act
-            var json = JsonSerializer.Serialize(original, _options);
-            var deserialized = JsonSerializer.Deserialize<VelocityComponent>(json, _options);
+            original.Serialize(componentWriter);
+            reader.SetSource(writer);
+            var deserialized = new VelocityComponent();
+            deserialized.Deserialize(componentReader);
 
             // Assert
             Assert.NotNull(deserialized);
-            Assert.Equal(original.X, deserialized.X, 5);
-            Assert.Equal(original.Y, deserialized.Y, 5);
-            Assert.Equal(original.Z, deserialized.Z, 5);
+            Assert.Equal(original.Value, deserialized.Value);
         }
 
         [Fact]
@@ -84,19 +96,21 @@ namespace SharedUnitTests.ECS.Components
                 Center = new Vector3(0.1f, 0.2f, 0.3f),
                 Size = new Vector3(1.1f, 1.2f, 1.3f)
             };
+            var writer = new NetDataWriter();
+            var reader = new NetDataReader();
+            var componentWriter = new NetDataWriterAdapter(writer);
+            var componentReader = new NetDataReaderAdapter(reader);
 
             // Act
-            var json = JsonSerializer.Serialize(original, _options);
-            var deserialized = JsonSerializer.Deserialize<LocalBoundsComponent>(json, _options);
+            original.Serialize(componentWriter);
+            reader.SetSource(writer);
+            var deserialized = new LocalBoundsComponent();
+            deserialized.Deserialize(componentReader);
 
             // Assert
             Assert.NotNull(deserialized);
-            Assert.Equal(original.CenterX, deserialized.CenterX, 5);
-            Assert.Equal(original.CenterY, deserialized.CenterY, 5);
-            Assert.Equal(original.CenterZ, deserialized.CenterZ, 5);
-            Assert.Equal(original.SizeX, deserialized.SizeX, 5);
-            Assert.Equal(original.SizeY, deserialized.SizeY, 5);
-            Assert.Equal(original.SizeZ, deserialized.SizeZ, 5);
+            Assert.Equal(original.Center, deserialized.Center);
+            Assert.Equal(original.Size, deserialized.Size);
         }
 
         [Fact]
@@ -108,19 +122,21 @@ namespace SharedUnitTests.ECS.Components
                 Min = new Vector3(-1f, -2f, -3f),
                 Max = new Vector3(1f, 2f, 3f)
             };
+            var writer = new NetDataWriter();
+            var reader = new NetDataReader();
+            var componentWriter = new NetDataWriterAdapter(writer);
+            var componentReader = new NetDataReaderAdapter(reader);
 
             // Act
-            var json = JsonSerializer.Serialize(original, _options);
-            var deserialized = JsonSerializer.Deserialize<WorldAABBComponent>(json, _options);
+            original.Serialize(componentWriter);
+            reader.SetSource(writer);
+            var deserialized = new WorldAABBComponent();
+            deserialized.Deserialize(componentReader);
 
             // Assert
             Assert.NotNull(deserialized);
-            Assert.Equal(original.MinX, deserialized.MinX, 5);
-            Assert.Equal(original.MinY, deserialized.MinY, 5);
-            Assert.Equal(original.MinZ, deserialized.MinZ, 5);
-            Assert.Equal(original.MaxX, deserialized.MaxX, 5);
-            Assert.Equal(original.MaxY, deserialized.MaxY, 5);
-            Assert.Equal(original.MaxZ, deserialized.MaxZ, 5);
+            Assert.Equal(original.Min, deserialized.Min);
+            Assert.Equal(original.Max, deserialized.Max);
         }
     }
 }

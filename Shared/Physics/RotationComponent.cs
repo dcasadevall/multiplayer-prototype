@@ -1,41 +1,12 @@
 using System.Numerics;
-using System.Text.Json.Serialization;
 using Shared.ECS;
+using Shared.ECS.Replication;
 
 namespace Shared.Physics
 {
     public class RotationComponent : IComponent
     {
-        [JsonIgnore]
         public Quaternion Value { get; set; }
-
-        [JsonPropertyName("x")]
-        public float X
-        {
-            get => Value.X;
-            set => Value = new Quaternion(value, Value.Y, Value.Z, Value.W);
-        }
-
-        [JsonPropertyName("y")]
-        public float Y
-        {
-            get => Value.Y;
-            set => Value = new Quaternion(Value.X, value, Value.Z, Value.W);
-        }
-
-        [JsonPropertyName("z")]
-        public float Z
-        {
-            get => Value.Z;
-            set => Value = new Quaternion(Value.X, Value.Y, value, Value.W);
-        }
-
-        [JsonPropertyName("w")]
-        public float W
-        {
-            get => Value.W;
-            set => Value = new Quaternion(Value.X, Value.Y, Value.Z, value);
-        }
 
         public RotationComponent()
         {
@@ -45,6 +16,16 @@ namespace Shared.Physics
         public RotationComponent(Quaternion value)
         {
             Value = value;
+        }
+
+        public void Serialize(IComponentWriter writer)
+        {
+            writer.Put(Value);
+        }
+
+        public void Deserialize(IComponentReader reader)
+        {
+            Value = reader.GetQuaternion();
         }
     }
 }

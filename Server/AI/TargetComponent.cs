@@ -1,5 +1,6 @@
 using System;
 using Shared.ECS;
+using Shared.ECS.Replication;
 
 namespace Server.AI
 {
@@ -10,5 +11,15 @@ namespace Server.AI
     public class TargetComponent : IServerComponent
     {
         public Guid TargetId { get; set; }
+
+        public void Serialize(IComponentWriter writer)
+        {
+            writer.Put(TargetId);
+        }
+
+        public void Deserialize(IComponentReader reader)
+        {
+            TargetId = reader.GetGuid();
+        }
     }
 }

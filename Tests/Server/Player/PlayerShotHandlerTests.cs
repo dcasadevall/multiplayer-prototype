@@ -36,7 +36,7 @@ namespace ServerUnitTests.Player
             var playerEntity = _registry.CreateEntity();
             playerEntity.AddComponent(new PeerComponent { PeerId = peerId });
             playerEntity.AddComponent(new PlayerTagComponent());
-            playerEntity.AddComponent(new PositionComponent { X = 1, Y = 2, Z = 3 });
+            playerEntity.AddComponent(new PositionComponent { Value = new Vector3(1, 2, 3) });
             playerEntity.AddComponent(new RotationComponent());
 
             var shotMessage = new PlayerShotMessage
@@ -77,7 +77,7 @@ namespace ServerUnitTests.Player
             var playerEntity = _registry.CreateEntity();
             playerEntity.AddComponent(new PeerComponent { PeerId = peerId });
             playerEntity.AddComponent(new PlayerTagComponent());
-            playerEntity.AddComponent(new PositionComponent { X = 1, Y = 2, Z = 3 });
+            playerEntity.AddComponent(new PositionComponent { Value = new Vector3(1, 2, 3) });
             playerEntity.AddComponent(new RotationComponent());
 
             // First shot - should succeed
@@ -117,7 +117,7 @@ namespace ServerUnitTests.Player
             var playerEntity = _registry.CreateEntity();
             playerEntity.AddComponent(new PeerComponent { PeerId = peerId });
             playerEntity.AddComponent(new PlayerTagComponent());
-            playerEntity.AddComponent(new PositionComponent { X = 1, Y = 2, Z = 3 });
+            playerEntity.AddComponent(new PositionComponent { Value = new Vector3(1, 2, 3) });
             playerEntity.AddComponent(new RotationComponent());
 
             // First shot
@@ -160,13 +160,13 @@ namespace ServerUnitTests.Player
             var player1 = _registry.CreateEntity();
             player1.AddComponent(new PeerComponent { PeerId = peerId1 });
             player1.AddComponent(new PlayerTagComponent());
-            player1.AddComponent(new PositionComponent { X = 1, Y = 2, Z = 3 });
+            player1.AddComponent(new PositionComponent { Value = new Vector3(1, 2, 3) });
             player1.AddComponent(new RotationComponent());
 
             var player2 = _registry.CreateEntity();
             player2.AddComponent(new PeerComponent { PeerId = peerId2 });
             player2.AddComponent(new PlayerTagComponent());
-            player2.AddComponent(new PositionComponent { X = 4, Y = 5, Z = 6 });
+            player2.AddComponent(new PositionComponent { Value = new Vector3(4, 5, 6) });
             player2.AddComponent(new RotationComponent());
 
             // First player shoots
@@ -231,7 +231,7 @@ namespace ServerUnitTests.Player
             var playerEntity = _registry.CreateEntity();
             playerEntity.AddComponent(new PeerComponent { PeerId = peerId });
             playerEntity.AddComponent(new PlayerTagComponent());
-            playerEntity.AddComponent(new PositionComponent { X = 1, Y = 2, Z = 3 });
+            playerEntity.AddComponent(new PositionComponent { Value = new Vector3(1, 2, 3) });
             playerEntity.AddComponent(new RotationComponent());
 
             var shotMsg = new PlayerShotMessage
@@ -262,7 +262,7 @@ namespace ServerUnitTests.Player
             var playerEntity = _registry.CreateEntity();
             playerEntity.AddComponent(new PeerComponent { PeerId = peerId });
             playerEntity.AddComponent(new PlayerTagComponent());
-            playerEntity.AddComponent(new PositionComponent { X = 1, Y = 2, Z = 3 });
+            playerEntity.AddComponent(new PositionComponent { Value = new Vector3(1, 2, 3) });
             playerEntity.AddComponent(new RotationComponent());
 
             // Fire a shot to establish cooldown tracking
@@ -280,7 +280,7 @@ namespace ServerUnitTests.Player
             var newPlayerEntity = _registry.CreateEntity();
             newPlayerEntity.AddComponent(new PeerComponent { PeerId = peerId });
             newPlayerEntity.AddComponent(new PlayerTagComponent());
-            newPlayerEntity.AddComponent(new PositionComponent { X = 1, Y = 2, Z = 3 });
+            newPlayerEntity.AddComponent(new PositionComponent { Value = new Vector3(1, 2, 3) });
             newPlayerEntity.AddComponent(new RotationComponent());
 
             var secondShot = new PlayerShotMessage

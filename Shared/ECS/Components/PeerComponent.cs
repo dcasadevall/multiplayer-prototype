@@ -1,4 +1,5 @@
-using System.Text.Json.Serialization;
+using Shared.ECS;
+using Shared.ECS.Replication;
 
 namespace Shared.ECS.Components
 {
@@ -7,10 +8,19 @@ namespace Shared.ECS.Components
     /// </summary>
     public class PeerComponent : IComponent
     {
-        [JsonPropertyName("peerId")]
         public int PeerId { get; set; }
-        
-        [JsonPropertyName("peerName")]
         public string PeerName { get; set; } = null!;
+
+        public void Serialize(IComponentWriter writer)
+        {
+            writer.Put(PeerId);
+            writer.Put(PeerName);
+        }
+
+        public void Deserialize(IComponentReader reader)
+        {
+            PeerId = reader.GetInt();
+            PeerName = reader.GetString();
+        }
     }
 }

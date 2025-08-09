@@ -1,6 +1,6 @@
 using System.Numerics;
-using System.Text.Json.Serialization;
 using Shared.ECS;
+using Shared.ECS.Replication;
 
 namespace Shared.Physics
 {
@@ -11,24 +11,20 @@ namespace Shared.Physics
     /// </summary>
     public class LocalBoundsComponent : IComponent
     {
-        [JsonIgnore]
         public Vector3 Center { get; set; }
-        [JsonIgnore]
         public Vector3 Size { get; set; }
 
-        [JsonPropertyName("cx")]
-        public float CenterX { get => Center.X; set => Center = new Vector3(value, Center.Y, Center.Z); }
-        [JsonPropertyName("cy")]
-        public float CenterY { get => Center.Y; set => Center = new Vector3(Center.X, value, Center.Z); }
-        [JsonPropertyName("cz")]
-        public float CenterZ { get => Center.Z; set => Center = new Vector3(Center.X, Center.Y, value); }
-        
-        [JsonPropertyName("sx")]
-        public float SizeX { get => Size.X; set => Size = new Vector3(value, Size.Y, Size.Z); }
-        [JsonPropertyName("sy")]
-        public float SizeY { get => Size.Y; set => Size = new Vector3(Size.X, value, Size.Z); }
-        [JsonPropertyName("sz")]
-        public float SizeZ { get => Size.Z; set => Size = new Vector3(Size.X, Size.Y, value); }
+        public void Serialize(IComponentWriter writer)
+        {
+            writer.Put(Center);
+            writer.Put(Size);
+        }
+
+        public void Deserialize(IComponentReader reader)
+        {
+            Center = reader.GetVector3();
+            Size = reader.GetVector3();
+        }
     }
 }
 

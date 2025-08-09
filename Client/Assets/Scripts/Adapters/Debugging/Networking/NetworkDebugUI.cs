@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using LiteNetLib.Utils;
 using Microsoft.Extensions.DependencyInjection;
 using Shared.ECS.Replication;
 using Shared.Networking;
@@ -30,6 +31,7 @@ namespace Adapters.Debugging.Networking
         private IMessageReceiver _messageReceiver;
         private ILogger _logger;
         private IReplicationStats _replicationStats;
+        private Dictionary<string, int> _lastPacketBreakdown;
         
         // Network stats
         private readonly Queue<float> _pingHistory = new();
@@ -59,8 +61,17 @@ namespace Adapters.Debugging.Networking
             _connectionStartTime = DateTime.Now;
             
             _logger.Info("Network Debug UI initialized");
+
+            _messageReceiver.RegisterMessageHandler<WorldDeltaMessage>(OnWorldDeltaReceived);
         }
         
+        private void OnWorldDeltaReceived(int peerId, WorldDeltaMessage message)
+        {
+            var writer = new NetDataWriter();
+            message.Serialize(writer);
+            _lastPacketBreakdown = PacketInspector.Inspect(writer);
+        }
+
         private void Update()
         {
             HandleInput();
@@ -123,6 +134,11 @@ namespace Adapters.Debugging.Networking
             DrawCurrentStats();
             
             GUILayout.Space(10);
+
+            // Packet breakdown
+            DrawPacketBreakdown();
+
+            GUILayout.Space(10);
             
             // Mini graphs
             DrawMiniGraphs();
@@ -168,6 +184,21 @@ namespace Adapters.Debugging.Networking
             GUILayout.Label($"Bytes Received: {NetworkStats.BytesReceived / 1024f:F2} KB");
             GUILayout.Label($"Avg Sent Payload: {NetworkStats.AverageSentPayloadSize:F2} B");
             GUILayout.Label($"Avg Received Payload: {NetworkStats.AverageReceivedPayloadSize:F2} B");
+        }
+
+        private void DrawPacketBreakdown()
+        {
+            GUILayout.Label("Last Packet Breakdown:");
+            if (_lastPacketBreakdown == null)
+            {
+                GUILayout.Label("No packet received yet.");
+                return;
+            }
+
+            foreach (var entry in _lastPacketBreakdown.OrderByDescending(e => e.Value))
+            {
+                GUILayout.Label($"- {entry.Key}: {entry.Value} bytes");
+            }
         }
         
         private void DrawMiniGraphs()
@@ -291,6 +322,7 @@ namespace Adapters.Debugging.Networking
         private void OnDestroy()
         {
             _snapshotHandler?.Dispose();
+            _messageReceiver.UnregisterMessageHandler<WorldDeltaMessage>(OnWorldDeltaReceived);
         }
     }
 }

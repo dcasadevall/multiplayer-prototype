@@ -1,23 +1,23 @@
+using Shared.ECS.Replication;
+
 namespace Shared.ECS
 {
     /// <summary>
-    /// Base interface for all components in the Entity-Component-System (ECS) architecture.
-    /// 
-    /// <para>
-    /// Components are pure data containers that hold information about entities. They should not
-    /// contain any logic or behavior. Systems operate on entities that have specific sets of components.
-    /// </para>
-    /// 
-    /// <example>
-    /// <code>
-    /// public class PositionComponent : IComponent
-    /// {
-    ///     public Vector2 Value;
-    /// }
-    /// </code>
-    /// </example>
+    /// Marker interface for all components.
+    /// Components should be structs that contain only data, not logic.
     /// </summary>
     public interface IComponent
     {
+        /// <summary>
+        /// Serializes the component's data to a binary writer.
+        /// </summary>
+        /// <param name="writer">The writer to serialize the data to.</param>
+        void Serialize(IComponentWriter writer);
+        
+        /// <summary>
+        /// Deserializes the component's data from a binary reader.
+        /// </summary>
+        /// <param name="reader">The reader to deserialize the data from.</param>
+        void Deserialize(IComponentReader reader);
     }
 }

@@ -1,5 +1,6 @@
 using System;
-using System.Text.Json.Serialization;
+using Shared.ECS;
+using Shared.ECS.Replication;
 
 namespace Shared.ECS.Components
 {
@@ -12,20 +13,31 @@ namespace Shared.ECS.Components
         /// <summary>
         /// The peer ID of the client that spawned this entity.
         /// </summary>
-        [JsonPropertyName("spawnedByPeerId")]
         public int SpawnedByPeerId { get; set; }
 
         /// <summary>
         /// The local entity ID that was used when this entity was first predicted/spawned on the client.
         /// Used to associate server entities with client-predicted entities.
         /// </summary>
-        [JsonPropertyName("localEntityId")]
         public Guid LocalEntityId { get; set; }
 
         /// <summary>
         /// The tick at which this entity was spawned.
         /// </summary>
-        [JsonPropertyName("spawnTick")]
         public uint SpawnTick { get; set; }
+
+        public void Serialize(IComponentWriter writer)
+        {
+            writer.Put(SpawnedByPeerId);
+            writer.Put(LocalEntityId);
+            writer.Put(SpawnTick);
+        }
+
+        public void Deserialize(IComponentReader reader)
+        {
+            SpawnedByPeerId = reader.GetInt();
+            LocalEntityId = reader.GetGuid();
+            SpawnTick = reader.GetUInt();
+        }
     }
 }

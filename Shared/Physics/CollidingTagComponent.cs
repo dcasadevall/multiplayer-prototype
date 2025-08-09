@@ -1,4 +1,6 @@
 using Shared.ECS;
+using Shared.ECS.Components;
+using Shared.ECS.Replication;
 
 namespace Shared.Physics
 {
@@ -7,7 +9,7 @@ namespace Shared.Physics
     /// The <see cref="CollisionSystem"/> will only consider entities that have this component
     /// in addition to a <see cref="WorldAABBComponent"/>.
     /// </summary>
-    public class CollidingTagComponent : IComponent
+    public class CollidingTagComponent : TagComponent
     {
     }
 }
