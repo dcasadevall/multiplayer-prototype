@@ -30,10 +30,11 @@ namespace Shared.ECS.Entities
         // They are used to produce deltas for replication and synchronization.
         // We could technically decouple this from the EntityRegistry,
         // but for simplicity, we keep it here.
-        private readonly List<Guid> _createdEntities = new();
-        private readonly List<Guid> _removedEntities = new();
-        private readonly Dictionary<Guid, List<IComponent>> _addedOrModifiedComponents = new();
-        private readonly Dictionary<Guid, List<Type>> _removedComponents = new();
+        private readonly List<EntityId> _createdEntities = new();
+        private readonly List<EntityId> _removedEntities = new();
+        private readonly Dictionary<EntityId, HashSet<IComponent>> _addedComponents = new();
+        private readonly Dictionary<EntityId, HashSet<IComponent>> _modifiedComponents = new();
+        private readonly Dictionary<EntityId, HashSet<IComponent>> _removedComponents = new();
 
         /// <summary>
         /// Creates a new entity with a unique ID and adds it to the world.
@@ -41,13 +42,22 @@ namespace Shared.ECS.Entities
         /// <returns>The newly created <see cref="Entity"/>.</returns>
         public Entity CreateEntity()
         {
-            var id = EntityId.New();
-            var entity = new Entity(id);
-            _entities.Add(id, entity);
-            _createdEntities.Add(id.Value);
+            return CreateEntity(EntityId.New());
+        }
+
+        /// <summary>
+        /// Creates a new entity with the given ID and adds it to the world.
+        /// </summary>
+        /// <returns>The newly created <see cref="Entity"/>.</returns>
+        private Entity CreateEntity(EntityId entityId)
+        {
+            var entity = new Entity(entityId);
+            _entities.Add(entityId, entity);
+            _createdEntities.Add(entityId);
 
             // Add for event handling
-            entity.OnComponentUpdated += HandleComponentAddedOrModified;
+            entity.OnComponentAdded += HandleComponentAdded;
+            entity.OnComponentModified += HandleComponentModified;
             entity.OnComponentRemoved += HandleComponentRemoved;
 
             return entity;
@@ -68,12 +78,18 @@ namespace Shared.ECS.Entities
         public void DestroyEntity(EntityId id)
         {
             // Clear event handlers
-            _entities[id].OnComponentUpdated -= HandleComponentAddedOrModified;
+            _entities[id].OnComponentAdded -= HandleComponentAdded;
+            _entities[id].OnComponentModified -= HandleComponentModified;
             _entities[id].OnComponentRemoved -= HandleComponentRemoved;
 
             // Remove the entity from the registry and track it as removed
             _entities.Remove(id);
-            _removedEntities.Add(id.Value);
+            _removedEntities.Add(id);
+
+            // Also remove any components that were added, modified, or removed in this delta
+            _addedComponents.Remove(id);
+            _modifiedComponents.Remove(id);
+            _removedComponents.Remove(id);
         }
 
         /// <summary>
@@ -94,12 +110,7 @@ namespace Shared.ECS.Entities
                 return entity;
             }
 
-            var newEntity = new Entity(id);
-            _entities.Add(id, newEntity);
-            _createdEntities.Add(id.Value);
-            newEntity.OnComponentUpdated += HandleComponentAddedOrModified;
-            newEntity.OnComponentRemoved += HandleComponentRemoved;
-            return newEntity;
+            return CreateEntity(id);
         }
 
         /// <summary>
@@ -155,26 +166,61 @@ namespace Shared.ECS.Entities
 
         #region Entity Delta Handling
 
-        private void HandleComponentAddedOrModified(Entity entity, IComponent component)
+        private void HandleComponentAdded(Entity entity, IComponent component)
         {
-            var entityId = entity.Id.Value;
-            if (!_addedOrModifiedComponents.ContainsKey(entityId))
+            var entityId = entity.Id;
+            if (!_addedComponents.ContainsKey(entityId))
             {
-                _addedOrModifiedComponents[entityId] = new List<IComponent>();
+                _addedComponents[entityId] = new HashSet<IComponent>();
             }
 
-            _addedOrModifiedComponents[entityId].Add(component);
+            // If we are adding a component removed in this delta,
+            // we should remove it from the removed list
+            if (_removedComponents.ContainsKey(entityId))
+            {
+                if (_removedComponents[entityId].Contains(component))
+                {
+                    _removedComponents[entityId].Remove(component);
+                }
+            }
+
+            _addedComponents[entityId].Add(component);
         }
 
-        private void HandleComponentRemoved(Entity entity, Type componentType)
+        private void HandleComponentModified(Entity entity, IComponent component)
         {
-            var entityId = entity.Id.Value;
-            if (!_removedComponents.ContainsKey(entityId))
+            var entityId = entity.Id;
+            if (!_modifiedComponents.ContainsKey(entityId))
             {
-                _removedComponents[entityId] = new List<Type>();
+                _modifiedComponents[entityId] = new HashSet<IComponent>();
             }
 
-            _removedComponents[entityId].Add(componentType);
+            _modifiedComponents[entityId].Add(component);
+        }
+
+        private void HandleComponentRemoved(Entity entity, IComponent component)
+        {
+            var entityId = entity.Id;
+            if (!_removedComponents.ContainsKey(entityId))
+            {
+                _removedComponents[entityId] = new HashSet<IComponent>();
+            }
+
+            // If we are removing a component that was added in this delta,
+            // we should remove it from the added list
+            if (_modifiedComponents.TryGetValue(entityId, out var modified) && modified.Contains(component))
+            {
+                modified.Remove(component);
+            }
+
+            // If we are removing a component that was added in this delta,
+            // we should remove it from the added list
+            if (_addedComponents.TryGetValue(entityId, out var added) && added.Contains(component))
+            {
+                added.Remove(component);
+            }
+
+            _removedComponents[entityId].Add(component);
         }
 
         /// <summary>
@@ -185,46 +231,63 @@ namespace Shared.ECS.Entities
         public List<EntityDelta> ProduceEntityDelta()
         {
             var deltas = new List<EntityDelta>();
-            var allEntityIds = _createdEntities
-                .Concat(_removedEntities)
-                .Concat(_addedOrModifiedComponents.Keys)
+
+            // Handle created entities
+            foreach (var entityId in _createdEntities)
+            {
+                if (_removedEntities.Contains(entityId))
+                {
+                    throw new InvalidOperationException(
+                        $"Entity {entityId} cannot be created because it was previously destroyed.");
+                }
+
+                deltas.Add(new EntityDelta
+                {
+                    EntityId = entityId.Value,
+                    IsNew = true,
+                    AddedOrModifiedComponents = _entities[entityId].GetAllComponents().ToList()
+                });
+            }
+
+            // Handle destroyed entities
+            foreach (var entityId in _removedEntities)
+            {
+                if (_createdEntities.Contains(entityId))
+                {
+                    throw new InvalidOperationException(
+                        $"Entity {entityId} cannot be destroyed because it was previously created.");
+                }
+
+                deltas.Add(new EntityDelta { EntityId = entityId.Value, IsDestroyed = true });
+            }
+
+            var modifiedAndRemoved = _addedComponents.Keys
+                .Concat(_modifiedComponents.Keys)
                 .Concat(_removedComponents.Keys)
                 .Distinct();
 
-            foreach (var entityId in allEntityIds)
+            // Handle modified and removed components
+            foreach (var entityId in modifiedAndRemoved)
             {
-                var isNew = _createdEntities.Contains(entityId);
-                var isDestroyed = _removedEntities.Contains(entityId);
+                if (_createdEntities.Contains(entityId) || _removedEntities.Contains(entityId)) continue;
 
-                if (isNew && isDestroyed)
+                var added = _addedComponents.GetValueOrDefault(entityId, new HashSet<IComponent>());
+                var modified = _modifiedComponents.GetValueOrDefault(entityId, new HashSet<IComponent>());
+
+                deltas.Add(new EntityDelta
                 {
-                    throw new Exception($"Entity {entityId} Marked as both new and destroyed");
-                }
-
-                // IsDestroyed entities should not be processed further
-                if (isDestroyed)
-                {
-                    deltas.Add(new EntityDelta
-                    {
-                        EntityId = entityId,
-                        IsDestroyed = true,
-                    });
-                    continue;
-                }
-
-                var delta = new EntityDelta
-                {
-                    EntityId = entityId,
-                    IsNew = isNew,
-                    AddedOrModifiedComponents = _addedOrModifiedComponents.GetValueOrDefault(entityId, new List<IComponent>()),
-                    RemovedComponents = _removedComponents.GetValueOrDefault(entityId, new List<Type>())
-                };
-
-                deltas.Add(delta);
+                    EntityId = entityId.Value,
+                    AddedOrModifiedComponents = added.Concat(modified).ToList(),
+                    RemovedComponents = _removedComponents
+                        .GetValueOrDefault(entityId, new HashSet<IComponent>())
+                        .Select(c => c.GetType())
+                        .ToList()
+                });
             }
 
             // Remove the tracked changes after producing deltas
-            _addedOrModifiedComponents.Clear();
+            _addedComponents.Clear();
+            _modifiedComponents.Clear();
             _removedComponents.Clear();
             _createdEntities.Clear();
             _removedEntities.Clear();
@@ -247,7 +310,11 @@ namespace Shared.ECS.Entities
                 // If the entity is marked as destroyed, remove it from the registry
                 if (delta.IsDestroyed)
                 {
-                    DestroyEntity(new EntityId(delta.EntityId));
+                    if (_entities.ContainsKey(new EntityId(delta.EntityId)))
+                    {
+                        DestroyEntity(new EntityId(delta.EntityId));
+                    }
+
                     continue;
                 }
 
@@ -279,7 +346,8 @@ namespace Shared.ECS.Entities
             }
 
             // Clear the tracked changes after consuming deltas
-            _addedOrModifiedComponents.Clear();
+            _addedComponents.Clear();
+            _modifiedComponents.Clear();
             _removedComponents.Clear();
             _createdEntities.Clear();
             _removedEntities.Clear();

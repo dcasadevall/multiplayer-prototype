@@ -1,15 +1,11 @@
-using System;
-using System.Linq;
 using System.Numerics;
 using Shared.ECS;
-using Shared.ECS.Components;
 using Shared.ECS.Entities;
 using Shared.ECS.Replication;
 using Shared.Physics;
 using Xunit;
-using System.Collections.Generic;
 
-namespace SharedUnitTests.ECS
+namespace SharedUnitTests.ECS.Entities
 {
     public class EntityRegistryTests
     {
@@ -75,7 +71,7 @@ namespace SharedUnitTests.ECS
         }
 
         [Fact]
-        public void ProduceEntityDelta_WithDestroyedEntity_CreatesDelta()
+        public void ProduceEntityDelta_WithDestroyedEntity_SetsIsDestroyed()
         {
             // Arrange
             var registry = new EntityRegistry();
@@ -86,13 +82,14 @@ namespace SharedUnitTests.ECS
 
             // Act
             var deltas = registry.ProduceEntityDelta();
-            
+
             // Assert
             Assert.Single(deltas);
             var delta = deltas.First();
+            Assert.True(delta.IsDestroyed);
             Assert.False(delta.IsNew);
             Assert.Empty(delta.AddedOrModifiedComponents);
-            Assert.Single(delta.RemovedComponents);
+            Assert.Empty(delta.RemovedComponents);
         }
 
         [Fact]
@@ -140,7 +137,7 @@ namespace SharedUnitTests.ECS
             registry.ConsumeEntityDelta(deltas);
 
             // Assert
-            Assert.Equal(new Vector3(4, 5, 6), entity.Get<PositionComponent>().Value);
+            Assert.Equal(new Vector3(4, 5, 6), entity.Get<PositionComponent>()!.Value);
         }
 
         [Fact]
@@ -178,11 +175,10 @@ namespace SharedUnitTests.ECS
                 new EntityDelta
                 {
                     EntityId = entity.Id.Value,
-                    IsNew = false,
-                    RemovedComponents = new List<Type> { typeof(PositionComponent) }
+                    IsDestroyed = true
                 }
             }.ToList();
-            
+
             // Act
             registry.ConsumeEntityDelta(deltas);
 

@@ -15,29 +15,25 @@ namespace Shared.ECS.Entities
         /// Internal events for component updates and creation.
         /// Used by the entity registry to track component changes.
         /// </summary>
-        internal event Action<Entity, IComponent>? OnComponentUpdated;
+        internal event Action<Entity, IComponent>? OnComponentAdded;
+
+        /// <summary>
+        /// Internal event for component modifications.
+        /// Used by the entity registry to track when components are modified.
+        /// </summary>
+        internal event Action<Entity, IComponent>? OnComponentModified;
 
         /// <summary>
         /// Internal event for component removals.
         /// Used by the entity registry to track when components are removed from an entity.
         /// </summary>
-        internal event Action<Entity, Type>? OnComponentRemoved;
+        internal event Action<Entity, IComponent>? OnComponentRemoved;
 
         public EntityId Id { get; }
 
         public Entity(EntityId id)
         {
             Id = id;
-        }
-
-        /// <summary>
-        /// Add a component to the entity.
-        /// </summary>
-        /// <typeparam name="T">The type of the component to add.</typeparam>
-        /// <param name="component">The component to add.</param>
-        public void AddComponent<T>(T component) where T : IComponent
-        {
-            AddComponent(component, typeof(T));
         }
 
         /// <summary>
@@ -52,16 +48,17 @@ namespace Shared.ECS.Entities
         /// <summary>
         /// Add a component to the entity.
         /// </summary>
+        /// <typeparam name="T">The type of the component to add.</typeparam>
         /// <param name="component">The component to add.</param>
-        /// <param name="componentType"></param>
-        public void AddComponent(IComponent component, Type componentType)
+        public void AddComponent<T>(T component) where T : IComponent
         {
+            var componentType = typeof(T);
             if (_components.ContainsKey(componentType))
             {
                 throw new InvalidOperationException($"Component {componentType} already exists");
             }
 
-            AddOrReplaceComponent(component, componentType);
+            AddOrReplaceComponent(component);
         }
 
         /// <summary>
@@ -70,19 +67,18 @@ namespace Shared.ECS.Entities
         /// <param name="component">The component to add or replace.</param>
         public void AddOrReplaceComponent(IComponent component)
         {
-            AddOrReplaceComponent(component, component.GetType());
-        }
-
-        /// <summary>
-        /// Adds a component to the entity, or replaces the existing component of the same type.
-        /// </summary>
-        /// <param name="component">The component to add or replace.</param>
-        /// <param name="componentType">The type of the component to add or replace.</param>
-        public void AddOrReplaceComponent(IComponent component, Type componentType)
-        {
             var type = component.GetType();
+            var isNewComponent = !_components.ContainsKey(type);
             _components[type] = component;
-            OnComponentUpdated?.Invoke(this, component);
+
+            if (isNewComponent)
+            {
+                OnComponentAdded?.Invoke(this, component);
+            }
+            else
+            {
+                OnComponentModified?.Invoke(this, component);
+            }
         }
 
         /// <summary>
@@ -222,8 +218,14 @@ namespace Shared.ECS.Entities
         /// <param name="type">The type of the component to remove.</param>
         public void Remove(Type type)
         {
+            if (!_components.ContainsKey(type))
+            {
+                throw new InvalidOperationException($"Component {type} does not exist on entity {Id}");
+            }
+
+            var component = _components[type];
             _components.Remove(type);
-            OnComponentRemoved?.Invoke(this, type);
+            OnComponentRemoved?.Invoke(this, component);
         }
 
         /// <summary>

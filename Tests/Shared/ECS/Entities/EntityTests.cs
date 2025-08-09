@@ -112,14 +112,14 @@ namespace SharedUnitTests.ECS.Entities
         }
 
         [Fact]
-        public void Remove_WithNonExistentComponent_ShouldNotThrow()
+        public void Remove_WithNonExistentComponent_ShouldThrow()
         {
             // Arrange
             var entity = new Entity(EntityId.New());
 
             // Act & Assert
             var exception = Record.Exception(() => entity.Remove<PositionComponent>());
-            Assert.Null(exception);
+            Assert.NotNull(exception);
         }
 
         [Fact]
