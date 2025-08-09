@@ -78,6 +78,9 @@ namespace Shared.Networking
                 return;
             }
 
+            // Record the size of the received payload
+            NetworkStats.RecordMessageReceived(reader.UserDataSize);
+
             // Read the rest of the data into a byte array
             var data = reader.GetRemainingBytes();
             if (!_handlers.TryGetValue(messageTypeClass, out var handlers))

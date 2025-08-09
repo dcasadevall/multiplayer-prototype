@@ -44,6 +44,22 @@ namespace Shared.Physics
                     worldMax = Vector3.Max(worldMax, worldCorner);
                 }
 
+                // If the current entity already has a WorldAABBComponent, 
+                // compare the existing bounds with the new ones.
+                // This is a small optimization to avoid unnecessary updates.
+                // Since our delta system is pretty simple, and does not
+                // compare equality.
+                // In a real world scenario, we might want to compare
+                // actual component changes
+                if (entity.TryGet<WorldAABBComponent>(out var existingAabb))
+                {
+                    // Only update if the new bounds are different
+                    if (existingAabb.Min == worldMin || existingAabb.Max == worldMax)
+                    {
+                        continue;
+                    }
+                }
+
                 entity.AddOrReplaceComponent(new WorldAABBComponent
                 {
                     Min = worldMin,

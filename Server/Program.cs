@@ -80,7 +80,7 @@ services.RegisterSharedTypes();
 
 // Register message sender and receiver, as the server
 // does not have a stateful connection object like the client.
-services.AddSingleton<IMessageSender, NetLibJsonMessageSender>();
+services.AddSingleton<IMessageSender, NetLibBinaryMessageSender>();
 services.AddSingleton<NetLibJsonMessageReceiver>();
 services.AddSingleton<IMessageReceiver>(sp => sp.GetRequiredService<NetLibJsonMessageReceiver>());
 services.AddSingleton<IInitializable>(sp => sp.GetRequiredService<NetLibJsonMessageReceiver>());

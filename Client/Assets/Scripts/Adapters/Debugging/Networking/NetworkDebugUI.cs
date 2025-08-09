@@ -162,6 +162,12 @@ namespace Adapters.Debugging.Networking
             }
             
             GUILayout.Label($"Total Packets: {_totalPacketsReceived}");
+            
+            // Display payload stats
+            GUILayout.Label($"Bytes Sent: {NetworkStats.BytesSent} B");
+            GUILayout.Label($"Bytes Received: {NetworkStats.BytesReceived} B");
+            GUILayout.Label($"Avg Sent Payload: {NetworkStats.AverageSentPayloadSize:F2} B");
+            GUILayout.Label($"Avg Received Payload: {NetworkStats.AverageReceivedPayloadSize:F2} B");
         }
         
         private void DrawMiniGraphs()
@@ -274,6 +280,7 @@ namespace Adapters.Debugging.Networking
             _pingHistory.Clear();
             _totalPacketsReceived = 0;
             _connectionStartTime = DateTime.Now;
+            NetworkStats.Reset();
             _logger.Info("Network debug stats reset");
         }
         

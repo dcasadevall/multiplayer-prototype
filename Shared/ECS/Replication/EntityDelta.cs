@@ -1,13 +1,16 @@
 using System;
 using System.Collections.Generic;
+using LiteNetLib.Utils;
+using Shared.ECS.Entities;
 
 namespace Shared.ECS.Replication
 {
     /// <summary>
     /// Represents the changes (delta) to a single entity for replication between server and client.
     /// Used to efficiently synchronize only the differences in entity state, rather than full snapshots.
+    /// This class is designed for binary serialization to minimize network overhead.
     /// </summary>
-    public class EntityDelta
+    public class EntityDelta : INetSerializable
     {
         /// <summary>
         /// The unique identifier of the entity whose state has changed.
@@ -36,5 +39,42 @@ namespace Shared.ECS.Replication
         /// The receiver should remove these components from the entity.
         /// </summary>
         public List<Type> RemovedComponents { get; set; } = new();
+
+        public void Serialize(NetDataWriter writer)
+        {
+            writer.Put(EntityId.ToByteArray());
+            writer.Put(IsNew);
+            writer.Put(IsDestroyed);
+
+            // Serialize components
+            writer.Put(AddedOrModifiedComponents.Count);
+            foreach (var component in AddedOrModifiedComponents)
+                ComponentSerializer.Serialize(writer, component);
+
+            // Serialize removed components
+            writer.Put(RemovedComponents.Count);
+            foreach (var type in RemovedComponents)
+                writer.Put(type.AssemblyQualifiedName);
+        }
+
+        public void Deserialize(NetDataReader reader)
+        {
+            var bytes = new byte[16];
+            reader.GetBytes(bytes, 16);
+            EntityId = new Guid(bytes);
+
+            IsNew = reader.GetBool();
+            IsDestroyed = reader.GetBool();
+
+            // Deserialize components
+            var count = reader.GetInt();
+            for (var i = 0; i < count; i++)
+                AddedOrModifiedComponents.Add(ComponentSerializer.Deserialize(reader));
+
+            // Deserialize removed components
+            count = reader.GetInt();
+            for (var i = 0; i < count; i++)
+                RemovedComponents.Add(Type.GetType(reader.GetString()));
+        }
     }
 }

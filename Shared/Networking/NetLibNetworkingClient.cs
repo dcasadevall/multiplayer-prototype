@@ -82,7 +82,7 @@ namespace Shared.Networking
                 }
 
                 connectedPeer = peer;
-                var messageSender = new NetLibJsonMessageSender(_netManager, _logger);
+                var messageSender = new NetLibBinaryMessageSender(_netManager, _logger);
                 var connection = new ClientConnection(peer, _logger, messageSender, messageReceiver, msg.PeerId);
 
                 _logger.Debug(LoggedFeature.Networking, $"Client {peer.Id} connected. Address: {peer.Address}");
