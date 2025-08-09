@@ -34,7 +34,7 @@ namespace Shared.ECS.Prediction
         {
             writer.Put(HasServerValue);
             if (HasServerValue)
-                writer.Put(ServerValue);
+                writer.Put(ServerValue!);
         }
 
         public void Deserialize(IComponentReader reader)

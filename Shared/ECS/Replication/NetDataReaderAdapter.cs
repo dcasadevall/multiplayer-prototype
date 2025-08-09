@@ -12,10 +12,12 @@ namespace Shared.ECS.Replication
     public class NetDataReaderAdapter : IComponentReader
     {
         private readonly NetDataReader _reader;
+        private readonly IComponentSerializer _componentSerializer;
 
-        public NetDataReaderAdapter(NetDataReader reader)
+        public NetDataReaderAdapter(NetDataReader reader, IComponentSerializer componentSerializer)
         {
             _reader = reader;
+            _componentSerializer = componentSerializer;
         }
 
         public int GetInt() => _reader.GetInt();
@@ -36,11 +38,10 @@ namespace Shared.ECS.Replication
 
         public T GetComponent<T>() where T : IComponent
         {
-            var serializer = new BinaryComponentSerializer();
             var size = _reader.GetInt();
             var bytes = new byte[size];
             _reader.GetBytes(bytes, size);
-            return (T)serializer.Deserialize(bytes);
+            return (T)_componentSerializer.Deserialize(bytes);
         }
 
         public Guid GetGuid()

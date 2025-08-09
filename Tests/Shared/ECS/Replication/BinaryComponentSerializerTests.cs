@@ -12,13 +12,15 @@ namespace SharedUnitTests.ECS.Replication
         public void Serialize(IComponentWriter writer) => writer.Put(Value);
         public void Deserialize(IComponentReader reader) => Value = reader.GetGuid();
     }
+
     public class BinaryComponentSerializerTests
     {
         [Fact]
         public void SerializeAndDeserialize_PositionComponent_ReturnsEqualComponent()
         {
             // Arrange
-            var serializer = new BinaryComponentSerializer();
+            var componentTypeRegistry = new ComponentTypeRegistry();
+            var serializer = new BinaryComponentSerializer(componentTypeRegistry);
             var originalComponent = new PositionComponent { Value = new Vector3(1, 2, 3) };
 
             // Act
@@ -33,7 +35,8 @@ namespace SharedUnitTests.ECS.Replication
         public void SerializeAndDeserialize_TagComponent_ReturnsEqualComponent()
         {
             // Arrange
-            var serializer = new BinaryComponentSerializer();
+            var componentTypeRegistry = new ComponentTypeRegistry();
+            var serializer = new BinaryComponentSerializer(componentTypeRegistry);
             var originalComponent = new CollidingTagComponent();
 
             // Act
@@ -49,7 +52,8 @@ namespace SharedUnitTests.ECS.Replication
         public void SerializeAndDeserialize_ComponentWithGuid_ReturnsEqualComponent()
         {
             // Arrange
-            var serializer = new BinaryComponentSerializer();
+            var componentTypeRegistry = new ComponentTypeRegistry();
+            var serializer = new BinaryComponentSerializer(componentTypeRegistry);
             var originalComponent = new TestGuidComponent { Value = System.Guid.NewGuid() };
 
             // Act

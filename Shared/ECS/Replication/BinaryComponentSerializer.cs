@@ -11,21 +11,29 @@ namespace Shared.ECS.Replication
     /// </summary>
     public class BinaryComponentSerializer : IComponentSerializer
     {
+        private readonly ComponentTypeRegistry _componentTypeRegistry;
+
+        public BinaryComponentSerializer(ComponentTypeRegistry componentTypeRegistry)
+        {
+            _componentTypeRegistry = componentTypeRegistry;
+        }
+
         public byte[] Serialize(IComponent component)
         {
             var writer = new NetDataWriter();
-            writer.Put(component.GetType().AssemblyQualifiedName);
-            component.Serialize(new NetDataWriterAdapter(writer));
+            var typeId = _componentTypeRegistry.GetId(component.GetType());
+            writer.Put(typeId);
+            component.Serialize(new NetDataWriterAdapter(writer, this));
             return writer.CopyData();
         }
 
         public IComponent Deserialize(byte[] data)
         {
             var reader = new NetDataReader(data);
-            var typeName = reader.GetString();
-            var type = Type.GetType(typeName);
+            var typeId = reader.GetUShort();
+            var type = _componentTypeRegistry.GetType(typeId);
             var component = (IComponent)Activator.CreateInstance(type);
-            component.Deserialize(new NetDataReaderAdapter(reader));
+            component.Deserialize(new NetDataReaderAdapter(reader, this));
             return component;
         }
     }

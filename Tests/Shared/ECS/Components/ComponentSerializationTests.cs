@@ -1,6 +1,5 @@
 using System.Numerics;
 using LiteNetLib.Utils;
-using Shared.ECS.Components;
 using Shared.ECS.Replication;
 using Shared.Physics;
 using Xunit;
@@ -28,8 +27,9 @@ namespace SharedUnitTests.ECS.Components
             var original = new RotationComponent { Value = rotation };
             var writer = new NetDataWriter();
             var reader = new NetDataReader();
-            var componentWriter = new NetDataWriterAdapter(writer);
-            var componentReader = new NetDataReaderAdapter(reader);
+            var binarySerializer = new BinaryComponentSerializer(new ComponentTypeRegistry());
+            var componentWriter = new NetDataWriterAdapter(writer, binarySerializer);
+            var componentReader = new NetDataReaderAdapter(reader, binarySerializer);
 
             // Act
             original.Serialize(componentWriter);
@@ -52,8 +52,9 @@ namespace SharedUnitTests.ECS.Components
             var original = new PositionComponent { Value = new Vector3(1.23f, 4.56f, 7.89f) };
             var writer = new NetDataWriter();
             var reader = new NetDataReader();
-            var componentWriter = new NetDataWriterAdapter(writer);
-            var componentReader = new NetDataReaderAdapter(reader);
+            var binarySerializer = new BinaryComponentSerializer(new ComponentTypeRegistry());
+            var componentWriter = new NetDataWriterAdapter(writer, binarySerializer);
+            var componentReader = new NetDataReaderAdapter(reader, binarySerializer);
 
             // Act
             original.Serialize(componentWriter);
@@ -73,8 +74,9 @@ namespace SharedUnitTests.ECS.Components
             var original = new VelocityComponent { Value = new Vector3(-9.87f, -6.54f, -3.21f) };
             var writer = new NetDataWriter();
             var reader = new NetDataReader();
-            var componentWriter = new NetDataWriterAdapter(writer);
-            var componentReader = new NetDataReaderAdapter(reader);
+            var binarySerializer = new BinaryComponentSerializer(new ComponentTypeRegistry());
+            var componentWriter = new NetDataWriterAdapter(writer, binarySerializer);
+            var componentReader = new NetDataReaderAdapter(reader, binarySerializer);
 
             // Act
             original.Serialize(componentWriter);
@@ -98,8 +100,9 @@ namespace SharedUnitTests.ECS.Components
             };
             var writer = new NetDataWriter();
             var reader = new NetDataReader();
-            var componentWriter = new NetDataWriterAdapter(writer);
-            var componentReader = new NetDataReaderAdapter(reader);
+            var binarySerializer = new BinaryComponentSerializer(new ComponentTypeRegistry());
+            var componentWriter = new NetDataWriterAdapter(writer, binarySerializer);
+            var componentReader = new NetDataReaderAdapter(reader, binarySerializer);
 
             // Act
             original.Serialize(componentWriter);
@@ -124,8 +127,9 @@ namespace SharedUnitTests.ECS.Components
             };
             var writer = new NetDataWriter();
             var reader = new NetDataReader();
-            var componentWriter = new NetDataWriterAdapter(writer);
-            var componentReader = new NetDataReaderAdapter(reader);
+            var binarySerializer = new BinaryComponentSerializer(new ComponentTypeRegistry());
+            var componentWriter = new NetDataWriterAdapter(writer, binarySerializer);
+            var componentReader = new NetDataReaderAdapter(reader, binarySerializer);
 
             // Act
             original.Serialize(componentWriter);
