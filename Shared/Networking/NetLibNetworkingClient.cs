@@ -64,7 +64,7 @@ namespace Shared.Networking
             // Set up a message receiver to handle the connection response
             // This has to happen before we connect to the server
             // and we must initialize it before connecting so that it can handle messages immediately.
-            var messageReceiver = new NetLibJsonMessageReceiver(_listener, _logger);
+            var messageReceiver = new NetLibBinaryMessageReceiver(_listener, _logger);
             messageReceiver.Initialize();
 
             // Register a message handler for the ConnectedMessage
@@ -147,15 +147,15 @@ namespace Shared.Networking
 
             public int AssignedPeerId { get; }
             public IMessageSender MessageSender { get; }
-            public IMessageReceiver MessageReceiver => _jsonMessageReceiver;
-            private readonly NetLibJsonMessageReceiver _jsonMessageReceiver;
+            public IMessageReceiver MessageReceiver => _binaryMessageReceiver;
+            private readonly NetLibBinaryMessageReceiver _binaryMessageReceiver;
 
             public int PingMs => _peer.Ping;
 
             public ClientConnection(NetPeer peer,
                 ILogger logger,
                 IMessageSender messageSender,
-                NetLibJsonMessageReceiver messageReceiver,
+                NetLibBinaryMessageReceiver messageReceiver,
                 int assignedPeerId)
             {
                 _peer = peer;
@@ -165,7 +165,7 @@ namespace Shared.Networking
 
                 // We store the concrete implementation as we need
                 // to manage its disposal
-                _jsonMessageReceiver = messageReceiver;
+                _binaryMessageReceiver = messageReceiver;
             }
 
             /// <summary>
@@ -180,7 +180,7 @@ namespace Shared.Networking
 
                 logger.Info("Disconnecting from server...");
                 _peer.Disconnect();
-                _jsonMessageReceiver.Dispose();
+                _binaryMessageReceiver.Dispose();
                 _disposed = true;
             }
         }

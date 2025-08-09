@@ -81,10 +81,10 @@ services.RegisterSharedTypes();
 // Register message sender and receiver, as the server
 // does not have a stateful connection object like the client.
 services.AddSingleton<IMessageSender, NetLibBinaryMessageSender>();
-services.AddSingleton<NetLibJsonMessageReceiver>();
-services.AddSingleton<IMessageReceiver>(sp => sp.GetRequiredService<NetLibJsonMessageReceiver>());
-services.AddSingleton<IInitializable>(sp => sp.GetRequiredService<NetLibJsonMessageReceiver>());
-services.AddSingleton<IDisposable>(sp => sp.GetRequiredService<NetLibJsonMessageReceiver>());
+services.AddSingleton<NetLibBinaryMessageReceiver>();
+services.AddSingleton<IMessageReceiver>(sp => sp.GetRequiredService<NetLibBinaryMessageReceiver>());
+services.AddSingleton<IInitializable>(sp => sp.GetRequiredService<NetLibBinaryMessageReceiver>());
+services.AddSingleton<IDisposable>(sp => sp.GetRequiredService<NetLibBinaryMessageReceiver>());
 
 // The scheduler is server specific (client will use a different scheduler)
 services.AddSingleton<IScheduler, TimerScheduler>();
