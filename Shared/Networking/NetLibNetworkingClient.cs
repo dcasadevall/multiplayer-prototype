@@ -2,6 +2,7 @@ using System;
 using System.Threading;
 using System.Threading.Tasks;
 using LiteNetLib;
+using Shared.ECS.Replication;
 using Shared.Logging;
 using Shared.Networking.Messages;
 using Shared.Scheduling;
@@ -82,12 +83,25 @@ namespace Shared.Networking
                 if (peer == null)
                 {
                     _logger.Error(LoggedFeature.Networking, $"Failed to connect: Peer with ID {peerId} not found.");
+                    tcs.TrySetException(new Exception($"Peer with ID {peerId} not found."));
+                    return;
+                }
+
+                if (msg.InitialWorldSnapshot == null)
+                {
+                    _logger.Error(LoggedFeature.Networking, $"Failed to connect: InitialWorldSnapshot is null.");
+                    tcs.TrySetException(new Exception("Initial world snapshot is null."));
                     return;
                 }
 
                 connectedPeer = peer;
                 var messageSender = new NetLibBinaryMessageSender(_netManager, _logger);
-                var connection = new ClientConnection(peer, _logger, messageSender, messageReceiver, msg.PeerId);
+                var connection = new ClientConnection(peer,
+                    _logger,
+                    messageSender,
+                    messageReceiver,
+                    msg.InitialWorldSnapshot,
+                    msg.PeerId);
 
                 _logger.Debug(LoggedFeature.Networking, $"Client {peer.Id} connected. Address: {peer.Address}");
                 tcs.TrySetResult(connection);
@@ -156,16 +170,20 @@ namespace Shared.Networking
 
             public int PingMs => _peer.Ping;
 
+            public WorldDeltaMessage InitialWorldSnapshot { get; set; }
+
             public ClientConnection(NetPeer peer,
                 ILogger logger,
                 IMessageSender messageSender,
                 NetLibBinaryMessageReceiver messageReceiver,
+                WorldDeltaMessage initialWorldSnapshot,
                 int assignedPeerId)
             {
                 _peer = peer;
                 this.logger = logger;
                 MessageSender = messageSender;
                 AssignedPeerId = assignedPeerId;
+                InitialWorldSnapshot = initialWorldSnapshot;
 
                 // We store the concrete implementation as we need
                 // to manage its disposal

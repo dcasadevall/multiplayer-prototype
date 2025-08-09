@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using Shared.ECS.Entities;
 using Shared.ECS.Simulation;
 using Shared.Networking;
@@ -32,15 +33,22 @@ namespace Shared.ECS.Replication
         public TimeSpan TimeBetweenDeltas { get; private set; } = TimeSpan.Zero;
 
         private readonly IDisposable _subscription;
-        private WorldDeltaMessage? _lastDeltaMessage;
+        private Queue<WorldDeltaMessage> _deltaMessages = new Queue<WorldDeltaMessage>();
         private DateTime _lastUpdate = DateTime.MinValue;
 
         /// <summary>
         /// Constructs a new ClientReplicationSystem using dependency injection.
         /// </summary>
         /// <param name="messageReceiver">Receiver for network messages.</param>
-        public ClientReplicationSystem(IMessageReceiver messageReceiver)
+        /// <param name="connection">Connection to the authoritative server.</param>
+        public ClientReplicationSystem(IMessageReceiver messageReceiver, IClientConnection connection)
         {
+            if (connection.InitialWorldSnapshot == null)
+            {
+                throw new ArgumentNullException(nameof(connection.InitialWorldSnapshot), "Initial world snapshot must not be null.");
+            }
+
+            _deltaMessages.Enqueue(connection.InitialWorldSnapshot);
             _subscription = messageReceiver.RegisterMessageHandler<WorldDeltaMessage>("ReplicationSystem", HandleMessageReceived);
         }
 
@@ -52,28 +60,25 @@ namespace Shared.ECS.Replication
         /// <param name="deltaTime">The time in seconds since the last update for this system.</param>
         public void Update(EntityRegistry registry, uint tickNumber, float deltaTime)
         {
-            if (_lastDeltaMessage == null)
+            while (_deltaMessages.TryDequeue(out var message))
             {
-                return;
+                // Update the time between deltas
+                var now = DateTime.UtcNow;
+                if (_lastUpdate != DateTime.MinValue)
+                {
+                    TimeBetweenDeltas = now - _lastUpdate;
+                }
+
+                _lastUpdate = now;
+
+                // Consume the world delta message
+                registry.ConsumeEntityDelta(message.Deltas);
             }
-
-            // Update the time between deltas
-            var now = DateTime.UtcNow;
-            if (_lastUpdate != DateTime.MinValue)
-            {
-                TimeBetweenDeltas = now - _lastUpdate;
-            }
-
-            _lastUpdate = now;
-
-            // If we have a delta message, consume it
-            registry.ConsumeEntityDelta(_lastDeltaMessage.Deltas);
-            _lastDeltaMessage = null;
         }
 
         private void HandleMessageReceived(int peerId, WorldDeltaMessage msg)
         {
-            _lastDeltaMessage = msg;
+            _deltaMessages.Enqueue(msg);
         }
 
         /// <summary>

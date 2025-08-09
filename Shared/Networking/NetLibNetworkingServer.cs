@@ -6,6 +6,9 @@ using Shared.ECS.TickSync;
 using Shared.Logging;
 using Shared.Networking.Messages;
 using Shared.Scheduling;
+using Shared.ECS.Entities;
+using Shared.ECS.Replication;
+using System.Linq;
 
 namespace Shared.Networking
 {
@@ -28,6 +31,8 @@ namespace Shared.Networking
         private readonly EventBasedNetListener _eventListener;
         private readonly ILogger _logger;
         private readonly IScheduler _scheduler;
+        private readonly EntityRegistry _entityRegistry;
+        private readonly IComponentSerializer _componentSerializer;
         private IDisposable? _pollHandle;
         private CancellationTokenSource? _cts;
         private volatile bool _running;
@@ -46,13 +51,17 @@ namespace Shared.Networking
             IMessageSender messageSender,
             EventBasedNetListener eventListener,
             ILogger logger,
-            IScheduler scheduler)
+            IScheduler scheduler,
+            EntityRegistry entityRegistry,
+            IComponentSerializer componentSerializer)
         {
             _netManager = netManager;
             _messageSender = messageSender;
             _eventListener = eventListener;
             _logger = logger;
             _scheduler = scheduler;
+            _entityRegistry = entityRegistry;
+            _componentSerializer = componentSerializer;
         }
 
         /// <inheritdoc />
@@ -108,6 +117,15 @@ namespace Shared.Networking
             {
                 PeerId = peer.Id,
                 ConnectionTime = DateTime.UtcNow,
+                InitialWorldSnapshot = new WorldDeltaMessage(_componentSerializer)
+                {
+                    Deltas = _entityRegistry.GetAll().Select(e => new EntityDelta
+                    {
+                        EntityId = e.Id.Value,
+                        IsNew = true,
+                        AddedOrModifiedComponents = e.GetAllComponents().ToList()
+                    }).ToList()
+                }
             };
 
             _messageSender.SendMessage(peer.Id, MessageType.Connected, msg, ChannelType.ReliableOrdered);

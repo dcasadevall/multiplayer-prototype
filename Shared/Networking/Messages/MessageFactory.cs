@@ -19,7 +19,7 @@ namespace Shared.Networking.Messages
         /// </summary>
         public MessageFactory(IComponentSerializer componentSerializer)
         {
-            _constructors[MessageType.Connected] = () => new ConnectedMessage();
+            _constructors[MessageType.Connected] = () => new ConnectedMessage { InitialWorldSnapshot = new WorldDeltaMessage(componentSerializer) };
             _constructors[MessageType.PlayerMovement] = () => new PlayerMovementMessage();
             _constructors[MessageType.PlayerShot] = () => new PlayerShotMessage();
             _constructors[MessageType.Delta] = () => new WorldDeltaMessage(componentSerializer);

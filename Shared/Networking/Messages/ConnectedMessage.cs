@@ -1,5 +1,6 @@
 using System;
 using LiteNetLib.Utils;
+using Shared.ECS.Replication;
 
 namespace Shared.Networking.Messages
 {
@@ -26,11 +27,17 @@ namespace Shared.Networking.Messages
         /// </summary>
         public string ServerVersion { get; set; } = "1.0.0";
 
+        /// <summary>
+        /// The initial state of the world when the client connects.
+        /// </summary>
+        public WorldDeltaMessage? InitialWorldSnapshot { get; set; }
+
         public void Serialize(NetDataWriter writer)
         {
             writer.Put(PeerId);
             writer.Put(ConnectionTime.ToBinary());
             writer.Put(ServerVersion);
+            InitialWorldSnapshot?.Serialize(writer);
         }
 
         public void Deserialize(NetDataReader reader)
@@ -38,6 +45,7 @@ namespace Shared.Networking.Messages
             PeerId = reader.GetInt();
             ConnectionTime = DateTime.FromBinary(reader.GetLong());
             ServerVersion = reader.GetString();
+            InitialWorldSnapshot?.Deserialize(reader);
         }
     }
 }

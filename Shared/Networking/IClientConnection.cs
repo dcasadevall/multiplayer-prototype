@@ -1,4 +1,5 @@
 using System;
+using Shared.ECS.Replication;
 
 namespace Shared.Networking
 {
@@ -18,6 +19,11 @@ namespace Shared.Networking
         /// This is Rtt/2
         /// </summary>
         int PingMs { get; }
+
+        /// <summary>
+        /// The initial world snapshot received from the server when the client connects.
+        /// </summary>
+        WorldDeltaMessage InitialWorldSnapshot { get; set; }
 
         /// <summary>
         /// The message sender for sending messages to the server or other peers.
