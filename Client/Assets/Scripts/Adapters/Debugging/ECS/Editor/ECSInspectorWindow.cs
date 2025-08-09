@@ -3,6 +3,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using Core.MathUtils;
 using Microsoft.Extensions.DependencyInjection;
 using Shared.ECS;
 using Shared.ECS.Entities;
@@ -254,7 +255,7 @@ namespace Adapters.Debugging.ECS.Editor
             bool hasPosition = entity.TryGet<PositionComponent>(out var posComponent);
             if (hasPosition)
             {
-                position = new Vector3(posComponent.X, posComponent.Y, posComponent.Z);
+                position = posComponent.Value.ToUnityVector3();
             }
             
             return new EntityInfo

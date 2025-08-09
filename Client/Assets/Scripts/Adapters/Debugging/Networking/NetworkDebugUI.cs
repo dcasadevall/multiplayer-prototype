@@ -46,6 +46,7 @@ namespace Adapters.Debugging.Networking
         private int _currentPing;
         private int _totalPacketsReceived;
         private DateTime _connectionStartTime;
+        private IDisposable _subscriber;
 
         private void Start()
         {
@@ -62,7 +63,7 @@ namespace Adapters.Debugging.Networking
             
             _logger.Info("Network Debug UI initialized");
 
-            _messageReceiver.RegisterMessageHandler<WorldDeltaMessage>(OnWorldDeltaReceived);
+            _subscriber = _messageReceiver.RegisterMessageHandler<WorldDeltaMessage>("NetworkDebug", OnWorldDeltaReceived);
         }
         
         private void OnWorldDeltaReceived(int peerId, WorldDeltaMessage message)
@@ -322,7 +323,7 @@ namespace Adapters.Debugging.Networking
         private void OnDestroy()
         {
             _snapshotHandler?.Dispose();
-            _messageReceiver.UnregisterMessageHandler<WorldDeltaMessage>(OnWorldDeltaReceived);
+            _subscriber?.Dispose();
         }
     }
 }

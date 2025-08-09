@@ -95,7 +95,7 @@ namespace Adapters.Debugging.ECS
         {
             if (entity.TryGet<PositionComponent>(out var position))
             {
-                return new Vector3(position.X, position.Y, position.Z);
+                return new Vector3(position.Value.X, position.Value.Y, position.Value.Z);
             }
             
             return Vector3.zero;
@@ -222,7 +222,7 @@ namespace Adapters.Debugging.ECS
                 {
                     if (entity.TryGet<PositionComponent>(out var pos))
                     {
-                        Debug.Log($"Entity {entity.Id}: Position ({pos.X:F2}, {pos.Y:F2}, {pos.Z:F2})");
+                        Debug.Log($"Entity {entity.Id}: Position ({pos.Value.X:F2}, {pos.Value.Y:F2}, {pos.Value.Z:F2})");
                     }
                     else
                     {
