@@ -27,7 +27,7 @@ namespace SharedUnitTests.Damage
 
             var deathRecords = registry.With<RespawnComponent>().ToList();
             Assert.Single(deathRecords);
-            Assert.True(deathRecords[0].Has<PlayerTagComponent>());
+            Assert.True(deathRecords[0].Has<PeerComponent>());
         }
 
         [Fact]
@@ -41,13 +41,13 @@ namespace SharedUnitTests.Damage
 
             system.Update(registry, 42, 0.016f);
 
-            var respawnable = player.GetRequired<RespawnComponent>();
+            var deathRecord = registry.With<RespawnComponent>().Single();
+            var respawnable = deathRecord.GetRequired<RespawnComponent>();
             Assert.Equal(42 + GameplayConstants.PlayerRespawnTime.ToNumTicks(), respawnable.RespawnAtTick);
-            Assert.False(player.Has<HealthComponent>());
         }
 
         [Fact]
-        public void Update_DoesNotAddRespawnAtTickTwice()
+        public void Update_DoesNotCreateDeathRecordTwice()
         {
             var registry = new EntityRegistry();
             var system = new DeathSystem();
@@ -56,11 +56,10 @@ namespace SharedUnitTests.Damage
             player.AddOrReplaceComponent(new HealthComponent { CurrentHealth = 0 });
 
             system.Update(registry, 1, 0.016f);
-            var firstRespawnTick = player.GetRequired<RespawnComponent>().RespawnAtTick;
             system.Update(registry, 2, 0.016f);
-            var secondRespawnTick = player.GetRequired<RespawnComponent>().RespawnAtTick;
 
-            Assert.Equal(firstRespawnTick, secondRespawnTick);
+            var deathRecords = registry.With<RespawnComponent>().ToList();
+            Assert.Single(deathRecords);
         }
     }
 }
