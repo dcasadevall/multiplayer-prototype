@@ -15,7 +15,7 @@ namespace Shared.ECS.Entities
         /// Internal events for component updates and creation.
         /// Used by the entity registry to track component changes.
         /// </summary>
-        internal event Action<Entity, Type>? OnComponentUpdated;
+        internal event Action<Entity, IComponent>? OnComponentUpdated;
 
         /// <summary>
         /// Internal event for component removals.
@@ -82,7 +82,7 @@ namespace Shared.ECS.Entities
         {
             var type = component.GetType();
             _components[type] = component;
-            OnComponentUpdated?.Invoke(this, componentType);
+            OnComponentUpdated?.Invoke(this, component);
         }
 
         /// <summary>

@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using Core.ECS.Rendering;
 using Shared.ECS;
+using Shared.ECS.Entities;
 using Shared.Physics;
 using UnityEngine;
 

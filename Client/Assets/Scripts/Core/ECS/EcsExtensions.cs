@@ -1,8 +1,8 @@
 using System;
 using Core.ECS.Rendering;
-using Core.ECS.Replication;
 using Microsoft.Extensions.DependencyInjection;
 using Shared.ECS;
+using Shared.ECS.Entities;
 using Shared.ECS.Replication;
 using Shared.ECS.TickSync;
 using Shared.Networking;

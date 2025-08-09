@@ -162,7 +162,7 @@ namespace SharedUnitTests.ECS.Entities
         }
 
         [Fact]
-        public void AddComponent_WithSameType_ShouldReplaceExistingComponent()
+        public void AddComponent_WithSameType_ShouldThrowException()
         {
             // Arrange
             var entity = new Entity(EntityId.New());
@@ -171,12 +171,10 @@ namespace SharedUnitTests.ECS.Entities
 
             entity.AddComponent(position1);
 
-            // Act
-            entity.AddComponent(position2);
-
-            // Assert
-            Assert.True(entity.TryGet<PositionComponent>(out var retrievedPosition));
-            Assert.Equal(position2.Value, retrievedPosition.Value);
+            // Act & Assert
+            var exception = Record.Exception(() => entity.AddComponent(position2));
+            Assert.NotNull(exception);
+            Assert.IsType<InvalidOperationException>(exception);
         }
     }
 }

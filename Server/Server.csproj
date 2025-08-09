@@ -30,6 +30,7 @@
 
     <ItemGroup>
         <Folder Include="Damage\"/>
+        <Folder Include="Replication\"/>
     </ItemGroup>
 
 </Project>

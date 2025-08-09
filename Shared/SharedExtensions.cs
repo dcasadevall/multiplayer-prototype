@@ -11,7 +11,6 @@ namespace Shared
         {
             serviceCollection.RegisterSchedulingTypes();
             serviceCollection.RegisterNetLibTypes();
-            serviceCollection.RegisterJsonReplicationTypes();
         }
     }
 }

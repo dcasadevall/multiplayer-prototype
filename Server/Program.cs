@@ -1,6 +1,5 @@
 ﻿using Microsoft.Extensions.DependencyInjection;
 using Server.Logging;
-using Server.Replication;
 using Server.Scenes;
 using Shared;
 using Shared.ECS;
@@ -15,6 +14,7 @@ using Server.AI;
 using Server.Player;
 using Shared.Damage;
 using Shared.ECS.Entities;
+using Shared.ECS.Replication;
 using Shared.Physics;
 using Shared.Respawn;
 
@@ -60,7 +60,7 @@ var tickSync = new TickSync();
 services.AddSingleton<ISystem>(_ => new ServerTickSystem(tickSync));
 services.AddSingleton<ITickSync>(tickSync);
 
-services.AddSingleton<ISystem, ReplicationSystem>();
+services.AddSingleton<ISystem, ServerReplicationSystem>();
 services.AddSingleton<ISystem, SelfDestroyingSystem>();
 
 // Scene loading

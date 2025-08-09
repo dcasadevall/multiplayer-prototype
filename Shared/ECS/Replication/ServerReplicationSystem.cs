@@ -1,10 +1,10 @@
-using Shared.ECS;
-using Shared.ECS.Replication;
+using Shared.ECS.Entities;
 using Shared.ECS.Simulation;
+using Shared.Logging;
 using Shared.Networking;
 using Shared.Networking.Messages;
 
-namespace Server.Replication
+namespace Shared.ECS.Replication
 {
     /// <summary>
     /// ECS system responsible for replicating the current world state to all connected clients on a fixed interval.
@@ -16,26 +16,26 @@ namespace Server.Replication
     /// </para>
     /// 
     /// <para>
-    /// The <see cref="ReplicationSystem"/> manages a <see cref="IWorldDeltaProducer"/>, which serializes
+    /// The <see cref="ServerReplicationSystem"/> uses the <see cref="EntityRegistry"/> ProduceEntityDelta method, which serializes
     /// all entities marked with <c>ReplicatedEntityComponent</c> and their <c>ISerializableComponent</c> data.
     /// Deltas are sent to all connected peers using reliable, ordered delivery.
     /// </para>
     /// </summary>
-    // NOTE: It's okay to replicate every tick, but in a real game we would likely want to reduce this frequency
-    // to avoid flooding the network with large deltas.
-    // We would send deltas and chunk large deltas.
     [TickInterval(1)]
-    public class ReplicationSystem : ISystem
+    public class ServerReplicationSystem : ISystem
     {
         private readonly IMessageSender _messageSender;
+        private readonly ILogger _logger;
 
         /// <summary>
-        /// Constructs a new <see cref="ReplicationSystem"/> for the given network manager.
+        /// Constructs a new <see cref="ServerReplicationSystem"/> for the given network manager.
         /// </summary>
         /// <param name="messageSender">Sender used for sending network messages.</param>
-        public ReplicationSystem(IMessageSender messageSender)
+        /// <param name="logger">The logger for logging replication events.</param>
+        public ServerReplicationSystem(IMessageSender messageSender, ILogger logger)
         {
             _messageSender = messageSender;
+            _logger = logger;
         }
 
         /// <summary>
@@ -54,6 +54,10 @@ namespace Server.Replication
 
             if (delta.Deltas.Count > 0)
             {
+                _logger.Debug(LoggedFeature.Replication,
+                    "Broadcasting replication delta for tick {0} with {1} entities",
+                    tickNumber, delta.Deltas.Count);
+
                 _messageSender.BroadcastMessage(MessageType.Delta, delta, ChannelType.ReliableOrdered);
             }
         }

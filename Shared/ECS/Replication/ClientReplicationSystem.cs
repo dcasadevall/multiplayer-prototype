@@ -1,44 +1,46 @@
 using System;
-using Shared.ECS;
-using Shared.ECS.Replication;
+using Shared.ECS.Entities;
 using Shared.ECS.Simulation;
 using Shared.Networking;
 
-namespace Core.ECS.Replication
+namespace Shared.ECS.Replication
 {
+    public interface IReplicationStats
+    {
+        /// <summary>
+        /// Gets the time between deltas received from the server.
+        /// </summary>
+        TimeSpan TimeBetweenDeltas { get; }
+    }
+
     /// <summary>
     /// ECS system responsible for consuming world deltas received from the server.
     /// 
     /// <para>
-    /// This system acts as the client-side counterpart to the server's ReplicationSystem.
+    /// This system acts as the client-side counterpart to the ServerReplicationSystem.
     /// It receives world deltas from the server and applies them to the local entity registry
     /// to keep the client's world state synchronized with the authoritative server state.
-    /// </para>
-    /// 
-    /// <para>
-    /// The ClientReplicationSystem manages an IWorldDeltaConsumer, which deserializes
-    /// incoming deltas and updates the local entity registry with the latest server state.
     /// </para>
     ///
     /// <para>
     /// One can assume that this system is always the first system to run on the client
     /// </para>
     /// </summary>
-    [TickInterval(1)] // Process deltas as frequently as possible
-    public class ClientReplicationSystem : ISystem, IDisposable
+    [TickInterval(1)]
+    public class ClientReplicationSystem : ISystem, IDisposable, IReplicationStats
     {
-        private readonly IWorldDeltaConsumer _worldDeltaConsumer;
+        public TimeSpan TimeBetweenDeltas { get; private set; } = TimeSpan.Zero;
+
         private readonly IDisposable _subscription;
-        private DateTime _lastDeltaTime;
+        private WorldDeltaMessage? _lastDeltaMessage;
+        private DateTime _lastUpdate = DateTime.MinValue;
 
         /// <summary>
         /// Constructs a new ClientReplicationSystem using dependency injection.
         /// </summary>
-        /// <param name="worldDeltaConsumer">Consumer used for processing incoming deltas.</param>
         /// <param name="messageReceiver">Receiver for network messages.</param>
-        public ClientReplicationSystem(IWorldDeltaConsumer worldDeltaConsumer, IMessageReceiver messageReceiver)
+        public ClientReplicationSystem(IMessageReceiver messageReceiver)
         {
-            _worldDeltaConsumer = worldDeltaConsumer;
             _subscription = messageReceiver.RegisterMessageHandler<WorldDeltaMessage>("ReplicationSystem", HandleMessageReceived);
         }
 
@@ -50,15 +52,28 @@ namespace Core.ECS.Replication
         /// <param name="deltaTime">The time in seconds since the last update for this system.</param>
         public void Update(EntityRegistry registry, uint tickNumber, float deltaTime)
         {
+            if (_lastDeltaMessage == null)
+            {
+                return;
+            }
+
+            // Update the time between deltas
+            var now = DateTime.UtcNow;
+            if (_lastUpdate != DateTime.MinValue)
+            {
+                TimeBetweenDeltas = now - _lastUpdate;
+            }
+
+            _lastUpdate = now;
+
+            // If we have a delta message, consume it
+            registry.ConsumeEntityDelta(_lastDeltaMessage.Deltas);
+            _lastDeltaMessage = null;
         }
 
         private void HandleMessageReceived(int peerId, WorldDeltaMessage msg)
         {
-            if (_lastDeltaTime != default)
-            {
-            }
-            _worldDeltaConsumer.ConsumeDelta(msg);
-            _lastDeltaTime = DateTime.Now;
+            _lastDeltaMessage = msg;
         }
 
         /// <summary>
@@ -69,4 +84,4 @@ namespace Core.ECS.Replication
             _subscription.Dispose();
         }
     }
-} 
+}

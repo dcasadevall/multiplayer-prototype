@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using Shared;
 using Shared.ECS;
+using Shared.ECS.Entities;
 using Shared.ECS.Simulation;
 using Shared.ECS.TickSync;
 using Shared.Scheduling;

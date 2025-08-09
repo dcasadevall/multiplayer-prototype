@@ -9,12 +9,18 @@ using Xunit;
 
 namespace SharedUnitTests.Damage
 {
+    /// <summary>
+    /// Unit tests for <see cref="DamageSystem"/>.
+    /// 
+    /// Test structure follows the Arrange-Act-Assert pattern for clarity and maintainability.
+    /// See: https://medium.com/@kaanfurkanc/unit-testing-best-practices-3a8b0ddd88b5
+    /// </summary>
     public class DamageSystemTests
     {
         [Fact]
         public void Update_AppliesDamageAndDestroysProjectile()
         {
-            // Arrange
+            // Arrange: Setup registry, system, and entities
             var registry = new EntityRegistry();
             var collisionDetector = Substitute.For<ICollisionDetector>();
             var logger = Substitute.For<ILogger>();
@@ -32,18 +38,19 @@ namespace SharedUnitTests.Damage
             // Simulate collision
             collisionDetector.GetCollisionsFor(projectile.Id).Returns([new EntityId(target.Id.Value)]);
 
-            // Act
+            // Act: Run the damage system update
             system.Update(registry, 1, 0.016f);
 
-            // Assert
+            // Assert: Target health reduced, projectile destroyed, target still exists
             Assert.Equal(75, target.GetRequired<HealthComponent>().CurrentHealth);
-            Assert.True(projectile.Has<MarkedForRemovalTagComponent>()); // projectile destroyed
-            Assert.False(target.Has<MarkedForRemovalTagComponent>());
+            Assert.False(registry.TryGet(projectile.Id, out _)); // projectile destroyed
+            Assert.True(registry.TryGet(target.Id, out _)); // Target still exists
         }
 
         [Fact]
         public void Update_DoesNotApplyDamage_WhenNoHealthComponent()
         {
+            // Arrange: Setup registry, system, and entities
             var registry = new EntityRegistry();
             var collisionDetector = Substitute.For<ICollisionDetector>();
             var logger = Substitute.For<ILogger>();
@@ -57,14 +64,17 @@ namespace SharedUnitTests.Damage
 
             collisionDetector.GetCollisionsFor(projectile.Id).Returns([new EntityId(target.Id.Value)]);
 
+            // Act: Run the damage system update
             system.Update(registry, 1, 0.016f);
 
+            // Assert: Target not destroyed
             Assert.True(registry.TryGet(target.Id, out _)); // target not destroyed
         }
 
         [Fact]
         public void Update_PreventsFriendlyFire_WhenCanDamageSelfIsFalse()
         {
+            // Arrange: Setup registry, system, and entities
             var registry = new EntityRegistry();
             var collisionDetector = Substitute.For<ICollisionDetector>();
             var logger = Substitute.For<ILogger>();
@@ -79,8 +89,10 @@ namespace SharedUnitTests.Damage
 
             collisionDetector.GetCollisionsFor(projectile.Id).Returns([new EntityId(target.Id.Value)]);
 
+            // Act: Run the damage system update
             system.Update(registry, 1, 0.016f);
 
+            // Assert: No damage applied due to friendly fire prevention
             Assert.Equal(100, target.GetRequired<HealthComponent>().CurrentHealth); // No damage
         }
     }

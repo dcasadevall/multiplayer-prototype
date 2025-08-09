@@ -26,7 +26,7 @@ namespace SharedUnitTests.ECS.Systems
             system.Update(registry, 15, 0.033f);
 
             // Assert
-            Assert.True(entity.Has<MarkedForRemovalTagComponent>());
+            Assert.False(registry.TryGet(entity.Id, out _)); // Entity should be destroyed
         }
 
         [Fact]
@@ -65,8 +65,8 @@ namespace SharedUnitTests.ECS.Systems
             system.Update(registry, 15, 0.033f);
 
             // Assert
-            Assert.True(expiredEntity.Has<MarkedForRemovalTagComponent>());
-            Assert.False(activeEntity.Has<MarkedForRemovalTagComponent>());
+            Assert.False(registry.TryGet(expiredEntity.Id, out _)); // Expired entity should be destroyed
+            Assert.True(registry.TryGet(activeEntity.Id, out _)); // Active entity should still exist
         }
 
         [Fact]

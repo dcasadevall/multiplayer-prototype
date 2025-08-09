@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using Core.MathUtils;
 using Shared.ECS;
+using Shared.ECS.Entities;
 using Shared.ECS.TickSync;
 using UnityEngine;
 using Vector2 = System.Numerics.Vector2;
