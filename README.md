@@ -57,6 +57,39 @@
 - **Maintainability:** New features = new components/systems, not rewrites
 - **Consistency:** Server and client always agree on game rules and state
 
+## 🧪 Testing & Code Coverage
+
+This project uses xUnit for unit tests. You can run tests and generate a code coverage report to ensure code quality.
+
+### Prerequisites
+
+You'll need the `reportgenerator` global tool. Install it with:
+```shell
+dotnet tool install --global dotnet-reportgenerator-globaltool
+```
+
+### Running Tests
+
+To run all unit tests from the command line, use the standard `dotnet test` command:
+```shell
+dotnet test
+```
+
+### Generating a Coverage Report
+
+A helper script is provided to run tests, collect coverage data, and generate a detailed HTML report.
+
+To run the script, execute:
+```shell
+./tools/coverage.sh
+```
+
+This will:
+1. Run all tests and collect coverage data.
+2. Generate an HTML report in the `coveragereport/` directory.
+3. Print a link to the local `index.html` file, which you can open in a browser to view the report.
+
+
 ## 🚀 Next Steps
 
 - Implement core components (Position, Health, etc.)

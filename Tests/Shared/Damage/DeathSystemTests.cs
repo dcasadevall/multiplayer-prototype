@@ -84,5 +84,27 @@ namespace SharedUnitTests.Damage
             var deathRecords = registry.With<RespawnComponent>().ToList();
             Assert.Single(deathRecords);
         }
+
+        [Fact]
+        public void Update_WhenEntityIsKilled_DeathSystemCreatesDeathRecord()
+        {
+            // Arrange
+            var registry = new EntityRegistry();
+            var deathSystem = new DeathSystem();
+            var player = PlayerArchetype.Create(registry, 1, Vector3.Zero);
+
+            // Act
+            // Simulate the player taking lethal damage
+            var health = player.GetRequired<HealthComponent>();
+            var newHealth = new HealthComponent { MaxHealth = health.MaxHealth, CurrentHealth = 0 };
+            player.AddOrReplaceComponent(newHealth);
+
+            deathSystem.Update(registry, 1, 0.016f);
+
+            // Assert
+            var deathRecords = registry.With<RespawnComponent>().ToList();
+            Assert.Single(deathRecords);
+            Assert.True(deathRecords[0].Has<PeerComponent>());
+        }
     }
 }

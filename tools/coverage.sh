@@ -9,10 +9,10 @@ echo "Running tests and collecting code coverage..."
 
 # Run tests and collect coverage data in the Cobertura format.
 # The --results-directory is specified to make the output predictable.
-dotnet test --collect:"XPlat Code Coverage" --results-directory ./TestResults
+dotnet test --collect:"XPlat Code Coverage" --results-directory ./.testresults
 
 # Find the coverage file. It's usually in a directory with a random name.
-COVERAGE_FILE=$(find ./TestResults -name "coverage.cobertura.xml" | head -n 1)
+COVERAGE_FILE=$(find ./.testresults -name "coverage.cobertura.xml" | head -n 1)
 
 if [ -z "$COVERAGE_FILE" ]; then
     echo "Error: Coverage file not found."
