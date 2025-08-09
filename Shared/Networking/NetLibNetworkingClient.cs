@@ -14,6 +14,7 @@ namespace Shared.Networking
     /// </summary>
     public class NetLibNetworkingClient : INetworkingClient, IDisposable
     {
+        private readonly MessageFactory _messageFactory;
         private readonly ILogger _logger;
         private readonly NetManager _netManager;
         private readonly EventBasedNetListener _listener;
@@ -24,16 +25,19 @@ namespace Shared.Networking
         /// <summary>
         /// Constructs a new <see cref="NetLibNetworkingClient"/>.
         /// </summary>
+        /// <param name="messageFactory">Factory for creating message instances.</param>
         /// <param name="logger">Logger for diagnostic output.</param>
         /// <param name="netManager">The LiteNetLib NetManager instance to use for networking.</param>
         /// <param name="listener">The injected event-based listener for handling network events.</param>
         /// <param name="scheduler">Scheduler for polling events.</param>
         public NetLibNetworkingClient(
+            MessageFactory messageFactory,
             ILogger logger,
             NetManager netManager,
             EventBasedNetListener listener,
             IScheduler scheduler)
         {
+            _messageFactory = messageFactory;
             _logger = logger;
             _netManager = netManager;
             _listener = listener;
@@ -64,7 +68,7 @@ namespace Shared.Networking
             // Set up a message receiver to handle the connection response
             // This has to happen before we connect to the server
             // and we must initialize it before connecting so that it can handle messages immediately.
-            var messageReceiver = new NetLibBinaryMessageReceiver(_listener, _logger);
+            var messageReceiver = new NetLibBinaryMessageReceiver(_listener, _messageFactory, _logger);
             messageReceiver.Initialize();
 
             // Register a message handler for the ConnectedMessage

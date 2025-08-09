@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Generic;
 using LiteNetLib.Utils;
-using Shared.ECS.Entities;
 
 namespace Shared.ECS.Replication
 {
@@ -10,7 +9,7 @@ namespace Shared.ECS.Replication
     /// Used to efficiently synchronize only the differences in entity state, rather than full snapshots.
     /// This class is designed for binary serialization to minimize network overhead.
     /// </summary>
-    public class EntityDelta : INetSerializable
+    public class EntityDelta
     {
         /// <summary>
         /// The unique identifier of the entity whose state has changed.
@@ -40,7 +39,7 @@ namespace Shared.ECS.Replication
         /// </summary>
         public List<Type> RemovedComponents { get; set; } = new();
 
-        public void Serialize(NetDataWriter writer)
+        public void Serialize(NetDataWriter writer, IComponentSerializer serializer)
         {
             writer.Put(EntityId.ToByteArray());
             writer.Put(IsNew);
@@ -49,15 +48,19 @@ namespace Shared.ECS.Replication
             // Serialize components
             writer.Put(AddedOrModifiedComponents.Count);
             foreach (var component in AddedOrModifiedComponents)
-                ComponentSerializer.Serialize(writer, component);
+            {
+                writer.PutBytesWithLength(serializer.Serialize(component));
+            }
 
             // Serialize removed components
             writer.Put(RemovedComponents.Count);
             foreach (var type in RemovedComponents)
+            {
                 writer.Put(type.AssemblyQualifiedName);
+            }
         }
 
-        public void Deserialize(NetDataReader reader)
+        public void Deserialize(NetDataReader reader, IComponentSerializer serializer)
         {
             var bytes = new byte[16];
             reader.GetBytes(bytes, 16);
@@ -69,12 +72,16 @@ namespace Shared.ECS.Replication
             // Deserialize components
             var count = reader.GetInt();
             for (var i = 0; i < count; i++)
-                AddedOrModifiedComponents.Add(ComponentSerializer.Deserialize(reader));
+            {
+                AddedOrModifiedComponents.Add(serializer.Deserialize(reader.GetBytesWithLength()));
+            }
 
             // Deserialize removed components
             count = reader.GetInt();
             for (var i = 0; i < count; i++)
+            {
                 RemovedComponents.Add(Type.GetType(reader.GetString()));
+            }
         }
     }
 }

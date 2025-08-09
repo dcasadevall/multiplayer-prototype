@@ -25,7 +25,6 @@ namespace Shared.ECS.TickSync
             if (_serverTickEntity == null)
             {
                 _serverTickEntity = registry.CreateEntity();
-                _serverTickEntity.AddComponent(new ReplicatedTagComponent());
             }
 
             _serverTickEntity.AddOrReplaceComponent(new ServerTickComponent { TickNumber = tickNumber });

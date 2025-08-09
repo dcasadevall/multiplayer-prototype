@@ -87,9 +87,6 @@ namespace Shared.ECS.Archetypes
             });
             projectile.AddComponent<CollidingTagComponent>();
 
-            // Network replication
-            projectile.AddComponent<ReplicatedTagComponent>();
-
             return projectile;
         }
     }

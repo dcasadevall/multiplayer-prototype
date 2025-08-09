@@ -25,16 +25,19 @@ namespace Shared.ECS.Replication
     public class ServerReplicationSystem : ISystem
     {
         private readonly IMessageSender _messageSender;
+        private readonly MessageFactory _messageFactory;
         private readonly ILogger _logger;
 
         /// <summary>
         /// Constructs a new <see cref="ServerReplicationSystem"/> for the given network manager.
         /// </summary>
         /// <param name="messageSender">Sender used for sending network messages.</param>
+        /// <param name="messageFactory">Factory for creating message instances.</param>
         /// <param name="logger">The logger for logging replication events.</param>
-        public ServerReplicationSystem(IMessageSender messageSender, ILogger logger)
+        public ServerReplicationSystem(IMessageSender messageSender, MessageFactory messageFactory, ILogger logger)
         {
             _messageSender = messageSender;
+            _messageFactory = messageFactory;
             _logger = logger;
         }
 
@@ -47,18 +50,16 @@ namespace Shared.ECS.Replication
         /// <param name="deltaTime">The time in seconds since the last update for this system.</param>
         public void Update(EntityRegistry registry, uint tickNumber, float deltaTime)
         {
-            var delta = new WorldDeltaMessage
-            {
-                Deltas = registry.ProduceEntityDelta()
-            };
+            var deltaMessage = (WorldDeltaMessage)_messageFactory.Create(MessageType.Delta);
+            deltaMessage.Deltas = registry.ProduceEntityDelta();
 
-            if (delta.Deltas.Count > 0)
+            if (deltaMessage.Deltas.Count > 0)
             {
                 _logger.Debug(LoggedFeature.Replication,
                     "Broadcasting replication delta for tick {0} with {1} entities",
-                    tickNumber, delta.Deltas.Count);
+                    tickNumber, deltaMessage.Deltas.Count);
 
-                _messageSender.BroadcastMessage(MessageType.Delta, delta, ChannelType.ReliableOrdered);
+                _messageSender.BroadcastMessage(MessageType.Delta, deltaMessage, ChannelType.ReliableOrdered);
             }
         }
     }

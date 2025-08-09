@@ -10,13 +10,18 @@ namespace Shared.ECS.Replication
     /// </summary>
     public class WorldDeltaMessage : INetSerializable
     {
+        private readonly IComponentSerializer _componentSerializer;
         public List<EntityDelta> Deltas { get; set; } = new();
+
+        public WorldDeltaMessage(IComponentSerializer componentSerializer)
+        {
+            _componentSerializer = componentSerializer;
+        }
 
         public void Serialize(NetDataWriter writer)
         {
             writer.Put(Deltas.Count);
-            foreach (var delta in Deltas)
-                delta.Serialize(writer);
+            Deltas.ForEach(delta => delta.Serialize(writer, _componentSerializer));
         }
 
         public void Deserialize(NetDataReader reader)
@@ -25,7 +30,7 @@ namespace Shared.ECS.Replication
             for (var i = 0; i < count; i++)
             {
                 var delta = new EntityDelta();
-                delta.Deserialize(reader);
+                delta.Deserialize(reader, _componentSerializer);
                 Deltas.Add(delta);
             }
         }

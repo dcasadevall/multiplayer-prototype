@@ -39,9 +39,6 @@ namespace Shared.ECS.Archetypes
             });
             botEntity.AddComponent<CollidingTagComponent>();
 
-            // Network replication
-            botEntity.AddComponent<ReplicatedTagComponent>();
-
             return botEntity;
         }
     }

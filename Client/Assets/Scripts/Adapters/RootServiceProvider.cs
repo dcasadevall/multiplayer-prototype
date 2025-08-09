@@ -42,6 +42,10 @@ namespace Adapters
         
         private void Awake()
         {
+            // Initialize the message factory before any other services are configured
+            MessageFactory.Initialize();
+            ComponentSerializer.Initialize();
+            
             // 1. Build a persistent, root service provider for networking
             _services = new ServiceCollection();
 

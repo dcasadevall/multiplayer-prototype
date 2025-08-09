@@ -102,7 +102,7 @@ namespace Shared.ECS.Simulation
                 Tick,
                 TimeSpan.Zero,
                 _tickRate,
-                context,
+                context!,
                 _cancelTokenSource.Token
             );
             _isRunning = true;

@@ -16,12 +16,16 @@ namespace Shared.Networking
     {
         private readonly ILogger _logger;
         private readonly EventBasedNetListener _eventBasedNetListener;
+        private readonly MessageFactory _messageFactory;
         private readonly Dictionary<Type, Dictionary<string, MessageHandler<object>>> _handlers = new();
 
-        public NetLibBinaryMessageReceiver(EventBasedNetListener eventBasedNetListener, ILogger logger)
+        public NetLibBinaryMessageReceiver(EventBasedNetListener eventBasedNetListener,
+            MessageFactory messageFactory,
+            ILogger logger)
         {
             _logger = logger;
             _eventBasedNetListener = eventBasedNetListener;
+            _messageFactory = messageFactory;
         }
 
         public void Initialize()
@@ -38,21 +42,26 @@ namespace Shared.Networking
         {
             NetworkStats.RecordMessageReceived(reader.UserDataSize);
 
+            // Ensure the message type is valid
             var messageType = (MessageType)reader.GetByte();
-            var messageTypeClass = MessageTypeMap.GetMessageType(messageType);
-
-            if (messageTypeClass == null)
+            if (!Enum.IsDefined(typeof(MessageType), messageType))
             {
                 _logger.Warn(LoggedFeature.Networking, "Received message with unknown type: {0}", messageType);
                 return;
             }
 
+            // Create the message instance using the factory
+            var message = _messageFactory.Create(messageType);
+
+            // Ensure the handler is registered for this message type
+            var messageTypeClass = message.GetType();
             if (!_handlers.TryGetValue(messageTypeClass, out var handlers))
+            {
                 return;
+            }
 
             try
             {
-                var message = (INetSerializable)Activator.CreateInstance(messageTypeClass);
                 message.Deserialize(reader);
 
                 foreach (var handler in handlers.Values)

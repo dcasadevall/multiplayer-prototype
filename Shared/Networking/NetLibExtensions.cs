@@ -1,6 +1,8 @@
 using System;
 using LiteNetLib;
 using Microsoft.Extensions.DependencyInjection;
+using Shared.ECS.Replication;
+using Shared.Networking.Messages;
 using Shared.Scheduling;
 
 namespace Shared.Networking
@@ -19,6 +21,10 @@ namespace Shared.Networking
 
         public static void RegisterNetLibTypes(this IServiceCollection services)
         {
+            // Message factory and component serializer
+            services.AddSingleton<MessageFactory>();
+            services.AddSingleton<IComponentSerializer, JsonComponentSerializer>();
+
             // Register Networking Client and Server abstractions
             services.AddSingleton<NetLibNetworkingClient>();
             services.AddSingleton<INetworkingClient>(sp => sp.GetRequiredService<NetLibNetworkingClient>());

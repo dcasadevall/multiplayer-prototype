@@ -53,7 +53,6 @@ namespace ServerUnitTests.Player
             Assert.Single(projectiles);
 
             var projectile = projectiles.First();
-            Assert.True(projectile.Has<ReplicatedTagComponent>());
             Assert.True(projectile.Has<DamageApplyingComponent>());
             Assert.True(projectile.Has<SelfDestroyingComponent>());
             Assert.True(projectile.Has<SpawnAuthorityComponent>());
