@@ -91,64 +91,6 @@ namespace SharedUnitTests.ECS.Components
             }
         }
 
-        public class HealthComponentTests
-        {
-            [Fact]
-            public void Constructor_ShouldSetValues()
-            {
-                // Arrange
-                var maxHealth = 100;
-
-                // Act
-                var component = new HealthComponent(maxHealth);
-
-                // Assert
-                Assert.Equal(maxHealth, component.CurrentHealth);
-                Assert.Equal(maxHealth, component.MaxHealth);
-            }
-
-            [Fact]
-            public void CurrentHealth_ShouldBeMutable()
-            {
-                // Arrange
-                var component = new HealthComponent(100);
-                var newHealth = 75;
-
-                // Act
-                component.CurrentHealth = newHealth;
-
-                // Assert
-                Assert.Equal(newHealth, component.CurrentHealth);
-            }
-
-            [Fact]
-            public void MaxHealth_ShouldBeMutable()
-            {
-                // Arrange
-                var component = new HealthComponent(100);
-                var newMaxHealth = 150;
-
-                // Act
-                component.MaxHealth = newMaxHealth;
-
-                // Assert
-                Assert.Equal(newMaxHealth, component.MaxHealth);
-            }
-
-            [Fact]
-            public void CurrentHealth_ShouldNotExceedMaxHealth()
-            {
-                // Arrange
-                var component = new HealthComponent(100);
-
-                // Act
-                component.CurrentHealth = 150; // Try to set above max
-
-                // Assert
-                Assert.Equal(150, component.CurrentHealth); // Should allow it for flexibility
-            }
-        }
-
         public class TagComponentTests
         {
             [Fact]

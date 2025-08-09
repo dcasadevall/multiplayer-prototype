@@ -24,9 +24,6 @@ namespace Adapters
         [SerializeField]
         private string _gameSceneName = "GameScene";
         
-        [SerializeField]
-        private UnityMainThreadScheduler _mainThreadScheduler;
-
         [SerializeField] 
         private Transform _loginScreen;
         
@@ -49,7 +46,7 @@ namespace Adapters
             _services.AddSingleton<ILogger, UnityLogger>();
             
             // Register the main thread scheduler
-            _services.AddSingleton<IScheduler>(_mainThreadScheduler);
+            _services.AddSingleton<IScheduler, UnityMainThreadScheduler>();
             
             // Networking, so we can connect to the server
             _services.RegisterNetLibTypes();

@@ -4,6 +4,7 @@ using Shared.Damage;
 using Shared.ECS.Components;
 using Shared.ECS.Entities;
 using Shared.ECS.Simulation;
+using Shared.Math;
 
 namespace Shared.ECS.Systems
 {
@@ -20,24 +21,21 @@ namespace Shared.ECS.Systems
         public void Update(EntityRegistry entityRegistry, uint tickNumber, float deltaTime)
         {
             // Get all entities with health components
-            var entities = entityRegistry.GetAll()
-                .Where(e => e.Has<HealthComponent>());
+            var entities = entityRegistry.With<HealthComponent>();
 
             foreach (var entity in entities)
             {
-                if (entity.TryGet<HealthComponent>(out var health))
-                {
-                    // Regenerate health over time
-                    if (health.CurrentHealth < health.MaxHealth)
-                    {
-                        health.CurrentHealth += HealthRegenRate;
+                var health = entity.GetRequired<HealthComponent>();
 
-                        // Clamp to max health
-                        if (health.CurrentHealth > health.MaxHealth)
-                        {
-                            health.CurrentHealth = health.MaxHealth;
-                        }
-                    }
+                // Regenerate health over time
+                if (health.CurrentHealth < health.MaxHealth)
+                {
+                    var newHealth = Clamping.Min(health.CurrentHealth + HealthRegenRate, health.MaxHealth);
+                    entity.AddOrReplaceComponent(new HealthComponent
+                    {
+                        MaxHealth = health.MaxHealth,
+                        CurrentHealth = newHealth
+                    });
                 }
             }
         }

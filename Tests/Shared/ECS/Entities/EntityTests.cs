@@ -132,7 +132,7 @@ namespace SharedUnitTests.ECS.Entities
                 Value = new Vector3(1, 2, 3)
             };
             var velocity = new VelocityComponent { Value = new Vector3(4, 5, 6) };
-            var health = new HealthComponent(100);
+            var health = new HealthComponent { MaxHealth = 100 };
 
             entity.AddComponent(position);
             entity.AddComponent(velocity);

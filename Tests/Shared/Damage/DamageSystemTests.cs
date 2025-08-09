@@ -28,7 +28,11 @@ namespace SharedUnitTests.Damage
 
             // Create target entity with health
             var target = registry.CreateEntity();
-            target.AddComponent(new HealthComponent(100));
+            target.AddComponent(new HealthComponent
+            {
+                CurrentHealth = 100,
+                MaxHealth = 100
+            });
 
             // Create projectile entity
             var projectile = registry.CreateEntity();
@@ -81,7 +85,11 @@ namespace SharedUnitTests.Damage
             var system = new DamageSystem(collisionDetector, logger);
 
             var target = registry.CreateEntity();
-            target.AddComponent(new HealthComponent(100));
+            target.AddComponent(new HealthComponent
+            {
+                CurrentHealth = 100,
+                MaxHealth = 100
+            });
             target.AddComponent(new PeerComponent { PeerId = 1 });
 
             var projectile = registry.CreateEntity();

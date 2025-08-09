@@ -3,6 +3,7 @@ using Shared.ECS;
 using Shared.ECS.Components;
 using Shared.ECS.Entities;
 using Shared.Logging;
+using Shared.Math;
 using Shared.Physics;
 
 namespace Shared.Damage
@@ -65,7 +66,12 @@ namespace Shared.Damage
                     // INTENTIONAL: Multiple collisions same frame with multiple entities are allowed.
                     didCollide = true;
                     var healthComponent = targetEntity.GetRequired<HealthComponent>();
-                    healthComponent.CurrentHealth -= damageComponent.Damage;
+                    var newHealth = Clamping.Max(0, healthComponent.CurrentHealth - damageComponent.Damage);
+                    targetEntity.AddOrReplaceComponent(new HealthComponent
+                    {
+                        MaxHealth = healthComponent.MaxHealth,
+                        CurrentHealth = newHealth
+                    });
                 }
 
                 // Destroy the projectile after applying damage

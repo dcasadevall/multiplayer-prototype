@@ -1,7 +1,6 @@
 using System.Numerics;
 using Shared;
 using Shared.Damage;
-using Shared.ECS;
 using Shared.ECS.Archetypes;
 using Shared.ECS.Components;
 using Shared.ECS.Entities;
@@ -26,7 +25,11 @@ namespace SharedUnitTests.Damage
             var registry = new EntityRegistry();
             var system = new DeathSystem();
             var player = PlayerArchetype.Create(registry, 1, Vector3.Zero);
-            player.AddOrReplaceComponent(new HealthComponent { CurrentHealth = 0 });
+            player.AddOrReplaceComponent(new HealthComponent
+            {
+                CurrentHealth = 0,
+                MaxHealth = 100,
+            });
 
             // Act: Run the death system update
             system.Update(registry, 42, 0.016f);
@@ -45,7 +48,11 @@ namespace SharedUnitTests.Damage
             var registry = new EntityRegistry();
             var system = new DeathSystem();
             var player = PlayerArchetype.Create(registry, 1, Vector3.Zero);
-            player.AddOrReplaceComponent(new HealthComponent { CurrentHealth = 0 });
+            player.AddOrReplaceComponent(new HealthComponent
+            {
+                CurrentHealth = 0,
+                MaxHealth = 100,
+            });
 
             // Act: Run the death system update
             system.Update(registry, 42, 0.016f);
@@ -63,7 +70,11 @@ namespace SharedUnitTests.Damage
             var registry = new EntityRegistry();
             var system = new DeathSystem();
             var player = PlayerArchetype.Create(registry, 1, Vector3.Zero);
-            player.AddOrReplaceComponent(new HealthComponent { CurrentHealth = 0 });
+            player.AddOrReplaceComponent(new HealthComponent
+            {
+                CurrentHealth = 0,
+                MaxHealth = 100,
+            });
 
             // Act: Run the death system update twice
             system.Update(registry, 1, 0.016f);
