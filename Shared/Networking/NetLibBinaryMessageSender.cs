@@ -55,6 +55,10 @@ namespace Shared.Networking
             }
 
             NetworkStats.RecordMessageSent(writer.Length);
+            _logger.Debug(LoggedFeature.Networking,
+                "Sending message of type {0} to peer {1} on channel {2}. Size: {3} bytes",
+                type, peerId, channel, writer.Length);
+
             peer.Send(writer, channel.ToDeliveryMethod());
         }
     }

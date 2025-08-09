@@ -56,7 +56,7 @@ namespace Shared.ECS.Replication
             if (deltaMessage.Deltas.Count > 0)
             {
                 _logger.Debug(LoggedFeature.Replication,
-                    "Broadcasting replication delta for tick {0} with {1} entities",
+                    "Broadcasting replication delta for tick {0} with {1} entities. Size: {2} bytes",
                     tickNumber, deltaMessage.Deltas.Count);
 
                 _messageSender.BroadcastMessage(MessageType.Delta, deltaMessage, ChannelType.ReliableOrdered);
