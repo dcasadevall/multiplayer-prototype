@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using System.Linq;
 using Shared.ECS.Components;
 using Shared.ECS.Entities;
@@ -26,20 +27,23 @@ namespace Shared.ECS.Systems
                 .Where(x => ShouldDestroy(x.GetRequired<SelfDestroyingComponent>(), tickNumber))
                 .ToList();
 
+            var toRemoveList = new List<Entity>();
             foreach (var entity in entitiesToDestroy)
             {
                 var selfDestroying = entity.GetRequired<SelfDestroyingComponent>();
-                
+
                 if (!selfDestroying.IsMarkedForDestruction)
                 {
                     selfDestroying.IsMarkedForDestruction = true;
-                    
-                    _logger.Debug("Destroying entity {0} at tick {1} (scheduled for {2})", 
+
+                    _logger.Debug("Destroying entity {0} at tick {1} (scheduled for {2})",
                         entity.Id, tickNumber, selfDestroying.DestroyAtTick);
-                    
-                    registry.DestroyEntity(entity.Id);
+
+                    toRemoveList.Add(entity);
                 }
             }
+
+            toRemoveList.ForEach(x => registry.DestroyEntity(x.Id));
         }
 
         private bool ShouldDestroy(SelfDestroyingComponent component, uint currentTick)

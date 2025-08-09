@@ -1,10 +1,10 @@
 using System.Text.Json;
 using NSubstitute;
+using Shared.Damage;
 using Shared.ECS;
 using Shared.ECS.Components;
 using Shared.ECS.Prediction;
 using Shared.ECS.Replication;
-using Shared.Health;
 using Shared.Logging;
 using Shared.Physics;
 using Xunit;

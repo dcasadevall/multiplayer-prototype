@@ -1,12 +1,12 @@
 using NSubstitute;
+using Shared.Damage;
 using Shared.ECS;
 using Shared.ECS.Components;
-using Shared.Health;
 using Shared.Logging;
 using Shared.Physics;
 using Xunit;
 
-namespace SharedUnitTests.Health
+namespace SharedUnitTests.Damage
 {
     public class DamageSystemTests
     {

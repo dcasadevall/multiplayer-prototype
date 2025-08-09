@@ -3,6 +3,7 @@ using Shared.ECS;
 using Shared.ECS.Archetypes;
 using Shared.ECS.Entities;
 using Shared.Logging;
+using Shared.Respawn;
 using Shared.Scheduling;
 
 namespace Server.Player
@@ -43,9 +44,6 @@ namespace Server.Player
         {
             logger.Info(LoggedFeature.Player, "Handling player spawn request from peer {0}", peer.Id);
 
-            // Generate a spawn position (this could be more complex in a real game)
-            // We can keep it within a radius of 10 units from the origin for simplicity
-            // NOTE: Random.Shared is not available in netstandard2.1, use System.Random instead if needed.
             var x = Random.Shared.Next(-3, 3);
             var y = 0;
             var z = Random.Shared.Next(-3, 3);
@@ -75,8 +73,8 @@ namespace Server.Player
             var playerEntity = entityRegistry.GetPlayerEntity(peer.Id);
             if (playerEntity == null)
             {
-                // Check the dead component if player is not found
-                playerEntity = entityRegistry.GetDeadPlayerEntity(peer.Id);
+                // Check if the player is "despawned" (e.g., dead)
+                playerEntity = entityRegistry.GetRespawningPlayer(peer.Id);
                 if (playerEntity == null)
                 {
                     logger.Warn(LoggedFeature.Player, "No player entity found for peer {0} on disconnect", peer.Id);

@@ -1,14 +1,13 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using Adapters;
 using Core.ECS.Replication;
 using Microsoft.Extensions.DependencyInjection;
 using Shared.Networking;
 using UnityEngine;
 using ILogger = Shared.Logging.ILogger;
 
-namespace Core.Networking
+namespace Adapters.Debugging.Networking
 {
     /// <summary>
     /// Advanced network debugging UI that shows detailed network statistics,

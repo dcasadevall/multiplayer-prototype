@@ -1,11 +1,11 @@
 using System.Numerics;
 using NSubstitute;
 using Server.Player;
+using Shared.Damage;
 using Shared.ECS;
 using Shared.ECS.Components;
 using Shared.ECS.Replication;
 using Shared.ECS.TickSync;
-using Shared.Health;
 using Shared.Input;
 using Shared.Logging;
 using Shared.Networking;

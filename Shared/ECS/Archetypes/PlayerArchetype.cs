@@ -1,9 +1,9 @@
 using System.Numerics;
+using Shared.Damage;
 using Shared.ECS.Components;
 using Shared.ECS.Entities;
 using Shared.ECS.Prediction;
 using Shared.ECS.Replication;
-using Shared.Health;
 using Shared.Physics;
 
 namespace Shared.ECS.Archetypes
@@ -29,7 +29,12 @@ namespace Shared.ECS.Archetypes
 
             // Gameplay/state components
             var name = $"Player_{peerId}";
-            playerEntity.AddComponent(new HealthComponent { MaxHealth = 100, CurrentHealth = 100 });
+            playerEntity.AddComponent(new HealthComponent
+            {
+                MaxHealth = GameplayConstants.MaxPlayerHealth,
+                CurrentHealth = GameplayConstants.MaxPlayerHealth
+            });
+
             playerEntity.AddComponent(new PeerComponent { PeerId = peerId, PeerName = name });
             playerEntity.AddComponent(new NameComponent { Name = name });
             playerEntity.AddComponent(new PrefabComponent { PrefabName = GameplayConstants.PlayerPrefabName });

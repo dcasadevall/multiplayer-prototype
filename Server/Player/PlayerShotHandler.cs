@@ -84,7 +84,7 @@ namespace Server.Player
                 // tick of receiving the shot message.
                 // we need a buffer of player positions at X tick so we can
                 // spawn the projectile at the correct position.
-                var projectile = ProjectileArchetype.CreateFromPlayer(
+                var projectile = ProjectileArchetype.CreateFromEntity(
                     entityRegistry,
                     playerEntity,
                     tickSync.ServerTick);

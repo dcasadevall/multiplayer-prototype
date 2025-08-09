@@ -1,19 +1,23 @@
+using System.Numerics;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using Shared.ECS.Replication;
+using Shared.ECS;
+using Shared.ECS.Archetypes;
+using Shared.Physics;
 
 namespace Server.Scenes
 {
     public class EntityDescription
     {
+        [JsonPropertyName("archetype")]
+        public string Archetype { get; set; } = String.Empty;
+
         [JsonPropertyName("components")]
         public Dictionary<string, JsonElement> Components { get; set; } = new();
-
-        [JsonPropertyName("tags")]
-        public List<string> Tags { get; set; } = new();
     }
 
-    public class SceneLoader(IWorldSnapshotConsumer snapshotConsumer)
+    public class SceneLoader(EntityRegistry entityRegistry)
     {
         /// <summary>
         /// Loads a scene from a JSON file and applies it to the registry using the snapshot consumer.
@@ -29,46 +33,14 @@ namespace Server.Scenes
                 throw new InvalidOperationException($"Failed to deserialize scene from {path}");
             }
 
-            // Convert EntityDescription list to WorldSnapshotMessage
-            var snapshotMsg = new WorldSnapshotMessage
+            foreach (var desc in entityDescriptions)
             {
-                Entities = entityDescriptions.Select(desc =>
+                if (desc.Archetype == "Bot")
                 {
-                    var entityId = Guid.NewGuid();
-                    var components = desc.Components.Select(kvp =>
-                    {
-                        var componentType = GetComponentTypeName(kvp.Key);
-                        return new SnapshotComponent
-                        {
-                            Type = componentType,
-                            Json = kvp.Value.GetRawText()
-                        };
-                    }).ToList();
-
-                    return new SnapshotEntity
-                    {
-                        Id = entityId,
-                        Components = components
-                    };
-                }).ToList()
-            };
-
-            // Apply the snapshot to the registry
-            snapshotConsumer.ConsumeSnapshot(snapshotMsg);
-        }
-
-        private static string GetComponentTypeName(string key)
-        {
-            // Map scene component keys to fully qualified type names as needed
-            // For example, "PositionComponent" => "Shared.ECS.Components.PositionComponent, Shared"
-            // Adjust this mapping as appropriate for your project
-            return key switch
-            {
-                "PositionComponent" => "Shared.Physics.PositionComponent, Shared",
-                "HealthComponent" => "Shared.Health.HealthComponent, Shared",
-                "ReplicatedTagComponent" => "Shared.ECS.Components.ReplicatedTagComponent, Shared",
-                _ => key
-            };
+                    var position = JsonSerializer.Deserialize<PositionComponent>(desc.Components["PositionComponent"].GetRawText());
+                    BotArchetype.Create(entityRegistry, position?.Value ?? Vector3.Zero);
+                }
+            }
         }
     }
 }

@@ -7,10 +7,10 @@ using Shared.ECS.Components;
 using Shared.ECS.Entities;
 using Shared.Physics;
 using UnityEngine;
-using ILogger = Shared.Logging.ILogger;
+
 #pragma warning disable CS0618 // Type or member is obsolete
 
-namespace Adapters.ECS.Debugging
+namespace Adapters.Debugging.ECS
 {
     /// <summary>
     /// Provides visual debugging information in the Unity Scene view.

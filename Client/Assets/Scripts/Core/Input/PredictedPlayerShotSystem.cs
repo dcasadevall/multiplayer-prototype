@@ -79,7 +79,7 @@ namespace Core.Input
             var localPlayer = _entityRegistry.GetLocalPlayerEntity(_localPeerId);
 
             // Create predicted projectile entity
-            var projectile = ProjectileArchetype.CreateFromPlayer(_entityRegistry, 
+            var projectile = ProjectileArchetype.CreateFromEntity(_entityRegistry, 
                 localPlayer, 
                 clientTick); 
             

@@ -7,7 +7,7 @@ using UnityEngine;
 using UnityEngine.UI;
 using ILogger = Shared.Logging.ILogger;
 
-namespace Core.Networking
+namespace Adapters.Debugging.Networking
 {
     /// <summary>
     /// Simple network stats display using Unity UI.

@@ -1,11 +1,10 @@
 using System.Numerics;
+using Shared.Damage;
 using Shared.ECS.Components;
 using Shared.ECS.Entities;
 using Shared.ECS.Prediction;
 using Shared.ECS.Replication;
 using Shared.ECS.Simulation;
-using Shared.Health;
-using Shared.Input;
 using Shared.Physics;
 
 namespace Shared.ECS.Archetypes
@@ -24,20 +23,20 @@ namespace Shared.ECS.Archetypes
         /// <param name="shootingPlayerEntity"></param>
         /// <param name="spawnTick"></param>
         /// <returns></returns>
-        public static Entity CreateFromPlayer(
+        public static Entity CreateFromEntity(
             EntityRegistry registry,
             Entity shootingPlayerEntity,
             uint spawnTick)
         {
             var playerPosition = shootingPlayerEntity.GetRequired<PositionComponent>().Value;
             var playerRotation = shootingPlayerEntity.GetRequired<RotationComponent>().Value;
-            var peerId = shootingPlayerEntity.GetRequired<PeerComponent>().PeerId;
+            var entityName = shootingPlayerEntity.Get<NameComponent>()?.Name ?? "Unknown";
 
             // Transform the spawn offsets by the player's rotation to get the correct world-space position
             var spawnOffset = new Vector3(0, GameplayConstants.ProjectileSpawnHeight, GameplayConstants.ProjectileSpawnForward);
             var rotatedOffset = Vector3.Transform(spawnOffset, playerRotation);
             var spawnPosition = playerPosition + rotatedOffset;
-            
+
             var velocity = Vector3.Transform(Vector3.UnitZ, playerRotation) * GameplayConstants.ProjectileSpeed;
 
             return Create(
@@ -46,7 +45,7 @@ namespace Shared.ECS.Archetypes
                 playerRotation,
                 velocity,
                 spawnTick,
-                peerId,
+                entityName,
                 shootingPlayerEntity.Id
             );
         }
@@ -60,7 +59,7 @@ namespace Shared.ECS.Archetypes
             Quaternion spawnRotation,
             Vector3 velocity,
             uint spawnTick,
-            int spawnedByPeerId,
+            string spawnedByName,
             EntityId sourceEntityId)
         {
             var projectile = registry.CreateEntity();
@@ -80,7 +79,7 @@ namespace Shared.ECS.Archetypes
 
             projectile.AddComponent(SelfDestroyingComponent.CreateWithTTL(spawnTick, GameplayConstants.ProjectileTtl.ToNumTicks()));
             projectile.AddComponent(new PrefabComponent { PrefabName = GameplayConstants.ProjectilePrefabName });
-            projectile.AddComponent(new NameComponent { Name = $"Laser_{spawnedByPeerId}" });
+            projectile.AddComponent(new NameComponent { Name = $"Laser_{spawnedByName}" });
             projectile.AddComponent(new LocalBoundsComponent
             {
                 Center = GameplayConstants.ProjectileLocalBoundsCenter,

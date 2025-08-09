@@ -1,6 +1,6 @@
 using System.Numerics;
+using Shared.Damage;
 using Shared.ECS.Components;
-using Shared.Health;
 using Shared.Physics;
 using Xunit;
 

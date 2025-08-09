@@ -5,13 +5,12 @@ using System.Collections.Generic;
 using System.Linq;
 using Microsoft.Extensions.DependencyInjection;
 using Shared.ECS;
-using Shared.ECS.Components;
 using Shared.ECS.Entities;
 using Shared.Physics;
 using UnityEditor;
 using UnityEngine;
 
-namespace Adapters.ECS.Debugging
+namespace Adapters.Debugging.ECS.Editor
 {
     /// <summary>
     /// Unity Editor window for inspecting ECS entities and components in real-time.

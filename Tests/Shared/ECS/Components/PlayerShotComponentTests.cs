@@ -1,8 +1,8 @@
 using System;
 using System.Numerics;
 using System.Text.Json;
+using Shared.Damage;
 using Shared.ECS.Components;
-using Shared.Health;
 using Shared.Input;
 using Xunit;
 

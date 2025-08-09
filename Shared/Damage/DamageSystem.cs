@@ -4,7 +4,7 @@ using Shared.ECS.Components;
 using Shared.Logging;
 using Shared.Physics;
 
-namespace Shared.Health
+namespace Shared.Damage
 {
     /// <summary>
     /// System that applies damage to entities based on collisions.

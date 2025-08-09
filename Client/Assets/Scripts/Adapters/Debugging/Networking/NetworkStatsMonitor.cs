@@ -6,7 +6,7 @@ using Shared.Networking;
 using UnityEngine;
 using ILogger = Shared.Logging.ILogger;
 
-namespace Core.Networking
+namespace Adapters.Debugging.Networking
 {
     /// <summary>
     /// Monitors and displays network statistics including ping and updates per second.

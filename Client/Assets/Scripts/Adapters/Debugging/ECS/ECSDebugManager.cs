@@ -1,7 +1,9 @@
+using Adapters.Debugging.ECS.Editor;
 using UnityEngine;
+
 #pragma warning disable CS0618 // Type or member is obsolete
 
-namespace Adapters.ECS.Debugging
+namespace Adapters.Debugging.ECS
 {
     /// <summary>
     /// Manager component that enables ECS debugging features.

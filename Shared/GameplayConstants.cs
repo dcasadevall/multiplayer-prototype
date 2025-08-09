@@ -10,6 +10,8 @@ namespace Shared
         public const float PlayerSpeed = 5.0f;
         public const string PlayerPrefabName = "Player";
         public static readonly TimeSpan PlayerRespawnTime = TimeSpan.FromSeconds(4);
+        public static readonly TimeSpan BotRespawnTime = TimeSpan.FromSeconds(4);
+        public const int MaxBotHealth = 100;
 
         // Player bounds constants
         public static readonly Vector3 PlayerLocalBoundsCenter = Vector3.UnitY;

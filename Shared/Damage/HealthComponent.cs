@@ -1,7 +1,7 @@
 using System.Text.Json.Serialization;
 using Shared.ECS;
 
-namespace Shared.Health
+namespace Shared.Damage
 {
     /// <summary>
     /// Stores the health state of an entity.

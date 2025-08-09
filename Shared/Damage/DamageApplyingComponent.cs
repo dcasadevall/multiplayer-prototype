@@ -2,7 +2,7 @@ using System;
 using System.Text.Json.Serialization;
 using Shared.ECS;
 
-namespace Shared.Health
+namespace Shared.Damage
 {
     /// <summary>
     /// Component that defines how much damage an entity deals on impact.
