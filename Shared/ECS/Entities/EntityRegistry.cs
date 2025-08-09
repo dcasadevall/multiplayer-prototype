@@ -168,6 +168,12 @@ namespace Shared.ECS.Entities
 
         private void HandleComponentAdded(Entity entity, IComponent component)
         {
+            // Skip server components, as they are not tracked for deltas
+            if (component is IServerComponent)
+            {
+                return;
+            }
+
             var entityId = entity.Id;
             if (!_addedComponents.ContainsKey(entityId))
             {
@@ -189,6 +195,12 @@ namespace Shared.ECS.Entities
 
         private void HandleComponentModified(Entity entity, IComponent component)
         {
+            // Skip server components, as they are not tracked for deltas
+            if (component is IServerComponent)
+            {
+                return;
+            }
+
             var entityId = entity.Id;
             if (!_modifiedComponents.ContainsKey(entityId))
             {
@@ -200,6 +212,12 @@ namespace Shared.ECS.Entities
 
         private void HandleComponentRemoved(Entity entity, IComponent component)
         {
+            // Skip server components, as they are not tracked for deltas
+            if (component is IServerComponent)
+            {
+                return;
+            }
+
             var entityId = entity.Id;
             if (!_removedComponents.ContainsKey(entityId))
             {
@@ -245,7 +263,9 @@ namespace Shared.ECS.Entities
                 {
                     EntityId = entityId.Value,
                     IsNew = true,
-                    AddedOrModifiedComponents = _entities[entityId].GetAllComponents().ToList()
+                    AddedOrModifiedComponents = _entities[entityId].GetAllComponents()
+                        .Where(x => x is not IServerComponent)
+                        .ToList()
                 });
             }
 
@@ -274,10 +294,14 @@ namespace Shared.ECS.Entities
                 var added = _addedComponents.GetValueOrDefault(entityId, new HashSet<IComponent>());
                 var modified = _modifiedComponents.GetValueOrDefault(entityId, new HashSet<IComponent>());
 
+                var addedOrModified = added.Concat(modified)
+                    .Where(c => c is not IServerComponent)
+                    .ToList();
+
                 deltas.Add(new EntityDelta
                 {
                     EntityId = entityId.Value,
-                    AddedOrModifiedComponents = added.Concat(modified).ToList(),
+                    AddedOrModifiedComponents = addedOrModified,
                     RemovedComponents = _removedComponents
                         .GetValueOrDefault(entityId, new HashSet<IComponent>())
                         .Select(c => c.GetType())

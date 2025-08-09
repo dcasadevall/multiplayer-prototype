@@ -7,6 +7,8 @@ using Xunit;
 
 namespace SharedUnitTests.ECS.Entities
 {
+    public class TestServerComponent : IComponent, IServerComponent { }
+
     public class EntityRegistryTests
     {
         [Fact]
@@ -184,6 +186,25 @@ namespace SharedUnitTests.ECS.Entities
 
             // Assert
             Assert.False(registry.TryGet(entity.Id, out _));
+        }
+
+        [Fact]
+        public void ProduceEntityDelta_WithServerComponent_ExcludesServerComponent()
+        {
+            // Arrange
+            var registry = new EntityRegistry();
+            var entity = registry.CreateEntity();
+            entity.AddComponent(new PositionComponent(new(1, 2, 3)));
+            entity.AddComponent(new TestServerComponent());
+
+            // Act
+            var deltas = registry.ProduceEntityDelta();
+
+            // Assert
+            Assert.Single(deltas);
+            var delta = deltas.First();
+            Assert.Single(delta.AddedOrModifiedComponents);
+            Assert.IsType<PositionComponent>(delta.AddedOrModifiedComponents.First());
         }
     }
 }

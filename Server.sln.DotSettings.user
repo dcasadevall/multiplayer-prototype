@@ -46,5 +46,6 @@
     &lt;TestId&gt;xUnit::A1B2C3D4-E5F6-7890-ABCD-EF1234567890::net8.0::SharedUnitTests.Damage.DeathSystemTests.Update_DoesNotCreateDeathRecordTwice&lt;/TestId&gt;
     &lt;TestId&gt;xUnit::A1B2C3D4-E5F6-7890-ABCD-EF1234567890::net8.0::SharedUnitTests.ECS.Replication.JsonComponentSerializerTests.SerializeAndDeserialize_SimpleComponent_ReturnsEqualComponent&lt;/TestId&gt;
     &lt;TestId&gt;xUnit::A1B2C3D4-E5F6-7890-ABCD-EF1234567890::net8.0::SharedUnitTests.ECS.Replication.EntityDeltaTests.SerializeAndDeserialize_FullDelta_ReturnsEqualDelta&lt;/TestId&gt;
+    &lt;TestId&gt;xUnit::A1B2C3D4-E5F6-7890-ABCD-EF1234567890::net8.0::SharedUnitTests.ECS.Entities.EntityRegistryTests.ProduceEntityDelta_WithServerComponent_ExcludesServerComponent&lt;/TestId&gt;
   &lt;/TestAncestor&gt;
 &lt;/SessionState&gt;</s:String></wpf:ResourceDictionary>

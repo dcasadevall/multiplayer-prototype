@@ -5,7 +5,7 @@ namespace Server.AI
     /// <summary>
     /// Component used to track the cooldown for shooting actions.
     /// </summary>
-    public class ShootingCooldownComponent : IComponent
+    public class ShootingCooldownComponent : IServerComponent
     {
         /// <summary>
         /// When the cooldown ends, represented as a tick count.
