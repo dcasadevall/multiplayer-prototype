@@ -32,12 +32,15 @@ namespace Shared.Respawn
             {
                 var spawnPosition = new System.Numerics.Vector3(_rand.Next(-3, 3), 0, _rand.Next(-3, 3));
 
-                if (entity.Has<PlayerTagComponent>())
+                // We identify player vs bot based on the peer component,
+                // we may want a more robust way in the future.
+                // We could specify the archetype in the RespawnComponent,
+                if (entity.Has<PeerComponent>())
                 {
                     var peerId = entity.GetRequired<PeerComponent>().PeerId;
                     PlayerArchetype.Create(registry, peerId, spawnPosition);
                 }
-                else if (entity.Has<BotTagComponent>())
+                else
                 {
                     BotArchetype.Create(registry, spawnPosition);
                 }

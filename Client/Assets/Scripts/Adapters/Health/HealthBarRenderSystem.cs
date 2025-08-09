@@ -22,7 +22,7 @@ namespace Adapters.Health
         public void Update(EntityRegistry registry, uint tickNumber, float deltaTime)
         {
             // Find all players with health components
-            foreach (var entity in registry.WithAll<PlayerTagComponent, HealthComponent>())
+            foreach (var entity in registry.With<HealthComponent>())
             {
                 var entityId = entity.Id;
                 var health = entity.GetRequired<HealthComponent>();

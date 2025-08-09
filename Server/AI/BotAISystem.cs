@@ -7,6 +7,7 @@ using Shared.ECS.Entities;
 using Shared.ECS.Simulation;
 using Shared.Physics;
 using Shared.Input;
+using Shared.Respawn;
 
 namespace Server.AI
 {
@@ -28,7 +29,8 @@ namespace Server.AI
             if (players.Count == 0)
                 return;
 
-            foreach (var bot in registry.With<BotTagComponent>())
+            var bots = registry.With<BotTagComponent>().ToList();
+            foreach (var bot in bots)
             {
                 var botHealth = bot.GetRequired<HealthComponent>();
                 var botPosition = bot.GetRequired<PositionComponent>().Value;
@@ -64,6 +66,14 @@ namespace Server.AI
                     {
                         // Stop moving when in attack range
                         bot.AddOrReplaceComponent(new VelocityComponent { Value = Vector3.Zero });
+
+                        // Face the target
+                        var rotation = Quaternion.CreateFromYawPitchRoll(
+                            MathF.Atan2(direction.X, direction.Z),
+                            0,
+                            0
+                        );
+                        bot.AddOrReplaceComponent(new RotationComponent { Value = rotation });
 
                         // Shoot
                         if (!bot.Has<ShootingCooldownComponent>() || tickNumber >= bot.GetRequired<ShootingCooldownComponent>().EndTick)

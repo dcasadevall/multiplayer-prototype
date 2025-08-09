@@ -47,6 +47,17 @@ namespace Server.Player
             var velocity = moveDirection * GameplayConstants.PlayerSpeed;
 
             entity.AddOrReplaceComponent(new VelocityComponent { Value = velocity });
+
+            // Face the direction of movement
+            if (moveDirection.LengthSquared() > 0)
+            {
+                var rotation = Quaternion.CreateFromYawPitchRoll(
+                    MathF.Atan2(moveDirection.X, moveDirection.Z),
+                    0,
+                    0
+                );
+                entity.AddOrReplaceComponent(new RotationComponent { Value = rotation });
+            }
         }
 
         public void Dispose()

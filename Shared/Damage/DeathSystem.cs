@@ -36,7 +36,6 @@ namespace Shared.Damage
                         RespawnAtTick = tickNumber + GameplayConstants.PlayerRespawnTime.ToNumTicks()
                     });
 
-                    deathRecord.AddComponent(new PlayerTagComponent());
                     deathRecord.AddComponent(entity.GetRequired<PeerComponent>());
                 }
                 else if (entity.Has<BotTagComponent>())
@@ -45,8 +44,6 @@ namespace Shared.Damage
                     {
                         RespawnAtTick = tickNumber + GameplayConstants.BotRespawnTime.ToNumTicks()
                     });
-
-                    deathRecord.AddComponent(new BotTagComponent());
                 }
 
                 registry.DestroyEntity(entity.Id);

@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using Core.ECS.Entities;
@@ -13,6 +14,7 @@ using Shared.Physics;
 using ILogger = Shared.Logging.ILogger;
 using Vector2 = System.Numerics.Vector2;
 using Vector3 = System.Numerics.Vector3;
+using Quaternion = System.Numerics.Quaternion;
 
 namespace Core.Input
 {
@@ -45,6 +47,7 @@ namespace Core.Input
         private struct PredictedState
         {
             public Vector3 Position;
+            public Quaternion Rotation;
         }
 
         public PredictedPlayerMovementSystem(
@@ -109,23 +112,26 @@ namespace Core.Input
         private void ProcessLocalPlayerMovement(Entity localPlayer, uint currentTick, float deltaTime)
         {
             var position = localPlayer.GetRequired<PositionComponent>();
+            var rotation = localPlayer.GetRequired<RotationComponent>();
 
             var lastState = _stateBuffer.TryGetValue(currentTick - 1, out var state)
                 ? state
-                : new PredictedState { Position = position.Value };
+                : new PredictedState { Position = position.Value, Rotation = rotation.Value };
 
             var newVelocity = Vector3.Zero;
-            if (_inputListener.TryGetMovementAtTick(currentTick, out var moveDirection))
+            var newRotation = lastState.Rotation;
+
+            if (_inputListener.TryGetMovementAtTick(currentTick, out var moveDirection) && moveDirection.LengthSquared() > 0.1f)
             {
                 newVelocity = new Vector3(moveDirection.X, 0, moveDirection.Y) * GameplayConstants.PlayerSpeed;
+                newRotation = Quaternion.CreateFromYawPitchRoll(MathF.Atan2(moveDirection.X, moveDirection.Y), 0, 0);
             }
 
             // 1. Calculate the uncorrected prediction for this tick.
-            // Since this is a local prediction, we use deltaTime.
             var newPosition = lastState.Position + newVelocity * deltaTime;
 
             // Store this pure state in our history.
-            _stateBuffer[currentTick] = new PredictedState { Position = newPosition };
+            _stateBuffer[currentTick] = new PredictedState { Position = newPosition, Rotation = newRotation };
 
             // 2. Smoothly reduce any existing reconciliation error each frame.
             _reconciliationError = Vector3.Lerp(_reconciliationError, Vector3.Zero, ReconciliationSmoothingFactor);
@@ -133,6 +139,7 @@ namespace Core.Input
             // 3. The final visual position is our pure prediction plus the diminishing error.
             localPlayer.AddOrReplaceComponent(new PositionComponent { Value = newPosition + _reconciliationError });
             localPlayer.AddOrReplaceComponent(new VelocityComponent { Value = newVelocity });
+            localPlayer.AddOrReplaceComponent(new RotationComponent { Value = newRotation });
         }
 
         private void CheckReconciliation(Entity localPlayer, uint currentTick)
@@ -172,10 +179,16 @@ namespace Core.Input
 
         private void CorrectStateAndResimulate(uint authoritativeTick, Vector3 authoritativePosition)
         {
+            // Keep the originally predicted rotation for the authoritative tick, since the server doesn't correct it
+            var authoritativeRotation = _stateBuffer.TryGetValue(authoritativeTick, out var oldState)
+                ? oldState.Rotation
+                : Quaternion.Identity;
+            
             // Correct the state at the authoritative tick with server data
             _stateBuffer[authoritativeTick] = new PredictedState
             {
                 Position = authoritativePosition,
+                Rotation = authoritativeRotation
             };
 
             // Re-simulate from the corrected tick forward to the current client tick
@@ -183,19 +196,21 @@ namespace Core.Input
             {
                 var previousState = _stateBuffer[tick - 1];
                 var newVelocity = Vector3.Zero;
+                var newRotation = previousState.Rotation;
 
                 // Apply the historical input for this tick
-                if (_inputListener.TryGetMovementAtTick(tick, out var moveDirection))
+                if (_inputListener.TryGetMovementAtTick(tick, out var moveDirection) && moveDirection.LengthSquared() > 0.1f)
                 {
                     newVelocity = new Vector3(moveDirection.X, 0, moveDirection.Y) * GameplayConstants.PlayerSpeed;
+                    newRotation = Quaternion.CreateFromYawPitchRoll(MathF.Atan2(moveDirection.X, moveDirection.Y), 0, 0);
                 }
 
                 // Use FixedDeltaTime to ensure consistent simulation
-                // If we used deltaTime, it would vary per frame and break the prediction.
                 var newPosition = previousState.Position + newVelocity * (float)SharedConstants.FixedDeltaTime.TotalSeconds;
                 _stateBuffer[tick] = new PredictedState
                 {
                     Position = newPosition,
+                    Rotation = newRotation
                 };
             }
         }

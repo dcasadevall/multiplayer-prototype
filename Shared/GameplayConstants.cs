@@ -21,7 +21,7 @@ namespace Shared
         public const float ProjectileSpeed = 8f;
         public const int ProjectileDamage = 25;
         public const uint MaxShotTickDeviation = 10; // Allow up to 10 ticks of deviation for shot validation
-        public const float ProjectileSpawnHeight = 2.0f;
+        public const float ProjectileSpawnHeight = 1.0f;
         public const float ProjectileSpawnForward = 0.5f;
         public const string ProjectilePrefabName = "LaserShot";
         public static readonly TimeSpan ProjectileTtl = TimeSpan.FromSeconds(4);

@@ -1,4 +1,7 @@
+#if UNITY_EDITOR
 using Adapters.Debugging.ECS.Editor;
+#endif
+
 using UnityEngine;
 
 #pragma warning disable CS0618 // Type or member is obsolete
