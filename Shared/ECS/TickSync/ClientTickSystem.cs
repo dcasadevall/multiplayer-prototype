@@ -1,4 +1,5 @@
 using System.Linq;
+using Shared.ECS.Entities;
 using Shared.Math;
 using Shared.Networking;
 

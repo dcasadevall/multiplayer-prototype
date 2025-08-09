@@ -2,6 +2,7 @@ using System.Linq;
 using NSubstitute;
 using Shared.ECS;
 using Shared.ECS.Components;
+using Shared.ECS.Entities;
 using Shared.ECS.Systems;
 using Shared.Logging;
 using Xunit;
@@ -25,7 +26,7 @@ namespace SharedUnitTests.ECS.Systems
             system.Update(registry, 15, 0.033f);
 
             // Assert
-            Assert.False(registry.TryGet(entity.Id, out _));
+            Assert.True(entity.Has<MarkedForRemovalTagComponent>());
         }
 
         [Fact]
@@ -64,8 +65,8 @@ namespace SharedUnitTests.ECS.Systems
             system.Update(registry, 15, 0.033f);
 
             // Assert
-            Assert.False(registry.TryGet(expiredEntity.Id, out _));
-            Assert.True(registry.TryGet(activeEntity.Id, out _));
+            Assert.True(expiredEntity.Has<MarkedForRemovalTagComponent>());
+            Assert.False(activeEntity.Has<MarkedForRemovalTagComponent>());
         }
 
         [Fact]

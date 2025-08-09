@@ -6,52 +6,40 @@ using Shared.Networking;
 
 namespace Core.ECS.Replication
 {
-    public interface IReplicationStats
-    {
-        /// <summary>
-        /// Gets the time between snapshots received from the server.
-        /// </summary>
-        TimeSpan TimeBetweenSnapshots { get; }
-    }
-    
     /// <summary>
-    /// ECS system responsible for consuming world snapshots received from the server.
+    /// ECS system responsible for consuming world deltas received from the server.
     /// 
     /// <para>
     /// This system acts as the client-side counterpart to the server's ReplicationSystem.
-    /// It receives world snapshots from the server and applies them to the local entity registry
+    /// It receives world deltas from the server and applies them to the local entity registry
     /// to keep the client's world state synchronized with the authoritative server state.
     /// </para>
     /// 
     /// <para>
-    /// The ClientReplicationSystem manages an IWorldSnapshotConsumer, which deserializes
-    /// incoming snapshots and updates the local entity registry with the latest server state.
+    /// The ClientReplicationSystem manages an IWorldDeltaConsumer, which deserializes
+    /// incoming deltas and updates the local entity registry with the latest server state.
     /// </para>
     ///
     /// <para>
     /// One can assume that this system is always the first system to run on the client
     /// </para>
     /// </summary>
-    [TickInterval(1)] // Process snapshots as frequently as possible
-    public class ClientReplicationSystem : ISystem, IDisposable, IReplicationStats
+    [TickInterval(1)] // Process deltas as frequently as possible
+    public class ClientReplicationSystem : ISystem, IDisposable
     {
-        private readonly IWorldSnapshotConsumer _worldSnapshotConsumer;
+        private readonly IWorldDeltaConsumer _worldDeltaConsumer;
         private readonly IDisposable _subscription;
-
-        public TimeSpan TimeBetweenSnapshots { get; private set; }
-        private DateTime _lastSnapshotTime;
+        private DateTime _lastDeltaTime;
 
         /// <summary>
         /// Constructs a new ClientReplicationSystem using dependency injection.
         /// </summary>
-        /// <param name="worldSnapshotConsumer">Consumer used for processing incoming snapshots.</param>
+        /// <param name="worldDeltaConsumer">Consumer used for processing incoming deltas.</param>
         /// <param name="messageReceiver">Receiver for network messages.</param>
-        public ClientReplicationSystem(IWorldSnapshotConsumer worldSnapshotConsumer, IMessageReceiver messageReceiver)
+        public ClientReplicationSystem(IWorldDeltaConsumer worldDeltaConsumer, IMessageReceiver messageReceiver)
         {
-            _worldSnapshotConsumer = worldSnapshotConsumer;
-
-            // Subscribe to snapshot messages
-            _subscription = messageReceiver.RegisterMessageHandler<WorldSnapshotMessage>("ReplicationSystem", HandleMessageReceived);
+            _worldDeltaConsumer = worldDeltaConsumer;
+            _subscription = messageReceiver.RegisterMessageHandler<WorldDeltaMessage>("ReplicationSystem", HandleMessageReceived);
         }
 
         /// <summary>
@@ -62,20 +50,15 @@ namespace Core.ECS.Replication
         /// <param name="deltaTime">The time in seconds since the last update for this system.</param>
         public void Update(EntityRegistry registry, uint tickNumber, float deltaTime)
         {
-            // The actual snapshot processing happens in HandleMessageReceived
-            // This method is called every tick to ensure we process messages promptly
         }
 
-        private void HandleMessageReceived(int peerId, WorldSnapshotMessage msg)
+        private void HandleMessageReceived(int peerId, WorldDeltaMessage msg)
         {
-            // Log the time since the last snapshot was received
-            if (_lastSnapshotTime != default)
+            if (_lastDeltaTime != default)
             {
-                var timeSinceLastSnapshot = DateTime.Now - _lastSnapshotTime;
-                TimeBetweenSnapshots = timeSinceLastSnapshot;
             }
-            _worldSnapshotConsumer.ConsumeSnapshot(msg);
-            _lastSnapshotTime = DateTime.Now;
+            _worldDeltaConsumer.ConsumeDelta(msg);
+            _lastDeltaTime = DateTime.Now;
         }
 
         /// <summary>

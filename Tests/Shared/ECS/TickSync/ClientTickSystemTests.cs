@@ -1,6 +1,7 @@
 using System.Linq;
 using NSubstitute;
 using Shared.ECS;
+using Shared.ECS.Entities;
 using Shared.ECS.TickSync;
 using Shared.Networking;
 using Xunit;

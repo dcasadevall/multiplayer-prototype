@@ -3,6 +3,7 @@ using System.Linq;
 using Shared.ECS;
 using Shared.ECS.Archetypes;
 using Shared.ECS.Components;
+using Shared.ECS.Entities;
 
 namespace Shared.Respawn
 {

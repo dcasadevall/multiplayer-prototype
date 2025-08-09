@@ -6,8 +6,8 @@ namespace Shared.ECS.Replication
     {
         public static void RegisterJsonReplicationTypes(this IServiceCollection service)
         {
-            service.AddSingleton<IWorldSnapshotProducer, JsonWorldSnapshotProducer>();
-            service.AddSingleton<IWorldSnapshotConsumer, JsonWorldSnapshotConsumer>();
+            service.AddSingleton<IWorldDeltaProducer, JsonWorldDeltaProducer>();
+            service.AddSingleton<IWorldDeltaConsumer, JsonWorldDeltaConsumer>();
         }
     }
 }

@@ -14,10 +14,11 @@ namespace Shared.Networking.Messages
         Connected = 0,
 
         /// <summary>
-        /// A full snapshot of the world state sent from the server to the client.
-        /// Includes replicated entities and their components.
+        /// A snapshot of the world state delta sent from the server to the client.
+        /// Includes any changes to replicated entities and their components.
+        /// It also includes the create and destroy events for entities.
         /// </summary>
-        Snapshot = 1,
+        Delta = 1,
 
         /// <summary>
         /// Player movement input message sent from the client to the server.

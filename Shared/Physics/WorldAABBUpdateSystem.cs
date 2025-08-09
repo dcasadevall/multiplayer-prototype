@@ -1,6 +1,7 @@
 using System.Linq;
 using System.Numerics;
 using Shared.ECS;
+using Shared.ECS.Entities;
 
 namespace Shared.Physics
 {

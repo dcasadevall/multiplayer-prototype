@@ -2,6 +2,7 @@ using System;
 using System.Linq;
 using Shared.Damage;
 using Shared.ECS.Components;
+using Shared.ECS.Entities;
 using Shared.ECS.Simulation;
 
 namespace Shared.ECS.Systems

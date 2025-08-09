@@ -14,6 +14,7 @@ using Microsoft.Extensions.Configuration;
 using Server.AI;
 using Server.Player;
 using Shared.Damage;
+using Shared.ECS.Entities;
 using Shared.Physics;
 using Shared.Respawn;
 

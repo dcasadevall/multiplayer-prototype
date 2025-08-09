@@ -14,7 +14,7 @@ namespace Shared.Networking.Messages
         private static readonly Dictionary<MessageType, Type> _messageTypeMap = new()
         {
             { MessageType.Connected, typeof(ConnectedMessage) },
-            { MessageType.Snapshot, typeof(WorldSnapshotMessage) },
+            { MessageType.Delta, typeof(WorldDeltaMessage) },
             { MessageType.PlayerMovement, typeof(PlayerMovementMessage) },
             { MessageType.PlayerShot, typeof(PlayerShotMessage) },
         };

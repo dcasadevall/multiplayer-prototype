@@ -2,6 +2,7 @@ using System;
 using System.Linq;
 using Shared.ECS.Components;
 using System.Numerics;
+using Shared.ECS.Entities;
 using Shared.ECS.Simulation;
 using Shared.Physics;
 

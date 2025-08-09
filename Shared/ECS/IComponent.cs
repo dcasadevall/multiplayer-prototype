@@ -1,21 +1,21 @@
 namespace Shared.ECS
 {
     /// <summary>
-    /// Marker interface for all ECS components.
+    /// Base interface for all components in the Entity-Component-System (ECS) architecture.
+    /// 
     /// <para>
-    /// In the Entity-Component-System (ECS) architecture, a <b>Component</b> is a simple data container
-    /// that holds state for an entity. Components should be as granular as possible and contain no logic—
-    /// only data. Systems operate on entities by querying for specific component types.
+    /// Components are pure data containers that hold information about entities. They should not
+    /// contain any logic or behavior. Systems operate on entities that have specific sets of components.
     /// </para>
-    /// <para>
-    /// <b>Usage:</b>
+    /// 
+    /// <example>
     /// <code>
     /// public class PositionComponent : IComponent
     /// {
-    ///     public Vector3 Value;
+    ///     public Vector2 Value;
     /// }
     /// </code>
-    /// </para>
+    /// </example>
     /// </summary>
     public interface IComponent
     {

@@ -4,6 +4,7 @@ using System.Text.Json.Serialization;
 using Shared.ECS.Replication;
 using Shared.ECS;
 using Shared.ECS.Archetypes;
+using Shared.ECS.Entities;
 using Shared.Physics;
 
 namespace Server.Scenes

@@ -1,3 +1,5 @@
+using Shared.ECS.Entities;
+
 namespace Shared.ECS
 {
     /// <summary>

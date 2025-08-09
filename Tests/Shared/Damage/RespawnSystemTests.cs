@@ -1,5 +1,6 @@
 using Shared.ECS;
 using Shared.ECS.Components;
+using Shared.ECS.Entities;
 using Shared.Respawn;
 using Xunit;
 
@@ -20,9 +21,14 @@ namespace SharedUnitTests.Damage
 
             system.Update(registry, 10, 0.016f);
 
-            Assert.False(registry.TryGet(deathRecord.Id, out _));
+            Assert.True(deathRecord.Has<MarkedForRemovalTagComponent>());
             var players = registry.With<PlayerTagComponent>().ToList();
             Assert.Single(players);
+
+            var newPlayer = players.First();
+            Assert.NotEqual(deathRecord.Id, newPlayer.Id);
+            Assert.True(newPlayer.Has<PeerComponent>());
+            Assert.Equal(1, newPlayer.Get<PeerComponent>().PeerId);
         }
     }
 }

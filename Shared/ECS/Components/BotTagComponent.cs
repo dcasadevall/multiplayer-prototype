@@ -1,3 +1,4 @@
+using System;
 using Shared.ECS;
 
 namespace Shared.ECS.Components

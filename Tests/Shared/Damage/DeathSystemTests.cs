@@ -4,6 +4,7 @@ using Shared.Damage;
 using Shared.ECS;
 using Shared.ECS.Archetypes;
 using Shared.ECS.Components;
+using Shared.ECS.Entities;
 using Shared.ECS.Simulation;
 using Shared.Respawn;
 using Xunit;
@@ -23,7 +24,7 @@ namespace SharedUnitTests.Damage
 
             system.Update(registry, 42, 0.016f);
 
-            Assert.False(registry.TryGet(player.Id, out _));
+            Assert.True(player.Has<MarkedForRemovalTagComponent>());
 
             var deathRecords = registry.With<RespawnComponent>().ToList();
             Assert.Single(deathRecords);

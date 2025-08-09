@@ -1,7 +1,9 @@
 using System;
-using System.Collections;
 using System.Collections.Generic;
 using Shared.ECS.Entities;
+using Shared.ECS.Components;
+using Shared.ECS.Replication;
+using System.Linq;
 
 namespace Shared.ECS
 {
@@ -26,6 +28,15 @@ namespace Shared.ECS
     {
         private readonly Dictionary<EntityId, Entity> _entities = new();
 
+        // The following fields track changes to entities for delta generation.
+        // They are used to produce deltas for replication and synchronization.
+        // We could technically decouple this from the EntityRegistry,
+        // but for simplicity, we keep it here.
+        private readonly List<Guid> _createdEntities = new();
+        private readonly List<Guid> _removedEntities = new();
+        private readonly Dictionary<Guid, List<Type>> _addedOrModifiedComponents = new();
+        private readonly Dictionary<Guid, List<Type>> _removedComponents = new();
+
         /// <summary>
         /// Creates a new entity with a unique ID and adds it to the world.
         /// </summary>
@@ -35,6 +46,11 @@ namespace Shared.ECS
             var id = EntityId.New();
             var entity = new Entity(id);
             _entities.Add(id, entity);
+            _createdEntities.Add(id.Value);
+
+            entity.OnComponentUpdated += HandleComponentAddedOrModified;
+            entity.OnComponentRemoved += HandleComponentRemoved;
+
             return entity;
         }
 
@@ -50,7 +66,11 @@ namespace Shared.ECS
         /// Removes an entity from the world by its ID.
         /// </summary>
         /// <param name="id">The entity's unique identifier.</param>
-        public void DestroyEntity(EntityId id) => _entities.Remove(id);
+        public void DestroyEntity(EntityId id)
+        {
+            _entities.Remove(id);
+            _removedEntities.Add(id.Value);
+        }
 
         /// <summary>
         /// Returns an enumerable of all entities currently in the world.
@@ -72,6 +92,7 @@ namespace Shared.ECS
 
             var newEntity = new Entity(id);
             _entities.Add(id, newEntity);
+            _createdEntities.Add(id.Value);
             return newEntity;
         }
 
@@ -125,5 +146,70 @@ namespace Shared.ECS
                 }
             }
         }
+
+        #region Entity Delta Handling
+
+        private void HandleComponentAddedOrModified(Entity entity, Type componentType)
+        {
+            var entityId = entity.Id.Value;
+            if (!_addedOrModifiedComponents.ContainsKey(entityId))
+            {
+                _addedOrModifiedComponents[entityId] = new List<Type>();
+            }
+
+            _addedOrModifiedComponents[entityId].Add(componentType);
+        }
+
+        private void HandleComponentRemoved(Entity entity, Type componentType)
+        {
+            var entityId = entity.Id.Value;
+            if (!_removedComponents.ContainsKey(entityId))
+            {
+                _removedComponents[entityId] = new List<Type>();
+            }
+
+            _removedComponents[entityId].Add(componentType);
+        }
+
+        /// <summary>
+        /// Produces a list of <see cref="EntityDelta"/> objects representing the changes made to entities.
+        /// Clears the tracked changes after producing the deltas.
+        /// </summary>
+        /// <returns></returns>
+        public List<EntityDelta> ProduceEntityDelta()
+        {
+            var deltas = new List<EntityDelta>();
+            var allEntityIds = _createdEntities.Concat(_removedEntities).Distinct();
+
+            foreach (var entityId in allEntityIds)
+            {
+                var isNew = _createdEntities.Contains(entityId);
+                var delta = new EntityDelta
+                {
+                    EntityId = entityId,
+                    IsNew = isNew,
+                };
+
+                if (isNew)
+                {
+                    var entity = _entities[new EntityId(entityId)];
+                    delta.AddedOrModifiedComponents = entity.GetAllComponents().ToList();
+                }
+
+                if (_removedEntities.Contains(entityId) && _entities.TryGetValue(new EntityId(entityId), out var removedEntity))
+                {
+                    delta.RemovedComponents = removedEntity.GetAllComponents().Select(c => c.GetType()).ToList();
+                }
+
+                deltas.Add(delta);
+            }
+
+            _createdEntities.Clear();
+            _removedEntities.Clear();
+
+            return deltas;
+        }
+
+        #endregion
     }
 }

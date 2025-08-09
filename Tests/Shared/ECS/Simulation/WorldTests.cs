@@ -1,5 +1,6 @@
 using NSubstitute;
 using Shared.ECS;
+using Shared.ECS.Entities;
 using Shared.ECS.Simulation;
 using Shared.Networking;
 using Shared.Scheduling;
@@ -217,7 +218,7 @@ namespace SharedUnitTests.ECS.Simulation
 
             // The world tick number in client mode is driven by tickSync.ClientTick
             // ClientTickSystem sets tickSync.ClientTick = tickNumber at the start of Update()
-            
+
             // Tick 1: World calls system with tickNumber=0, system sets ClientTick=0, then CorrectForDrift may modify it
             scheduler.TickAction!();
             // After first tick, ClientTick should be set to 0 initially, then potentially modified by drift correction

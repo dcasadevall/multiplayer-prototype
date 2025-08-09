@@ -2,6 +2,7 @@ using System.Numerics;
 using Shared;
 using Shared.ECS;
 using Shared.ECS.Components;
+using Shared.ECS.Entities;
 using Shared.Input;
 using Shared.Logging;
 using Shared.Networking;

@@ -11,6 +11,18 @@ namespace Shared.ECS.Entities
     {
         private readonly Dictionary<Type, IComponent> _components = new();
 
+        /// <summary>
+        /// Internal events for component updates and creation.
+        /// Used by the entity registry to track component changes.
+        /// </summary>
+        internal event Action<Entity, Type>? OnComponentUpdated;
+
+        /// <summary>
+        /// Internal event for component removals.
+        /// Used by the entity registry to track when components are removed from an entity.
+        /// </summary>
+        internal event Action<Entity, Type>? OnComponentRemoved;
+
         public EntityId Id { get; }
 
         public Entity(EntityId id)
@@ -25,7 +37,7 @@ namespace Shared.ECS.Entities
         /// <param name="component">The component to add.</param>
         public void AddComponent<T>(T component) where T : IComponent
         {
-            _components[typeof(T)] = component;
+            AddComponent(component, typeof(T));
         }
 
         /// <summary>
@@ -34,8 +46,7 @@ namespace Shared.ECS.Entities
         /// <typeparam name="T">The type of the component to add.</typeparam>
         public void AddComponent<T>() where T : IComponent, new()
         {
-            var component = new T();
-            _components[typeof(T)] = component;
+            AddComponent(new T());
         }
 
         /// <summary>
@@ -45,7 +56,12 @@ namespace Shared.ECS.Entities
         /// <param name="componentType"></param>
         public void AddComponent(IComponent component, Type componentType)
         {
-            _components[componentType] = component;
+            if (_components.ContainsKey(componentType))
+            {
+                throw new InvalidOperationException($"Component {componentType} already exists");
+            }
+
+            AddOrReplaceComponent(component, componentType);
         }
 
         /// <summary>
@@ -54,8 +70,19 @@ namespace Shared.ECS.Entities
         /// <param name="component">The component to add or replace.</param>
         public void AddOrReplaceComponent(IComponent component)
         {
+            AddOrReplaceComponent(component, component.GetType());
+        }
+
+        /// <summary>
+        /// Adds a component to the entity, or replaces the existing component of the same type.
+        /// </summary>
+        /// <param name="component">The component to add or replace.</param>
+        /// <param name="componentType">The type of the component to add or replace.</param>
+        public void AddOrReplaceComponent(IComponent component, Type componentType)
+        {
             var type = component.GetType();
             _components[type] = component;
+            OnComponentUpdated?.Invoke(this, componentType);
         }
 
         /// <summary>
@@ -186,7 +213,7 @@ namespace Shared.ECS.Entities
         /// <typeparam name="T">The type of the component to remove.</typeparam>
         public void Remove<T>() where T : IComponent
         {
-            _components.Remove(typeof(T));
+            Remove(typeof(T));
         }
 
         /// <summary>
@@ -196,6 +223,7 @@ namespace Shared.ECS.Entities
         public void Remove(Type type)
         {
             _components.Remove(type);
+            OnComponentRemoved?.Invoke(this, type);
         }
 
         /// <summary>
