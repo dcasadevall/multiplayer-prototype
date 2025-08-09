@@ -37,6 +37,7 @@ namespace Shared.ECS.Simulation
 
         private CancellationTokenSource? _cancelTokenSource;
         private IDisposable? _tickDisposable;
+        private SingleThreadSynchronizationContext? _serverThreadContext;
         private bool _isRunning;
         private uint _tickNumber;
         private readonly float _fixedDeltaTime;
@@ -89,10 +90,19 @@ namespace Shared.ECS.Simulation
             }
 
             _cancelTokenSource = new CancellationTokenSource();
+
+            SynchronizationContext? context = null;
+            if (_worldMode == WorldMode.Server)
+            {
+                _serverThreadContext = new SingleThreadSynchronizationContext();
+                context = _serverThreadContext;
+            }
+
             _tickDisposable = _scheduler.ScheduleAtFixedRate(
                 Tick,
                 TimeSpan.Zero,
                 _tickRate,
+                context,
                 _cancelTokenSource.Token
             );
             _isRunning = true;
@@ -110,6 +120,7 @@ namespace Shared.ECS.Simulation
 
             _cancelTokenSource?.Cancel();
             _tickDisposable?.Dispose();
+            _serverThreadContext?.Dispose();
 
             _isRunning = false;
         }

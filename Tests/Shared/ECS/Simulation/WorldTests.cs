@@ -46,6 +46,12 @@ namespace SharedUnitTests.ECS.Simulation
                 return new DummyDisposable();
             }
 
+            public IDisposable ScheduleAtFixedRate(Action task, TimeSpan initialDelay, TimeSpan period, SynchronizationContext context,
+                CancellationToken cancellationToken = default)
+            {
+                return ScheduleAtFixedRate(task, initialDelay, period, cancellationToken);
+            }
+
             private class DummyDisposable : IDisposable
             {
                 public void Dispose()

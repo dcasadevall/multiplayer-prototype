@@ -17,7 +17,7 @@ namespace Shared.Scheduling
     public class TimerScheduler : IScheduler
     {
         /// <summary>
-        /// Schedules a task for repeated execution.
+        /// Schedules a task for repeated execution on the thread pool.
         /// </summary>
         /// <param name="task">The <see cref="Action"/> delegate to be executed.</param>
         /// <param name="initialDelay">The <see cref="TimeSpan"/> representing the amount of time to wait before the first execution.
@@ -30,6 +30,11 @@ namespace Shared.Scheduling
         /// all associated resources.
         /// </returns>
         public IDisposable ScheduleAtFixedRate(Action task, TimeSpan initialDelay, TimeSpan period, CancellationToken cancellationToken = default)
+        {
+            return ScheduleAtFixedRate(task, initialDelay, period, null, cancellationToken);
+        }
+
+        public IDisposable ScheduleAtFixedRate(Action task, TimeSpan initialDelay, TimeSpan period, SynchronizationContext? context, CancellationToken cancellationToken = default)
         {
             // Create a new CancellationTokenSource linked to the optional external token.
             // This allows cancellation to be triggered either by disposing the returned object
@@ -45,11 +50,20 @@ namespace Shared.Scheduling
 
                 try
                 {
-                    // Execute the task directly on the timer's thread pool thread.
-                    // System.Threading.Timer guarantees that it will not fire the callback
-                    // again until the previous callback has completed. This behavior is crucial
-                    // for preventing overlapping executions.
-                    task();
+                    // If a SynchronizationContext is provided, post the task to it.
+                    // This marshals the execution to the context's thread (e.g., the main UI thread).
+                    if (context != null)
+                    {
+                        context.Post(_ => task(), null);
+                    }
+                    else
+                    {
+                        // Otherwise, execute the task directly on the timer's thread pool thread.
+                        // System.Threading.Timer guarantees that it will not fire the callback
+                        // again until the previous callback has completed. This behavior is crucial
+                        // for preventing overlapping executions.
+                        task();
+                    }
                 }
                 catch (Exception ex)
                 {
