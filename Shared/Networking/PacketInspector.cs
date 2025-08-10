@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using LiteNetLib.Utils;
+using Shared.ECS.Replication;
 
 namespace Shared.Networking
 {
@@ -10,25 +11,60 @@ namespace Shared.Networking
     public static class PacketInspector
     {
         /// <summary>
-        /// Inspects the contents of a <see cref="NetDataWriter"/> and returns a dictionary
-        /// mapping the names of the serialized types to their sizes in bytes.
+        /// Inspects the contents of a <see cref="NetDataWriter"/> containing a <see cref="WorldDeltaMessage"/>
+        /// and returns a dictionary mapping the names of the serialized component types to their total sizes in bytes.
         /// </summary>
-        /// <param name="writer">The writer to inspect.</param>
-        /// <returns>A dictionary of type names and their sizes.</returns>
-        public static Dictionary<string, int> Inspect(NetDataWriter writer)
+        /// <param name="writer">The writer containing the serialized WorldDeltaMessage.</param>
+        /// <param name="registry">The component type registry to resolve component names.</param>
+        /// <returns>A dictionary of component type names and their total aggregated sizes.</returns>
+        public static Dictionary<string, int> Inspect(NetDataWriter writer, ComponentTypeRegistry registry)
         {
-            var result = new Dictionary<string, int>();
-            var reader = new NetDataReader(writer);
-            while (!reader.EndOfData)
+            var result = new Dictionary<string, int> { { "Header", 0 } };
+            if (registry == null)
             {
-                var typeName = reader.GetString();
-                var size = reader.GetInt();
-                if (result.ContainsKey(typeName))
-                    result[typeName] += size;
-                else
-                    result[typeName] = size;
-                reader.SkipBytes(size);
+                result["Error"] = "ComponentTypeRegistry is null".Length;
+                return result;
             }
+
+            var reader = new NetDataReader(writer);
+
+            // WorldDeltaMessage header
+            var startPos = reader.Position;
+            reader.GetUInt(); // Tick
+            var entityDeltasCount = reader.GetUShort();
+            result["Header"] = reader.Position - startPos;
+
+
+            for (var i = 0; i < entityDeltasCount; i++)
+            {
+                // EntityDelta header
+                startPos = reader.Position;
+                reader.GetUInt(); // EntityId
+                var componentsCount = reader.GetByte();
+                var deltaHeaderSize = reader.Position - startPos;
+                if(result.ContainsKey("EntityDelta"))
+                    result["EntityDelta"] += deltaHeaderSize;
+                else
+                    result.Add("EntityDelta", deltaHeaderSize);
+
+
+                // Modified Components
+                for (var j = 0; j < componentsCount; j++)
+                {
+                    startPos = reader.Position;
+                    var typeId = reader.GetUShort();
+                    var typeName = registry.GetType(typeId).Name;
+                    var componentDataSize = reader.GetUShort(); // Size from PutBytesWithLength
+                    reader.SkipBytes(componentDataSize);
+                    var totalComponentSize = reader.Position - startPos;
+
+                    if (result.ContainsKey(typeName))
+                        result[typeName] += totalComponentSize;
+                    else
+                        result.Add(typeName, totalComponentSize);
+                }
+            }
+
             return result;
         }
     }

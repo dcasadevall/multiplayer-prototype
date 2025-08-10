@@ -18,8 +18,9 @@ namespace Shared.ECS.Systems
         public void Update(EntityRegistry entityRegistry, uint tickNumber, float deltaTime)
         {
             // Get all entities with both position and velocity components
-            var entities = entityRegistry.GetAll()
-                .Where(e => e.Has<PositionComponent>() && e.Has<VelocityComponent>());
+            var entities = entityRegistry
+                .WithAll<PositionComponent, VelocityComponent>()
+                .ToList();
 
             foreach (var entity in entities)
             {
@@ -27,7 +28,10 @@ namespace Shared.ECS.Systems
                     entity.TryGet<VelocityComponent>(out var velocity))
                 {
                     // Update position based on velocity and delta time
-                    position.Value += velocity.Value * (float)SharedConstants.FixedDeltaTime.TotalSeconds;
+                    entity.AddOrReplaceComponent(new PositionComponent
+                    {
+                        Value = position.Value + velocity.Value * (float)SharedConstants.FixedDeltaTime.TotalSeconds
+                    });
                 }
             }
         }

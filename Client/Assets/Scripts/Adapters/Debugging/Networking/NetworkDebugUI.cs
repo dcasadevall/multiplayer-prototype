@@ -31,6 +31,7 @@ namespace Adapters.Debugging.Networking
         private IMessageReceiver _messageReceiver;
         private ILogger _logger;
         private IReplicationStats _replicationStats;
+        private ComponentTypeRegistry _componentTypeRegistry;
         private Dictionary<string, int> _lastPacketBreakdown;
         
         // Network stats
@@ -57,6 +58,7 @@ namespace Adapters.Debugging.Networking
             _messageReceiver = serviceProvider?.GetRequiredService<IMessageReceiver>();
             _logger = serviceProvider?.GetRequiredService<ILogger>();
             _replicationStats = serviceProvider?.GetRequiredService<IReplicationStats>();
+            _componentTypeRegistry = serviceProvider?.GetRequiredService<ComponentTypeRegistry>();
             
             _showDebugUI = _showOnStart;
             _connectionStartTime = DateTime.Now;
@@ -70,7 +72,7 @@ namespace Adapters.Debugging.Networking
         {
             var writer = new NetDataWriter();
             message.Serialize(writer);
-            _lastPacketBreakdown = PacketInspector.Inspect(writer);
+            _lastPacketBreakdown = PacketInspector.Inspect(writer, _componentTypeRegistry);
         }
 
         private void Update()
