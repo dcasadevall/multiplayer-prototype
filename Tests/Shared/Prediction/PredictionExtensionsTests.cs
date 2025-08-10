@@ -1,10 +1,10 @@
-using System;
 using System.Numerics;
 using Shared.ECS.Entities;
 using Shared.Physics;
+using Shared.Prediction;
 using Xunit;
 
-namespace Shared.ECS.Prediction.Tests
+namespace SharedUnitTests.Prediction
 {
     public class PredictionExtensionsTests
     {

@@ -2,6 +2,7 @@ using System.Numerics;
 using Shared;
 using Shared.ECS.Entities;
 using Shared.Physics;
+using Shared.Prediction;
 using Xunit;
 
 namespace SharedUnitTests.ECS.Physics

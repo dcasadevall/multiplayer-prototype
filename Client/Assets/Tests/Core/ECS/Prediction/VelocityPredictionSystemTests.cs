@@ -2,13 +2,12 @@ using System.Numerics;
 using Core.Physics;
 using NSubstitute;
 using NUnit.Framework;
-using Shared.ECS;
 using Shared.ECS.Components;
 using Shared.ECS.Entities;
-using Shared.ECS.Prediction;
 using Shared.ECS.TickSync;
 using Shared.Networking;
 using Shared.Physics;
+using Shared.Prediction;
 
 namespace Tests.Core.ECS.Prediction
 {

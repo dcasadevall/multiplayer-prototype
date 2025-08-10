@@ -2,7 +2,7 @@ using System.Numerics;
 using Shared.ECS;
 using Shared.ECS.Replication;
 
-namespace Shared.Physics
+namespace Shared.Prediction
 {
     /// <summary>
     /// Marks that the entity's position is derived locally on the client and should not be replicated continuously.

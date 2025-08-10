@@ -1,12 +1,9 @@
-using System;
-using System.Linq;
-using Shared.Damage;
-using Shared.ECS.Components;
+using Shared.ECS;
 using Shared.ECS.Entities;
 using Shared.ECS.Simulation;
 using Shared.Math;
 
-namespace Shared.ECS.Systems
+namespace Shared.Damage
 {
     /// <summary>
     /// System that handles health regeneration and status effects.

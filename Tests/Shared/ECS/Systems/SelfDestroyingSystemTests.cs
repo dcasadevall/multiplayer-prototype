@@ -3,8 +3,8 @@ using NSubstitute;
 using Shared.ECS;
 using Shared.ECS.Components;
 using Shared.ECS.Entities;
-using Shared.ECS.Systems;
 using Shared.Logging;
+using Shared.Respawn;
 using Xunit;
 
 namespace SharedUnitTests.ECS.Systems

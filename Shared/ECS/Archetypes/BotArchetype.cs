@@ -2,8 +2,8 @@ using System.Numerics;
 using Shared.Damage;
 using Shared.ECS.Components;
 using Shared.ECS.Entities;
-using Shared.ECS.Prediction;
 using Shared.Physics;
+using Shared.Prediction;
 
 namespace Shared.ECS.Archetypes
 {

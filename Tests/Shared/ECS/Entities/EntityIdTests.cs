@@ -1,4 +1,5 @@
 using Shared.ECS;
+using Shared.ECS.Entities;
 using Xunit;
 
 namespace SharedUnitTests.ECS.Entities

@@ -1,8 +1,8 @@
+using System.Numerics;
 using Shared.ECS;
 using Shared.ECS.Replication;
-using System.Numerics;
 
-namespace Shared.Physics
+namespace Shared.Prediction
 {
     /// <summary>
     /// Carries initial velocity and the spawn tick for locally-derived kinematic motion.

@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using Shared.ECS;
+using Shared.ECS.Entities;
 
 namespace Shared.Physics
 {

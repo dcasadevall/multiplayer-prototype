@@ -107,16 +107,8 @@ namespace Core.ECS.Rendering
             // Update the view's position
             if (_entityViews.TryGetValue(entityId, out var view))
             {
-                // Prefer derived position if available
-                if (entity.TryGet<DerivedPositionComponent>(out var derivedPos))
-                {
-                    view.transform.position = derivedPos.Position.ToUnityVector3();
-                }
-                else
-                {
-                    var positionComponent = entity.Get<PositionComponent>();
-                    view.transform.position = (positionComponent?.Value ?? Vector3.Zero).ToUnityVector3();
-                }
+                var positionComponent = entity.Get<PositionComponent>();
+                view.transform.position = (positionComponent?.Value ?? Vector3.Zero).ToUnityVector3();
 
                 if(entity.TryGet<RotationComponent>(out var rotationComponent))
                     view.transform.rotation = rotationComponent.Value.ToUnityQuaternion();
@@ -159,15 +151,8 @@ namespace Core.ECS.Rendering
             // Set initial position
             if (entity.Has<PositionComponent>())
             {
-                if (entity.TryGet<DerivedPositionComponent>(out var derivedPos))
-                {
-                    view.transform.position = derivedPos.Position.ToUnityVector3();
-                }
-                else
-                {
-                    var positionComponent = entity.Get<PositionComponent>();
-                    view.transform.position = (positionComponent?.Value ?? Vector3.Zero).ToUnityVector3();
-                }
+                var positionComponent = entity.Get<PositionComponent>();
+                view.transform.position = (positionComponent?.Value ?? Vector3.Zero).ToUnityVector3();
             }
 
             if (entity.TryGet<RotationComponent>(out var rotationComponent))

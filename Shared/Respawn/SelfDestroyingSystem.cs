@@ -1,10 +1,10 @@
-using System.Collections.Generic;
 using System.Linq;
+using Shared.ECS;
 using Shared.ECS.Components;
 using Shared.ECS.Entities;
 using Shared.Logging;
 
-namespace Shared.ECS.Systems
+namespace Shared.Respawn
 {
     /// <summary>
     /// System that handles destroying entities when their TTL expires.

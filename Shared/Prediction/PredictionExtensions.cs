@@ -1,10 +1,10 @@
 using System;
 using System.Collections.Generic;
 using System.Reflection;
+using Shared.ECS;
 using Shared.ECS.Entities;
-using Shared.ECS.Replication;
 
-namespace Shared.ECS.Prediction
+namespace Shared.Prediction
 {
     /// <summary>
     /// Extension methods for working with predicted components on entities.

@@ -1,8 +1,8 @@
-using System;
 using LiteNetLib.Utils;
+using Shared.Input;
 using Xunit;
 
-namespace Shared.Input.Tests
+namespace SharedUnitTests.Input
 {
     public class PlayerShotMessageTests
     {

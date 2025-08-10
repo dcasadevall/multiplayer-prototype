@@ -127,3 +127,27 @@ Failure to do so will result in serialization errors and mismatches between the 
     ```
 
 This will overwrite the `Shared/ECS/Replication/ComponentTypeRegistry.Generated.cs` file with the updated mapping. It is safe to commit this generated file to version control.
+
+## 🎯 Unity Client: Refresh Shared.dll after changes
+
+After modifying code in `/Shared`, rebuild and copy the artifacts into the Unity client so it picks up the latest logic.
+
+```shell
+# From repo root
+# 1) Build
+dotnet build
+
+# 2) Regenerate component IDs (if you've added/renamed/removed components)
+dotnet run --project tools/ComponentIdGenerator
+
+# 3) Build again to ensure the generated map is included
+dotnet build
+
+# 4) Copy the Shared.dll and PDB into the Unity project's Assets folder
+cp ./Shared/bin/Debug/netstandard2.1/Shared.dll ./Client/Assets/
+cp ./Shared/bin/Debug/netstandard2.1/Shared.pdb ./Client/Assets/
+```
+
+Notes:
+- If Unity is open, it will auto-reimport the updated DLL. If it doesn’t, re-focus the Unity Editor or force a reimport.
+- Adjust `Debug`/`Release` paths as needed depending on your build configuration.

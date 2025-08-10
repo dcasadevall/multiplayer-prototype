@@ -1,4 +1,4 @@
-using Shared.ECS;
+using Shared.ECS.Entities;
 using UnityEngine;
 
 namespace Core.ECS.Rendering

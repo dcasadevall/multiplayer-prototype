@@ -1,8 +1,7 @@
-using System;
 using Shared.ECS;
 using Shared.ECS.Entities;
 
-namespace Shared.Physics
+namespace Shared.Prediction
 {
     /// <summary>
     /// Derives position locally from spawn kinematics for entities that declare a <see cref="SpawnVelocityComponent"/>.

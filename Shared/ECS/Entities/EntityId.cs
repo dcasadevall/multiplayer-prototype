@@ -1,6 +1,6 @@
 using System;
 
-namespace Shared.ECS
+namespace Shared.ECS.Entities
 {
     /// <summary>
     /// Uniquely identifies an entity in the ECS world.
@@ -13,6 +13,7 @@ namespace Shared.ECS
         {
             Value = value;
         }
+
         public static EntityId New() => new EntityId(Guid.NewGuid());
         public override string ToString() => Value.ToString();
 

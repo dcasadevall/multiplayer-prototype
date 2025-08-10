@@ -1,10 +1,8 @@
-using System;
 using System.Linq;
 using Shared.ECS.Entities;
-using Shared.ECS.Simulation;
 using Shared.Logging;
 
-namespace Shared.ECS.Systems
+namespace Shared.ECS.Simulation
 {
     /// <summary>
     /// System that logs the number of entities in the world on each tick.

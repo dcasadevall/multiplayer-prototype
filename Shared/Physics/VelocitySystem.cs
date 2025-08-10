@@ -1,12 +1,9 @@
-using System;
 using System.Linq;
-using Shared.ECS.Components;
-using System.Numerics;
+using Shared.ECS;
 using Shared.ECS.Entities;
 using Shared.ECS.Simulation;
-using Shared.Physics;
 
-namespace Shared.ECS.Systems
+namespace Shared.Physics
 {
     /// <summary>
     /// System that handles entity movement based on velocity.

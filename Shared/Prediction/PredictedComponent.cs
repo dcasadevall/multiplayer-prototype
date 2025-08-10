@@ -1,6 +1,7 @@
+using Shared.ECS;
 using Shared.ECS.Replication;
 
-namespace Shared.ECS.Prediction
+namespace Shared.Prediction
 {
     /// <summary>
     /// A component wrapper used for client-side prediction and reconciliation.
