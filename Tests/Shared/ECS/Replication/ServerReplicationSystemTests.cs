@@ -16,6 +16,7 @@ namespace SharedUnitTests.ECS.Replication
         private readonly IMessageSender _messageSender;
         private readonly MessageFactory _messageFactory;
         private readonly ServerReplicationSystem _system;
+        private readonly Shared.ECS.TickSync.TickSync _tickSync;
 
         public ServerReplicationSystemTests()
         {
@@ -25,7 +26,8 @@ namespace SharedUnitTests.ECS.Replication
             var componentRegistry = new ComponentTypeRegistry();
             _messageFactory = new MessageFactory(componentSerializer, componentRegistry);
             var logger = Substitute.For<ILogger>();
-            _system = new ServerReplicationSystem(_registry, _messageSender, _messageFactory, logger);
+            _tickSync = new Shared.ECS.TickSync.TickSync();
+            _system = new ServerReplicationSystem(_registry, _tickSync, _messageSender, _messageFactory, logger);
             _system.Initialize();
         }
 
@@ -224,13 +226,19 @@ namespace SharedUnitTests.ECS.Replication
             entity2.AddComponent(new PredictedComponent<VelocityComponent> { Mode = ReplicationMode.EveryTick });
 
             // Act
-            var snapshot = _system.ProduceEntitySnapshot(1);
+            _tickSync.ServerTick = 1;
+            var snapshot = _system.ProduceEntitySnapshot();
 
             // Assert
             Assert.Equal(2, snapshot.Count);
             Assert.Contains(snapshot, d => d.EntityId == entity1.Id.Value && d.AddedOrModifiedComponents.OfType<PositionComponent>().Any());
             Assert.Contains(snapshot,
                 d => d.EntityId == entity2.Id.Value && d.AddedOrModifiedComponents.OfType<PredictedComponent<VelocityComponent>>().Any());
+            // Predicted component should have last sent tick set
+            var predComponent = snapshot.First(d => d.EntityId == entity2.Id.Value)
+                .AddedOrModifiedComponents.OfType<PredictedComponent<VelocityComponent>>().FirstOrDefault();
+            Assert.NotNull(predComponent);
+            Assert.Equal(_tickSync.ServerTick, predComponent.LastSentAtTick);
         }
     }
 }

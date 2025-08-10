@@ -65,6 +65,7 @@ services.AddSingleton<ServerReplicationSystem>();
 services.AddSingleton<ISystem>(sp => sp.GetRequiredService<ServerReplicationSystem>());
 services.AddSingleton<IInitializable>(sp => sp.GetRequiredService<ServerReplicationSystem>());
 services.AddSingleton<IDisposable>(sp => sp.GetRequiredService<ServerReplicationSystem>());
+services.AddSingleton<IWorldSnapshotProvider>(sp => sp.GetRequiredService<ServerReplicationSystem>());
 
 // Scene loading
 services.AddSingleton<SceneLoader>();

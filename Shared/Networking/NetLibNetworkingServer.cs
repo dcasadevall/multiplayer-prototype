@@ -31,7 +31,7 @@ namespace Shared.Networking
         private readonly EventBasedNetListener _eventListener;
         private readonly ILogger _logger;
         private readonly IScheduler _scheduler;
-        private readonly EntityRegistry _entityRegistry;
+        private readonly IWorldSnapshotProvider _worldSnapshotProvider;
         private readonly IComponentSerializer _componentSerializer;
         private readonly ComponentTypeRegistry _componentTypeRegistry;
         private IDisposable? _pollHandle;
@@ -47,13 +47,16 @@ namespace Shared.Networking
         /// <param name="eventListener">The injected eventBasedNetListener</param>
         /// <param name="logger">Logger for structured logging of network events.</param>
         /// <param name="scheduler">Scheduler for polling events.</param>
+        /// <param name="worldSnapshotProvider">Provider for world snapshots to send to clients.</param>
+        /// <param name="componentSerializer"></param>
+        /// <param name="componentTypeRegistry"></param>
         /// <exception cref="ArgumentException">Thrown if the NetManager does not use an EventBasedNetListener.</exception>
         public NetLibNetworkingServer(NetManager netManager,
             IMessageSender messageSender,
             EventBasedNetListener eventListener,
             ILogger logger,
             IScheduler scheduler,
-            EntityRegistry entityRegistry,
+            IWorldSnapshotProvider worldSnapshotProvider,
             IComponentSerializer componentSerializer,
             ComponentTypeRegistry componentTypeRegistry)
         {
@@ -62,7 +65,7 @@ namespace Shared.Networking
             _eventListener = eventListener;
             _logger = logger;
             _scheduler = scheduler;
-            _entityRegistry = entityRegistry;
+            _worldSnapshotProvider = worldSnapshotProvider;
             _componentSerializer = componentSerializer;
             _componentTypeRegistry = componentTypeRegistry;
         }
@@ -122,12 +125,7 @@ namespace Shared.Networking
                 ConnectionTime = DateTime.UtcNow,
                 InitialWorldSnapshot = new WorldDeltaMessage(_componentSerializer, _componentTypeRegistry)
                 {
-                    Deltas = _entityRegistry.GetAll().Select(e => new EntityDelta
-                    {
-                        EntityId = e.Id.Value,
-                        IsNew = true,
-                        AddedOrModifiedComponents = e.GetAllComponents().ToList()
-                    }).ToList()
+                    Deltas = _worldSnapshotProvider.ProduceEntitySnapshot()
                 }
             };
 

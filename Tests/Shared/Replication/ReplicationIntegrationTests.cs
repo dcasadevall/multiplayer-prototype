@@ -1,5 +1,4 @@
-using System;
-using System.Linq;
+using NSubstitute;
 using Shared.ECS.Entities;
 using Shared.Logging;
 using Shared.Networking;
@@ -7,10 +6,9 @@ using Shared.Networking.Messages;
 using Shared.Physics;
 using Shared.Prediction;
 using Shared.Replication;
-using NSubstitute;
 using Xunit;
 
-namespace SharedUnitTests.ECS.Replication
+namespace SharedUnitTests.Replication
 {
     public class ReplicationIntegrationTests
     {
@@ -29,7 +27,8 @@ namespace SharedUnitTests.ECS.Replication
             var componentRegistry = new ComponentTypeRegistry();
             var serverMessageFactory = new MessageFactory(componentSerializer, componentRegistry);
             var logger = Substitute.For<ILogger>();
-            _serverSystem = new ServerReplicationSystem(_serverRegistry, messageSender, serverMessageFactory, logger);
+            var tickSync = new Shared.ECS.TickSync.TickSync();
+            _serverSystem = new ServerReplicationSystem(_serverRegistry, tickSync, messageSender, serverMessageFactory, logger);
             _serverSystem.Initialize();
 
             // Capture the message sent by the server

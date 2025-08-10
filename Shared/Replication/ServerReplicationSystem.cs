@@ -4,6 +4,7 @@ using System.Linq;
 using Shared.ECS;
 using Shared.ECS.Entities;
 using Shared.ECS.Simulation;
+using Shared.ECS.TickSync;
 using Shared.Logging;
 using Shared.Networking;
 using Shared.Networking.Messages;
@@ -12,6 +13,20 @@ using Shared.Scheduling;
 
 namespace Shared.Replication
 {
+    /// <summary>
+    /// IWorldSnapshotProvider allows callers to obtain a snapshot of the ECS world
+    /// at any given time.
+    /// </summary>
+    public interface IWorldSnapshotProvider
+    {
+        /// <summary>
+        /// Produces a full world snapshot, including the full current state of all entities.
+        /// This method still abides by server prediction rules.
+        /// </summary>
+        /// <returns></returns>
+        List<EntityDelta> ProduceEntitySnapshot();
+    }
+
     /// <summary>
     /// Manages replication by tracking ECS changes and broadcasting them to clients.
     /// 
@@ -30,9 +45,10 @@ namespace Shared.Replication
     /// </para>
     /// </summary>
     [TickInterval(1)]
-    public class ServerReplicationSystem : ISystem, IInitializable, IDisposable
+    public class ServerReplicationSystem : ISystem, IInitializable, IDisposable, IWorldSnapshotProvider
     {
         private readonly EntityRegistry _entityRegistry;
+        private readonly ITickSync _tickSync;
         private readonly IMessageSender _messageSender;
         private readonly MessageFactory _messageFactory;
         private readonly ILogger _logger;
@@ -48,13 +64,18 @@ namespace Shared.Replication
         /// Constructs a new <see cref="ServerReplicationSystem"/>.
         /// </summary>
         /// <param name="entityRegistry">The entity registry to monitor for changes.</param>
+        /// <param name="tickSync">Tick synchronization provider</param>
         /// <param name="messageSender">Sender used for sending network messages.</param>
         /// <param name="messageFactory">Factory for creating message instances.</param>
         /// <param name="logger">The logger for logging replication events.</param>
-        public ServerReplicationSystem(EntityRegistry entityRegistry, IMessageSender messageSender, MessageFactory messageFactory,
+        public ServerReplicationSystem(EntityRegistry entityRegistry,
+            ITickSync tickSync,
+            IMessageSender messageSender,
+            MessageFactory messageFactory,
             ILogger logger)
         {
             _entityRegistry = entityRegistry;
+            _tickSync = tickSync;
             _messageSender = messageSender;
             _messageFactory = messageFactory;
             _logger = logger;
@@ -191,7 +212,7 @@ namespace Shared.Replication
         /// Produces a snapshot of all entities in the world as a list of deltas,
         /// treating all entities as newly created. Obeys all replication rules.
         /// </summary>
-        public List<EntityDelta> ProduceEntitySnapshot(uint tickNumber)
+        public List<EntityDelta> ProduceEntitySnapshot()
         {
             var deltas = new List<EntityDelta>();
             foreach (var entity in _entityRegistry.GetAll())
@@ -210,7 +231,7 @@ namespace Shared.Replication
                     if (component.IsPredicted())
                     {
                         var p = (IPredictedComponent)component;
-                        p.LastSentAtTick = tickNumber;
+                        p.LastSentAtTick = _tickSync.ServerTick;
                         componentsToSend.Add(component);
 
                         // Add the local counterpart if it hasn't been added yet
