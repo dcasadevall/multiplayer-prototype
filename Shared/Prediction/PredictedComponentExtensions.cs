@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Reflection;
+using System.Linq;
 using Shared.ECS;
 using Shared.ECS.Entities;
 
@@ -29,7 +30,7 @@ namespace Shared.Prediction
         /// Gets the closed generic type for PredictedComponent<T> based on the provided component type.
         /// Uses a cache for high performance.
         /// </summary>
-        private static Type GetPredictedComponentType(Type componentType)
+        public static Type GetLocalPredictedCounterpartType(Type componentType)
         {
             lock (_predictedTypeCacheLock)
             {
@@ -94,7 +95,7 @@ namespace Shared.Prediction
             if (componentType == null) throw new ArgumentNullException(nameof(componentType));
             if (serverComponent == null) throw new ArgumentNullException(nameof(serverComponent));
 
-            var predictedType = GetPredictedComponentType(componentType);
+            var predictedType = GetLocalPredictedCounterpartType(componentType);
             if (!entity.TryGet(predictedType, out var wrapper))
             {
                 return false;
@@ -117,6 +118,20 @@ namespace Shared.Prediction
                 Console.WriteLine($"Failed to set ServerValue: {ex.Message}");
                 return false;
             }
+        }
+
+        /// <summary>
+        /// Returns true if the entity has a predicted component of the specified type.
+        /// That is, if the entity has a component of type PredictedComponent[T]
+        /// with T being the provided componentType.
+        /// </summary>
+        public static bool HasPredictedComponent(this Entity entity, Type componentType)
+        {
+            if (entity == null) throw new ArgumentNullException(nameof(entity));
+            if (componentType == null) throw new ArgumentNullException(nameof(componentType));
+
+            var predictedType = GetLocalPredictedCounterpartType(componentType);
+            return entity.Has(predictedType);
         }
 
         /// <summary>
@@ -157,6 +172,16 @@ namespace Shared.Prediction
             }
 
             var type = component.GetType();
+            return IsPredicted(type);
+        }
+
+        /// <summary>
+        /// Checks if the component type is a predicted component.
+        /// </summary>
+        /// <param name="type"></param>
+        /// <returns>True if the component is of type PredictedComponent<T> for any Type.</returns>
+        public static bool IsPredicted(Type type)
+        {
             return type.IsGenericType && type.GetGenericTypeDefinition() == typeof(PredictedComponent<>);
         }
 
@@ -187,6 +212,44 @@ namespace Shared.Prediction
             }
 
             return false;
+        }
+
+        /// <summary>
+        /// Gets the non-generic IPredictedComponent interface from a predicted component on an entity.
+        /// </summary>
+        public static bool TryGetPredictedComponent(this Entity entity, Type innerType, out IPredictedComponent? predictedComponent)
+        {
+            var genericType = typeof(PredictedComponent<>).MakeGenericType(innerType);
+            if (entity.TryGet(genericType, out var component))
+            {
+                predictedComponent = (IPredictedComponent)component;
+                return true;
+            }
+
+            predictedComponent = null;
+            return false;
+        }
+
+        /// <summary>
+        /// Sets the server value on a client's PredictedComponent.
+        /// </summary>
+        public static void SetServerValue(this Entity entity, IComponent serverValue)
+        {
+            var innerType = serverValue.GetType();
+            if (entity.TryGetPredictedComponent(innerType, out var predictedComponent))
+            {
+                var genericType = typeof(PredictedComponent<>).MakeGenericType(innerType);
+                var serverValueProp = genericType.GetProperty("ServerValue");
+                serverValueProp?.SetValue(predictedComponent, serverValue);
+            }
+        }
+
+        /// <summary>
+        /// Gets all IPredictedComponent interfaces from an entity.
+        /// </summary>
+        public static IEnumerable<IPredictedComponent> GetPredictedComponents(this Entity entity)
+        {
+            return entity.GetAllComponents().OfType<IPredictedComponent>();
         }
     }
 }

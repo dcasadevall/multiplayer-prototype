@@ -218,6 +218,13 @@ namespace Shared.Replication
                         continue;
                     }
 
+                    // If the component has a predicted counterpart, do not replicate the
+                    // non predicted component.
+                    if (entity.HasPredictedComponent(component.GetType()))
+                    {
+                        continue;
+                    }
+
                     if (component.IsPredicted())
                     {
                         if (component.ShouldBeReplicatedAtTick(0))
@@ -266,10 +273,22 @@ namespace Shared.Replication
                 var added = _addedComponents.GetValueOrDefault(entityId, new HashSet<IComponent>());
                 var modified = _modifiedComponents.GetValueOrDefault(entityId, new HashSet<IComponent>());
 
+                if (!_entityRegistry.TryGet(entityId, out var entity))
+                {
+                    throw new InvalidOperationException($"Entity {entityId} does not exist in the registry.");
+                }
+
                 var componentsToSend = new List<IComponent>();
                 foreach (var component in added.Concat(modified))
                 {
                     if (component is INonReplicatedComponent)
+                    {
+                        continue;
+                    }
+
+                    // If the component has a predicted counterpart, do not replicate the
+                    // non-predicted component.
+                    if (entity.HasPredictedComponent(component.GetType()))
                     {
                         continue;
                     }
@@ -289,7 +308,11 @@ namespace Shared.Replication
                     }
                 }
 
-                var removed = _removedComponents.GetValueOrDefault(entityId, new HashSet<IComponent>());
+                // Prune local counterparts of predicted components so client can handle the removal of those
+                var removed = _removedComponents
+                    .GetValueOrDefault(entityId, new HashSet<IComponent>())
+                    .Where(x => !entity.HasPredictedComponent(x.GetType()))
+                    .ToList();
 
                 if (componentsToSend.Count > 0 || removed.Count > 0)
                 {

@@ -37,6 +37,12 @@ namespace Shared.Replication
         bool GetBool();
 
         /// <summary>
+        /// Reads a byte value from the stream.
+        /// </summary>
+        /// <returns></returns>
+        byte GetByte();
+
+        /// <summary>
         /// Reads a Vector3 value from the stream.
         /// </summary>
         Vector3 GetVector3();

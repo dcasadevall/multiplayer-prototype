@@ -1,9 +1,11 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using Shared.ECS;
 using Shared.ECS.Entities;
 using Shared.ECS.Simulation;
 using Shared.Networking;
+using Shared.Prediction;
 
 namespace Shared.Replication
 {
@@ -91,44 +93,80 @@ namespace Shared.Replication
         /// </summary>
         /// <param name="registry">The entity registry to modify.</param>
         /// <param name="deltas">The list of changes to apply.</param>
-        private void ConsumeEntityDelta(EntityRegistry registry, List<EntityDelta> deltas)
+        private static void ConsumeEntityDelta(EntityRegistry registry, List<EntityDelta> deltas)
         {
             foreach (var delta in deltas)
             {
                 // If the entity is marked as destroyed, remove it from the registry
                 if (delta.IsDestroyed)
                 {
-                    if (registry.TryGet(new EntityId(delta.EntityId), out var entity))
-                    {
-                        registry.DestroyEntity(entity.Id);
-                    }
-
+                    registry.DestroyEntity(new EntityId(delta.EntityId));
                     continue;
                 }
 
                 // If the entity is new, create it and add components
+                var entity = registry.GetOrCreate(delta.EntityId);
+
+                // Added or modified components that are not the local counterpart of a predicted component
+                var addedOrModifiedComponents = delta.AddedOrModifiedComponents
+                    .Where(x =>
+                        !entity.Has(PredictedComponentExtensions.GetLocalPredictedCounterpartType(x.GetType())));
+
                 if (delta.IsNew)
                 {
-                    var newEntity = registry.CreateEntity(new EntityId(delta.EntityId));
-                    foreach (var component in delta.AddedOrModifiedComponents)
+                    foreach (var component in addedOrModifiedComponents)
                     {
-                        newEntity.AddComponent(component);
+                        // If the component is a PredictedComponent<> wrapper
+                        // We set the server authoritative value
+                        // and add the local component counterpart
+                        // We assume the server only sends this component
+                        // based on the tick replication mode.
+                        if (component.IsPredicted())
+                        {
+                            entity.AddPredictedComponent(component);
+                        }
+
+                        if (entity.TrySetServerAuthoritativeValue(component.GetType(), component))
+                        {
+                        }
+                        else
+                        {
+                            entity.AddComponent(component);
+                        }
                     }
 
                     continue;
                 }
 
                 // If the entity already exists, update its components
-                if (registry.TryGet(new EntityId(delta.EntityId), out var existingEntity))
+                foreach (var componentType in delta.RemovedComponents)
                 {
-                    foreach (var componentType in delta.RemovedComponents)
+                    // If a predicted component is removed, we also remove its local counterpart
+                    if (PredictedComponentExtensions.IsPredicted(componentType))
                     {
-                        existingEntity.Remove(componentType);
+                        // Get the local counterpart of the predicted component
+                        var localCounterpartType = PredictedComponentExtensions.GetLocalPredictedCounterpartType(componentType);
+                        if (entity.TryGet(localCounterpartType, out var _))
+                        {
+                            entity.Remove(localCounterpartType);
+                        }
                     }
 
-                    foreach (var component in delta.AddedOrModifiedComponents)
+                    entity.Remove(componentType);
+                }
+
+                foreach (var component in delta.AddedOrModifiedComponents)
+                {
+                    if (component.IsPredicted())
                     {
-                        existingEntity.AddOrReplaceComponent(component);
+                        // Update the ServerValue of the existing PredictedComponent
+                        // The local counterpart will be sent as a separate modified component
+                        // so we don't need to do anything here
+                        entity.SetServerValue(((IPredictedComponent)component).GetServerValue());
+                    }
+                    else
+                    {
+                        entity.AddOrReplaceComponent(component);
                     }
                 }
             }

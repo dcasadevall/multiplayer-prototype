@@ -3,9 +3,9 @@ using Core.ECS.Rendering;
 using Microsoft.Extensions.DependencyInjection;
 using Shared.ECS;
 using Shared.ECS.Entities;
-using Shared.ECS.Replication;
 using Shared.ECS.TickSync;
 using Shared.Networking;
+using Shared.Replication;
 
 namespace Core.ECS
 {

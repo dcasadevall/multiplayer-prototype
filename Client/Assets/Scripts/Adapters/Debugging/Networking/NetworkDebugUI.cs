@@ -3,9 +3,9 @@ using System.Collections.Generic;
 using System.Linq;
 using LiteNetLib.Utils;
 using Microsoft.Extensions.DependencyInjection;
-using Shared.ECS.Replication;
 using Shared.Networking;
 using Shared.Networking.Debugging;
+using Shared.Replication;
 using UnityEngine;
 using ILogger = Shared.Logging.ILogger;
 

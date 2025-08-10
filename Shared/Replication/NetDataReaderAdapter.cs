@@ -26,6 +26,7 @@ namespace Shared.Replication
         public float GetFloat() => _reader.GetFloat();
         public string GetString() => _reader.GetString();
         public bool GetBool() => _reader.GetBool();
+        public byte GetByte() => _reader.GetByte();
 
         public Vector3 GetVector3()
         {
