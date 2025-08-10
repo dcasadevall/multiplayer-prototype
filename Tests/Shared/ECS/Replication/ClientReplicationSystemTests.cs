@@ -175,18 +175,19 @@ namespace SharedUnitTests.ECS.Replication
                     new()
                     {
                         EntityId = entity.Id.Value,
-                        AddedOrModifiedComponents = { new PredictedComponent<PositionComponent> { ServerValue = serverAuth } }
+                        AddedOrModifiedComponents =
+                            { new PredictedComponent<PositionComponent> { Mode = ReplicationMode.EveryTick, ServerValue = serverAuth } }
                     }
                 }
             };
-            
+
             // Act
             _messageHandler.Invoke(0, deltaMessage);
             _system.Update(_registry, 1, 0);
 
             // Assert
-            Assert.NotNull(predicted.ServerValue);
-            Assert.Equal(serverAuth.Value, predicted.ServerValue.Value);
+            // Assert.NotNull(predicted.ServerValue);
+            Assert.Equal(serverAuth.Value, entity.GetRequired<PredictedComponent<PositionComponent>>().ServerValue!.Value);
         }
     }
 }

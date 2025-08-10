@@ -218,25 +218,14 @@ namespace Shared.Replication
                         continue;
                     }
 
-                    // If the component has a predicted counterpart, do not replicate the
-                    // non-predicted component yet.
-                    if (entity.HasPredictedComponent(component.GetType()))
-                    {
-                        continue;
-                    }
-
+                    // If the component is predicted, we always 
+                    // send the server value on entity creation
+                    // since we know it's a fresh component.
                     if (component.IsPredicted())
                     {
-                        if (component.ShouldBeReplicatedAtTick(0))
-                        {
-                            // Add the Predicted component
-                            var p = (IPredictedComponent)component;
-                            p.LastSentAtTick = tickNumber;
-                            componentsToSend.Add(component);
-
-                            // Now add the local counterpart
-                            componentsToSend.Add(component.GetServerAuthoritativeValue());
-                        }
+                        var p = (IPredictedComponent)component;
+                        p.LastSentAtTick = tickNumber;
+                        componentsToSend.Add(component);
                     }
                     else
                     {
@@ -290,10 +279,17 @@ namespace Shared.Replication
                         continue;
                     }
 
-                    // If the component has a predicted counterpart, do not replicate the
-                    // non-predicted component.
+                    // If the component has a predicted counterpart, only add
+                    // the local version if it didn't exist yet.
+                    // This does mean we don't support removing local counterparts
+                    // of predicted components, but that seems fine.
                     if (entity.HasPredictedComponent(component.GetType()))
                     {
+                        if (!entity.Has(component.GetType()))
+                        {
+                            componentsToSend.Add(component);
+                        }
+
                         continue;
                     }
 
@@ -312,7 +308,8 @@ namespace Shared.Replication
                     }
                 }
 
-                // Prune local counterparts of predicted components so client can handle the removal of those
+                // We don't filter predicted / local counterparts. Just let removal
+                // be driven by the server.
                 var removed = _removedComponents.GetValueOrDefault(entityId, new HashSet<IComponent>());
 
                 if (componentsToSend.Count > 0 || removed.Count > 0)
