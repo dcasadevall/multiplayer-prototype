@@ -61,16 +61,20 @@ var tickSync = new TickSync();
 services.AddSingleton<ISystem>(_ => new ServerTickSystem(tickSync));
 services.AddSingleton<ITickSync>(tickSync);
 
-services.AddSingleton<ISystem, ServerReplicationSystem>();
-services.AddSingleton<ISystem, SelfDestroyingSystem>();
+// Server replication
+services.AddSingleton<ServerReplicationSystem>();
+services.AddSingleton<ISystem>(sp => sp.GetRequiredService<ServerReplicationSystem>());
+services.AddSingleton<IInitializable>(sp => sp.GetRequiredService<ServerReplicationSystem>());
+services.AddSingleton<IDisposable>(sp => sp.GetRequiredService<ServerReplicationSystem>());
 
 // Scene loading
 services.AddSingleton<SceneLoader>();
 
-// Player spawn
+// Entity lifecycle management
 services.AddSingleton<PlayerSpawnHandler>();
 services.AddSingleton<IInitializable>(sp => sp.GetRequiredService<PlayerSpawnHandler>());
 services.AddSingleton<IDisposable>(sp => sp.GetRequiredService<PlayerSpawnHandler>());
+services.AddSingleton<ISystem, SelfDestroyingSystem>();
 
 // Register all shared services (Networking, Scheduling, etc.)
 services.RegisterSharedTypes();
