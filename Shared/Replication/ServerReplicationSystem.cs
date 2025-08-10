@@ -188,6 +188,60 @@ namespace Shared.Replication
         #endregion
 
         /// <summary>
+        /// Produces a snapshot of all entities in the world as a list of deltas,
+        /// treating all entities as newly created. Obeys all replication rules.
+        /// </summary>
+        public List<EntityDelta> ProduceEntitySnapshot(uint tickNumber)
+        {
+            var deltas = new List<EntityDelta>();
+            foreach (var entity in _entityRegistry.GetAll())
+            {
+                var componentsToSend = new List<IComponent>();
+                foreach (var component in entity.GetAllComponents())
+                {
+                    if (component is INonReplicatedComponent)
+                    {
+                        continue;
+                    }
+
+                    // If the component is predicted, we always 
+                    // send the server value on entity creation
+                    // since we know it's a fresh component.
+                    if (component.IsPredicted())
+                    {
+                        var p = (IPredictedComponent)component;
+                        p.LastSentAtTick = tickNumber;
+                        componentsToSend.Add(component);
+
+                        // Add the local counterpart if it hasn't been added yet
+                        // This handles cases where the predicted component is added
+                        // but the local counterpart is not. It makes the 
+                        // API more robust as server / local counterpart always
+                        // stay in sync
+                        var localType = PredictedComponentExtensions.GetLocalType(component.GetType());
+                        if (!entity.Has(localType))
+                        {
+                            componentsToSend.Add(component.GetServerAuthoritativeValue());
+                        }
+                    }
+                    else
+                    {
+                        componentsToSend.Add(component);
+                    }
+                }
+
+                deltas.Add(new EntityDelta
+                {
+                    EntityId = entity.Id.Value,
+                    IsNew = true,
+                    AddedOrModifiedComponents = componentsToSend
+                });
+            }
+
+            return deltas;
+        }
+
+        /// <summary>
         /// Produces a list of <see cref="EntityDelta"/> objects representing the changes made to entities.
         /// Clears the tracked changes after producing the deltas.
         /// </summary>

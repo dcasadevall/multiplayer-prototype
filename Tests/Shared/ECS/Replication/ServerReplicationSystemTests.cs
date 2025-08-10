@@ -210,5 +210,27 @@ namespace SharedUnitTests.ECS.Replication
                     d.AddedOrModifiedComponents.Contains(local))),
                 Arg.Any<ChannelType>());
         }
+
+        [Fact]
+        public void ProduceEntitySnapshot_CapturesAllReplicableEntitiesAndComponents()
+        {
+            // Arrange
+            // Entity 1: Standard
+            var entity1 = _registry.CreateEntity();
+            entity1.AddComponent(new PositionComponent());
+
+            // Entity 2: Predicted
+            var entity2 = _registry.CreateEntity();
+            entity2.AddComponent(new PredictedComponent<VelocityComponent> { Mode = ReplicationMode.EveryTick });
+
+            // Act
+            var snapshot = _system.ProduceEntitySnapshot(1);
+
+            // Assert
+            Assert.Equal(2, snapshot.Count);
+            Assert.Contains(snapshot, d => d.EntityId == entity1.Id.Value && d.AddedOrModifiedComponents.OfType<PositionComponent>().Any());
+            Assert.Contains(snapshot,
+                d => d.EntityId == entity2.Id.Value && d.AddedOrModifiedComponents.OfType<PredictedComponent<VelocityComponent>>().Any());
+        }
     }
 }
