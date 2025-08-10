@@ -309,10 +309,7 @@ namespace Shared.Replication
                 }
 
                 // Prune local counterparts of predicted components so client can handle the removal of those
-                var removed = _removedComponents
-                    .GetValueOrDefault(entityId, new HashSet<IComponent>())
-                    .Where(x => !entity.HasPredictedComponent(x.GetType()))
-                    .ToList();
+                var removed = _removedComponents.GetValueOrDefault(entityId, new HashSet<IComponent>());
 
                 if (componentsToSend.Count > 0 || removed.Count > 0)
                 {
