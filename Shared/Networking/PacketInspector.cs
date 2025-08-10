@@ -19,53 +19,71 @@ namespace Shared.Networking
         /// <returns>A dictionary of component type names and their total aggregated sizes.</returns>
         public static Dictionary<string, int> Inspect(NetDataWriter writer, ComponentTypeRegistry registry)
         {
-            var result = new Dictionary<string, int> { { "Header", 0 } };
-            if (registry == null)
-            {
-                result["Error"] = "ComponentTypeRegistry is null".Length;
-                return result;
-            }
-
+            var result = new Dictionary<string, int>();
             var reader = new NetDataReader(writer);
 
-            // WorldDeltaMessage header
-            var startPos = reader.Position;
-            reader.GetUInt(); // Tick
-            var entityDeltasCount = reader.GetUShort();
-            result["Header"] = reader.Position - startPos;
+            // WorldDeltaMessage
+            var wdmHeaderStart = reader.Position;
+            var deltasCount = reader.GetInt();
+            AddOrUpdate(result, "WorldDeltaHeader", reader.Position - wdmHeaderStart);
 
-
-            for (var i = 0; i < entityDeltasCount; i++)
+            for (var i = 0; i < deltasCount; i++)
             {
                 // EntityDelta header
-                startPos = reader.Position;
-                reader.GetUInt(); // EntityId
-                var componentsCount = reader.GetByte();
-                var deltaHeaderSize = reader.Position - startPos;
-                if(result.ContainsKey("EntityDelta"))
-                    result["EntityDelta"] += deltaHeaderSize;
-                else
-                    result.Add("EntityDelta", deltaHeaderSize);
+                var edHeaderStart = reader.Position;
+                reader.SkipBytes(16); // Guid
+                reader.GetBool();    // IsNew
+                reader.GetBool();    // IsDestroyed
+                AddOrUpdate(result, "EntityDeltaHeader", reader.Position - edHeaderStart);
 
+                // Added/Modified Components
+                var modifiedCountStart = reader.Position;
+                var modifiedCount = reader.GetInt();
+                AddOrUpdate(result, "ModifiedCount", reader.Position - modifiedCountStart);
 
-                // Modified Components
-                for (var j = 0; j < componentsCount; j++)
+                for (var j = 0; j < modifiedCount; j++)
                 {
-                    startPos = reader.Position;
-                    var typeId = reader.GetUShort();
-                    var typeName = registry.GetType(typeId).Name;
-                    var componentDataSize = reader.GetUShort(); // Size from PutBytesWithLength
-                    reader.SkipBytes(componentDataSize);
-                    var totalComponentSize = reader.Position - startPos;
+                    var componentStartPos = reader.Position;
+                    var componentPayloadSize = reader.GetUShort(); // From PutBytesWithLength
 
-                    if (result.ContainsKey(typeName))
-                        result[typeName] += totalComponentSize;
-                    else
-                        result.Add(typeName, totalComponentSize);
+                    if (reader.AvailableBytes < componentPayloadSize)
+                    {
+                        AddOrUpdate(result, "MalformedComponent", reader.AvailableBytes);
+                        return result;
+                    }
+                    
+                    var payloadReader = new NetDataReader(reader.RawData, reader.Position, reader.Position + componentPayloadSize);
+                    var typeId = payloadReader.GetUShort();
+                    var typeName = registry.GetType(typeId).Name;
+                    
+                    reader.SkipBytes(componentPayloadSize);
+
+                    var totalSizeOnStream = reader.Position - componentStartPos;
+                    AddOrUpdate(result, typeName, totalSizeOnStream);
+                }
+
+                // Removed Components
+                var removedCountStart = reader.Position;
+                var removedCount = reader.GetInt();
+                AddOrUpdate(result, "RemovedCount", reader.Position - removedCountStart);
+
+                for (var j = 0; j < removedCount; j++)
+                {
+                    var removedStart = reader.Position;
+                    reader.GetString(); // AssemblyQualifiedName
+                    AddOrUpdate(result, "RemovedComponent", reader.Position - removedStart);
                 }
             }
 
             return result;
+        }
+
+        private static void AddOrUpdate(Dictionary<string, int> dict, string key, int value)
+        {
+            if (dict.ContainsKey(key))
+                dict[key] += value;
+            else
+                dict.Add(key, value);
         }
     }
 }
