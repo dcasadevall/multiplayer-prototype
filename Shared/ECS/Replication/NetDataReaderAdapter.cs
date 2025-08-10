@@ -61,7 +61,6 @@ namespace Shared.ECS.Replication
         {
             byte header = _reader.GetByte();
             int maxIndex = header & 0x03;
-            bool negative = ((header >> 2) & 0x01) == 1;
 
             short c0 = _reader.GetShort();
             short c1 = _reader.GetShort();
@@ -72,10 +71,9 @@ namespace Shared.ECS.Replication
             float f1 = c1 * invScale;
             float f2 = c2 * invScale;
 
-            // Reconstruct the largest component using unit length constraint
-            float missingSquared = 1.0f - (f0 * f0 + f1 * f1 + f2 * f2);
-            float missing = missingSquared > 0 ? MathF.Sqrt(missingSquared) : 0f;
-            if (negative) missing = -missing;
+            // Reconstruct the largest component using unit length constraint (positive root)
+            float missingSquared = MathF.Max(0f, 1.0f - (f0 * f0 + f1 * f1 + f2 * f2));
+            float missing = MathF.Sqrt(missingSquared);
 
             float x, y, z, w;
             switch (maxIndex)

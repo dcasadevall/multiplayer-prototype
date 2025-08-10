@@ -94,46 +94,13 @@ namespace Shared.ECS.Replication
                 maxIndex = 3;
             }
 
-            // Ensure largest is positive; track sign in header
-            float sign = 1f;
+            // Make largest positive (q and -q are equivalent)
             switch (maxIndex)
             {
-                case 0:
-                    if (x < 0)
-                    {
-                        sign = -1f;
-                    }
-
-                    break;
-                case 1:
-                    if (y < 0)
-                    {
-                        sign = -1f;
-                    }
-
-                    break;
-                case 2:
-                    if (z < 0)
-                    {
-                        sign = -1f;
-                    }
-
-                    break;
-                case 3:
-                    if (w < 0)
-                    {
-                        sign = -1f;
-                    }
-
-                    break;
-            }
-
-            if (sign < 0)
-            {
-                x = -x;
-                y = -y;
-                z = -z;
-                w = -w;
+                case 0: if (x < 0) { x = -x; y = -y; z = -z; w = -w; } break;
+                case 1: if (y < 0) { x = -x; y = -y; z = -z; w = -w; } break;
+                case 2: if (z < 0) { x = -x; y = -y; z = -z; w = -w; } break;
+                case 3: if (w < 0) { x = -x; y = -y; z = -z; w = -w; } break;
             }
 
             // Store the other three components scaled to Int16 range
@@ -149,8 +116,8 @@ namespace Shared.ECS.Replication
             short c1 = (short)Clamping.Clamp((int)MathF.Round(comps[1] * scale), short.MinValue, short.MaxValue);
             short c2 = (short)Clamping.Clamp((int)MathF.Round(comps[2] * scale), short.MinValue, short.MaxValue);
 
-            // Header byte: 2 bits for index (0..3), 1 bit for sign (0=positive,1=negative)
-            byte header = (byte)((maxIndex & 0x03) | ((sign < 0 ? 1 : 0) << 2));
+            // Header byte: 2 bits for index (0..3)
+            byte header = (byte)(maxIndex & 0x03);
             _writer.Put(header);
             _writer.Put(c0);
             _writer.Put(c1);
