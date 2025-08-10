@@ -186,8 +186,11 @@ namespace Shared.Prediction
         /// <typeparam name="T">The type of the component to predict (must implement <see cref="IComponent"/>).</typeparam>
         /// <param name="entity">The entity to add the predicted component to.</param>
         /// <param name="component">The initial value for both server and client prediction.</param>
+        /// <param name="replicationMode">The replication mode for this component, determining how often it should be replicated to clients.</param>
         /// <exception cref="ArgumentNullException">Thrown if entity is null.</exception>
-        public static void AddPredictedComponent<T>(this Entity entity, T component) where T : IComponent
+        public static void AddPredictedComponent<T>(this Entity entity,
+            T component,
+            ReplicationMode replicationMode = ReplicationMode.EveryTick) where T : IComponent
         {
             if (entity == null)
             {
@@ -195,7 +198,10 @@ namespace Shared.Prediction
             }
 
             // Create a new PredictedComponent that marks this component for prediction
-            entity.AddComponent(new PredictedComponent<T>());
+            entity.AddComponent(new PredictedComponent<T>
+            {
+                Mode = replicationMode
+            });
 
             // Add the component to the entity, which will hold the server state on the server,
             // and the predicted state on the client.
