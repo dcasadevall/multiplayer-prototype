@@ -44,6 +44,7 @@ services.AddSingleton<ISystem, HealthSystem>();
 // Physics / Movement
 services.AddSingleton<ISystem, WorldAABBUpdateSystem>();
 services.AddSingleton<ISystem, VelocitySystem>();
+services.AddSingleton<ISystem, SpawnVelocitySystem>();
 services.AddSingleton<CollisionSystem>();
 services.AddSingleton<ISystem>(sp => sp.GetRequiredService<CollisionSystem>());
 services.AddSingleton<ICollisionDetector>(sp => sp.GetRequiredService<CollisionSystem>());

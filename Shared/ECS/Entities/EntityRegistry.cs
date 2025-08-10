@@ -2,6 +2,8 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using Shared.ECS.Replication;
+using Shared.ECS.Components;
+using Shared.Physics;
 
 namespace Shared.ECS.Entities
 {

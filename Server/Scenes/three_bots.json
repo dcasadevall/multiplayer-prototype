@@ -1,0 +1,32 @@
+[
+  {
+    "archetype": "Bot",
+    "components": {
+      "PositionComponent": {
+        "x": 5,
+        "y": 0,
+        "z": 5
+      }
+    }
+  },
+  {
+    "archetype": "Bot",
+    "components": {
+      "PositionComponent": {
+        "x": -5,
+        "y": 0,
+        "z": 5
+      }
+    }
+  },
+  {
+    "archetype": "Bot",
+    "components": {
+      "PositionComponent": {
+        "x": 5,
+        "y": 0,
+        "z": -5
+      }
+    }
+  }
+]

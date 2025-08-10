@@ -64,10 +64,16 @@ namespace Shared.ECS.Archetypes
         {
             var projectile = registry.CreateEntity();
 
-            // Predicted spatial components
-            projectile.AddPredictedComponent(new RotationComponent { Value = spawnRotation });
-            projectile.AddPredictedComponent(new PositionComponent { Value = spawnPosition });
-            projectile.AddPredictedComponent(new VelocityComponent { Value = velocity });
+            // Spatial components: runtime Position + DerivedPosition + SpawnVelocity
+            projectile.AddComponent(new SpawnVelocityComponent
+            {
+                SpawnPosition = spawnPosition,
+                SpawnTick = spawnTick,
+                Velocity = velocity
+            });
+
+            // Rotation (initial only)
+            projectile.AddComponent(new RotationComponent { Value = spawnRotation });
 
             // Gameplay/state components
             projectile.AddComponent<ProjectileTagComponent>();

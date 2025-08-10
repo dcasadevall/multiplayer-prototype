@@ -46,6 +46,7 @@ namespace Adapters
             // Prediction: Player and other entities movement
             serviceCollection.AddSingleton<ISystem, PredictedPlayerMovementSystem>();
             serviceCollection.AddSingleton<ISystem, VelocityPredictionSystem>();
+            serviceCollection.AddSingleton<ISystem, SpawnVelocitySystem>();
             
             // Prediction: Player shots
             serviceCollection.AddSingleton<PredictedPlayerShotSystem>();
