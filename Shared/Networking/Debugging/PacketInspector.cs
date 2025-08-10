@@ -32,8 +32,7 @@ namespace Shared.Networking.Debugging
                 // EntityDelta header
                 var edHeaderStart = reader.Position;
                 reader.SkipBytes(16); // Guid
-                reader.GetBool();    // IsNew
-                reader.GetBool();    // IsDestroyed
+                reader.GetByte();     // Flags (bit-packed IsNew/IsDestroyed)
                 AddOrUpdate(result, "EntityDeltaHeader", reader.Position - edHeaderStart);
 
                 // Added/Modified Components
