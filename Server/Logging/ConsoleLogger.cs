@@ -57,6 +57,7 @@ namespace Server.Logging
         private void WriteLog(string level, ConsoleColor levelColor, LoggedFeature feature, string message, params object[]? args)
         {
             // The check is now done here, based on the config file
+            // ALWAYS log error and fatal messages regardless of the minimum log level
             if ((int)_settings.MinimumLogLevel > (int)GetLogLevelFromString(level) ||
                 !_settings.Features.GetValueOrDefault(feature, true))
             {

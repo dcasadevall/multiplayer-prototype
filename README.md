@@ -101,3 +101,29 @@ This will:
 ---
 
 *This architecture is designed for rapid prototyping and robust multiplayer gameplay, following industry best practices for modern game development.*
+
+## 🧬 Component ID Generation
+
+This project uses a code generation step to create a static mapping of component types to unique integer IDs. This is essential for efficient network serialization, as it allows us to send a small ID instead of a long type name.
+
+### When to Run the Generator
+
+You **must** run the component ID generator whenever you:
+- Add a new `IComponent` type.
+- Rename an existing `IComponent` type.
+- Remove an `IComponent` type.
+
+Failure to do so will result in serialization errors and mismatches between the client and server.
+
+### How to Run the Generator
+
+1.  **Build the Solution**: The generator needs to inspect the latest compiled assemblies. Make sure you have recently built the `Shared` and `Server` projects.
+    ```shell
+    dotnet build
+    ```
+2.  **Run the Tool**: Execute the generator tool from the root of the repository:
+    ```shell
+    dotnet run --project tools/ComponentIdGenerator
+    ```
+
+This will overwrite the `Shared/ECS/Replication/ComponentTypeRegistry.Generated.cs` file with the updated mapping. It is safe to commit this generated file to version control.

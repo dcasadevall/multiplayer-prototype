@@ -1,5 +1,7 @@
 using System.Numerics;
 using LiteNetLib.Utils;
+using NSubstitute;
+using Shared.ECS.Components;
 using Shared.ECS.Replication;
 using Shared.Physics;
 using Xunit;
@@ -10,13 +12,13 @@ namespace SharedUnitTests.ECS.Components
     {
         public static IEnumerable<object[]> RotationTestData()
         {
-            yield return [Quaternion.Identity]; // No rotation
-            yield return [Quaternion.CreateFromYawPitchRoll(MathF.PI / 2, 0, 0)]; // 90 degrees on Y
-            yield return [Quaternion.CreateFromYawPitchRoll(0, MathF.PI / 2, 0)]; // 90 degrees on X
-            yield return [Quaternion.CreateFromYawPitchRoll(0, 0, MathF.PI / 2)]; // 90 degrees on Z
-            yield return [Quaternion.CreateFromYawPitchRoll(MathF.PI, 0, 0)]; // 180 degrees
-            yield return [Quaternion.CreateFromYawPitchRoll(MathF.PI / 4, 0, 0)]; // Original 45 degrees
-            yield return [Quaternion.Normalize(new Quaternion(0.5f, -0.2f, 0.8f, 0.1f))]; // Arbitrary rotation
+            yield return new object[] { Quaternion.Identity }; // No rotation
+            yield return new object[] { Quaternion.CreateFromYawPitchRoll(MathF.PI / 2, 0, 0) }; // 90 degrees on Y
+            yield return new object[] { Quaternion.CreateFromYawPitchRoll(0, MathF.PI / 2, 0) }; // 90 degrees on X
+            yield return new object[] { Quaternion.CreateFromYawPitchRoll(0, 0, MathF.PI / 2) }; // 90 degrees on Z
+            yield return new object[] { Quaternion.CreateFromYawPitchRoll(MathF.PI, 0, 0) }; // 180 degrees
+            yield return new object[] { Quaternion.CreateFromYawPitchRoll(MathF.PI / 4, 0, 0) }; // Original 45 degrees
+            yield return new object[] { Quaternion.Normalize(new Quaternion(0.5f, -0.2f, 0.8f, 0.1f)) }; // Arbitrary rotation
         }
 
         [Theory]
@@ -26,14 +28,12 @@ namespace SharedUnitTests.ECS.Components
             // Arrange
             var original = new RotationComponent { Value = rotation };
             var writer = new NetDataWriter();
-            var reader = new NetDataReader();
-            var binarySerializer = new BinaryComponentSerializer(new ComponentTypeRegistry());
-            var componentWriter = new NetDataWriterAdapter(writer, binarySerializer);
-            var componentReader = new NetDataReaderAdapter(reader, binarySerializer);
+            var componentWriter = new NetDataWriterAdapter(writer, Substitute.For<IComponentSerializer>());
 
             // Act
             original.Serialize(componentWriter);
-            reader.SetSource(writer);
+            var reader = new NetDataReader(writer);
+            var componentReader = new NetDataReaderAdapter(reader, Substitute.For<IComponentSerializer>());
             var deserialized = new RotationComponent();
             deserialized.Deserialize(componentReader);
 
@@ -51,14 +51,12 @@ namespace SharedUnitTests.ECS.Components
             // Arrange
             var original = new PositionComponent { Value = new Vector3(1.23f, 4.56f, 7.89f) };
             var writer = new NetDataWriter();
-            var reader = new NetDataReader();
-            var binarySerializer = new BinaryComponentSerializer(new ComponentTypeRegistry());
-            var componentWriter = new NetDataWriterAdapter(writer, binarySerializer);
-            var componentReader = new NetDataReaderAdapter(reader, binarySerializer);
+            var componentWriter = new NetDataWriterAdapter(writer, Substitute.For<IComponentSerializer>());
 
             // Act
             original.Serialize(componentWriter);
-            reader.SetSource(writer);
+            var reader = new NetDataReader(writer);
+            var componentReader = new NetDataReaderAdapter(reader, Substitute.For<IComponentSerializer>());
             var deserialized = new PositionComponent();
             deserialized.Deserialize(componentReader);
 
@@ -73,14 +71,12 @@ namespace SharedUnitTests.ECS.Components
             // Arrange
             var original = new VelocityComponent { Value = new Vector3(-9.87f, -6.54f, -3.21f) };
             var writer = new NetDataWriter();
-            var reader = new NetDataReader();
-            var binarySerializer = new BinaryComponentSerializer(new ComponentTypeRegistry());
-            var componentWriter = new NetDataWriterAdapter(writer, binarySerializer);
-            var componentReader = new NetDataReaderAdapter(reader, binarySerializer);
+            var componentWriter = new NetDataWriterAdapter(writer, Substitute.For<IComponentSerializer>());
 
             // Act
             original.Serialize(componentWriter);
-            reader.SetSource(writer);
+            var reader = new NetDataReader(writer);
+            var componentReader = new NetDataReaderAdapter(reader, Substitute.For<IComponentSerializer>());
             var deserialized = new VelocityComponent();
             deserialized.Deserialize(componentReader);
 
@@ -99,14 +95,12 @@ namespace SharedUnitTests.ECS.Components
                 Size = new Vector3(1.1f, 1.2f, 1.3f)
             };
             var writer = new NetDataWriter();
-            var reader = new NetDataReader();
-            var binarySerializer = new BinaryComponentSerializer(new ComponentTypeRegistry());
-            var componentWriter = new NetDataWriterAdapter(writer, binarySerializer);
-            var componentReader = new NetDataReaderAdapter(reader, binarySerializer);
+            var componentWriter = new NetDataWriterAdapter(writer, Substitute.For<IComponentSerializer>());
 
             // Act
             original.Serialize(componentWriter);
-            reader.SetSource(writer);
+            var reader = new NetDataReader(writer);
+            var componentReader = new NetDataReaderAdapter(reader, Substitute.For<IComponentSerializer>());
             var deserialized = new LocalBoundsComponent();
             deserialized.Deserialize(componentReader);
 
@@ -126,14 +120,12 @@ namespace SharedUnitTests.ECS.Components
                 Max = new Vector3(1f, 2f, 3f)
             };
             var writer = new NetDataWriter();
-            var reader = new NetDataReader();
-            var binarySerializer = new BinaryComponentSerializer(new ComponentTypeRegistry());
-            var componentWriter = new NetDataWriterAdapter(writer, binarySerializer);
-            var componentReader = new NetDataReaderAdapter(reader, binarySerializer);
+            var componentWriter = new NetDataWriterAdapter(writer, Substitute.For<IComponentSerializer>());
 
             // Act
             original.Serialize(componentWriter);
-            reader.SetSource(writer);
+            var reader = new NetDataReader(writer);
+            var componentReader = new NetDataReaderAdapter(reader, Substitute.For<IComponentSerializer>());
             var deserialized = new WorldAABBComponent();
             deserialized.Deserialize(componentReader);
 

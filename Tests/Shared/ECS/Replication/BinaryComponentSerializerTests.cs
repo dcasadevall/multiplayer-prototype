@@ -1,18 +1,12 @@
 using System.Numerics;
 using Shared.ECS;
+using Shared.ECS.Components;
 using Shared.ECS.Replication;
 using Shared.Physics;
 using Xunit;
 
 namespace SharedUnitTests.ECS.Replication
 {
-    public class TestGuidComponent : IComponent
-    {
-        public System.Guid Value { get; set; }
-        public void Serialize(IComponentWriter writer) => writer.Put(Value);
-        public void Deserialize(IComponentReader reader) => Value = reader.GetGuid();
-    }
-
     public class BinaryComponentSerializerTests
     {
         [Fact]
@@ -54,14 +48,17 @@ namespace SharedUnitTests.ECS.Replication
             // Arrange
             var componentTypeRegistry = new ComponentTypeRegistry();
             var serializer = new BinaryComponentSerializer(componentTypeRegistry);
-            var originalComponent = new TestGuidComponent { Value = System.Guid.NewGuid() };
+            var originalComponent = new SpawnAuthorityComponent
+            {
+                LocalEntityId = System.Guid.NewGuid(),
+            };
 
             // Act
             var serializedData = serializer.Serialize(originalComponent);
-            var deserializedComponent = (TestGuidComponent)serializer.Deserialize(serializedData);
+            var deserializedComponent = (SpawnAuthorityComponent)serializer.Deserialize(serializedData);
 
             // Assert
-            Assert.Equal(originalComponent.Value, deserializedComponent.Value);
+            Assert.Equal(originalComponent.LocalEntityId, deserializedComponent.LocalEntityId);
         }
     }
 }

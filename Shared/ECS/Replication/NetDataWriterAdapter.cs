@@ -11,13 +11,13 @@ namespace Shared.ECS.Replication
     /// </summary>
     public class NetDataWriterAdapter : IComponentWriter
     {
-        private readonly IComponentSerializer _componentSerializer;
         private readonly NetDataWriter _writer;
+        private readonly IComponentSerializer _serializer;
 
-        public NetDataWriterAdapter(NetDataWriter writer, IComponentSerializer componentSerializer)
+        public NetDataWriterAdapter(NetDataWriter writer, IComponentSerializer serializer)
         {
             _writer = writer;
-            _componentSerializer = componentSerializer;
+            _serializer = serializer;
         }
 
         public void Put(int value) => _writer.Put(value);
@@ -25,7 +25,6 @@ namespace Shared.ECS.Replication
         public void Put(float value) => _writer.Put(value);
         public void Put(string value) => _writer.Put(value);
         public void Put(bool value) => _writer.Put(value);
-
         public void Put(Vector3 value)
         {
             _writer.Put(value.X);
@@ -43,10 +42,8 @@ namespace Shared.ECS.Replication
 
         public void Put(IComponent component)
         {
-            var bytes = _componentSerializer.Serialize(component);
-            _writer.Put(component.GetType().Name);
-            _writer.Put(bytes.Length);
-            _writer.Put(bytes);
+            var bytes = _serializer.Serialize(component);
+            _writer.PutBytesWithLength(bytes);
         }
 
         public void Put(Guid value)
