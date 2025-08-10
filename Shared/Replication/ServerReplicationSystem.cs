@@ -300,6 +300,16 @@ namespace Shared.Replication
                             var p = (IPredictedComponent)component;
                             p.LastSentAtTick = tickNumber;
                             componentsToSend.Add(component);
+
+                            // Add the local counterpart if it hasn't been added yet
+                            // This handles cases where the predicted component is added
+                            // but the local counterpart is not. It makes the 
+                            // API more robust as server / local counterpart always
+                            // stay in sync
+                            if (!entity.Has(component.GetType()))
+                            {
+                                componentsToSend.Add(component);
+                            }
                         }
                     }
                     else

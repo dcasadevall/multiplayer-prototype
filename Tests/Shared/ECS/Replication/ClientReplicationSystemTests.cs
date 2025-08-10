@@ -186,8 +186,78 @@ namespace SharedUnitTests.ECS.Replication
             _system.Update(_registry, 1, 0);
 
             // Assert
-            // Assert.NotNull(predicted.ServerValue);
-            Assert.Equal(serverAuth.Value, entity.GetRequired<PredictedComponent<PositionComponent>>().ServerValue!.Value);
+            predicted = entity.GetRequired<PredictedComponent<PositionComponent>>();
+            Assert.NotNull(predicted);
+            Assert.NotNull(predicted.ServerValue);
+            Assert.Equal(serverAuth.Value, predicted.ServerValue.Value);
+        }
+
+        [Fact]
+        public void Update_WhenPredictedDeltaReceived_AndLocalCounterpartMissing_AddsLocalComponent()
+        {
+            // Arrange
+            var entity = _registry.CreateEntity();
+            var predicted = new PredictedComponent<PositionComponent>();
+            entity.AddComponent(predicted);
+
+            var serverAuth = new PositionComponent { Value = new Vector3(1, 2, 3) };
+            var deltaMessage = new WorldDeltaMessage(_componentSerializer, _componentRegistry)
+            {
+                Deltas = new List<EntityDelta>
+                {
+                    new()
+                    {
+                        EntityId = entity.Id.Value,
+                        AddedOrModifiedComponents =
+                        {
+                            new PredictedComponent<PositionComponent> { ServerValue = serverAuth },
+                            new PositionComponent
+                            {
+                                Value = serverAuth.Value,
+                            }
+                        }
+                    }
+                }
+            };
+
+            // Act
+            _messageHandler.Invoke(0, deltaMessage);
+            _system.Update(_registry, 1, 0);
+
+            // Assert
+            Assert.True(entity.Has<PositionComponent>());
+            Assert.Equal(serverAuth.Value, entity.GetRequired<PositionComponent>().Value);
+        }
+
+        [Fact]
+        public void Update_WhenPredictedDeltaReceived_AndLocalCounterpartExists_DoesNotOverwrite()
+        {
+            // Arrange
+            var entity = _registry.CreateEntity();
+            var predicted = new PredictedComponent<PositionComponent>();
+            var local = new PositionComponent { Value = new Vector3(9, 9, 9) };
+            entity.AddComponent(predicted);
+            entity.AddComponent(local);
+
+            var serverAuth = new PositionComponent { Value = new Vector3(1, 2, 3) };
+            var deltaMessage = new WorldDeltaMessage(_componentSerializer, _componentRegistry)
+            {
+                Deltas = new List<EntityDelta>
+                {
+                    new()
+                    {
+                        EntityId = entity.Id.Value,
+                        AddedOrModifiedComponents = { new PredictedComponent<PositionComponent> { ServerValue = serverAuth } }
+                    }
+                }
+            };
+
+            // Act
+            _messageHandler.Invoke(0, deltaMessage);
+            _system.Update(_registry, 1, 0);
+
+            // Assert
+            Assert.Equal(new Vector3(9, 9, 9), local.Value); // Should not have changed
         }
     }
 }
