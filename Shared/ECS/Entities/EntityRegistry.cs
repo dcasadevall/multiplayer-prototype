@@ -169,7 +169,7 @@ namespace Shared.ECS.Entities
         private void HandleComponentAdded(Entity entity, IComponent component)
         {
             // Skip server components, as they are not tracked for deltas
-            if (component is IServerComponent)
+            if (component is INonReplicatedComponent)
             {
                 return;
             }
@@ -196,7 +196,7 @@ namespace Shared.ECS.Entities
         private void HandleComponentModified(Entity entity, IComponent component)
         {
             // Skip server components, as they are not tracked for deltas
-            if (component is IServerComponent)
+            if (component is INonReplicatedComponent)
             {
                 return;
             }
@@ -213,7 +213,7 @@ namespace Shared.ECS.Entities
         private void HandleComponentRemoved(Entity entity, IComponent component)
         {
             // Skip server components, as they are not tracked for deltas
-            if (component is IServerComponent)
+            if (component is INonReplicatedComponent)
             {
                 return;
             }
@@ -264,7 +264,7 @@ namespace Shared.ECS.Entities
                     EntityId = entityId.Value,
                     IsNew = true,
                     AddedOrModifiedComponents = _entities[entityId].GetAllComponents()
-                        .Where(x => x is not IServerComponent)
+                        .Where(x => x is not INonReplicatedComponent)
                         .ToList()
                 });
             }
@@ -295,7 +295,7 @@ namespace Shared.ECS.Entities
                 var modified = _modifiedComponents.GetValueOrDefault(entityId, new HashSet<IComponent>());
 
                 var addedOrModified = added.Concat(modified)
-                    .Where(c => c is not IServerComponent)
+                    .Where(c => c is not INonReplicatedComponent)
                     .ToList();
 
                 deltas.Add(new EntityDelta

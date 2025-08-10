@@ -8,7 +8,9 @@ using Xunit;
 
 namespace SharedUnitTests.ECS.Entities
 {
-    public class TestServerComponent : TagComponent, IServerComponent { }
+    public class TestNonReplicatedComponent : TagComponent, INonReplicatedComponent
+    {
+    }
 
     public class EntityRegistryTests
     {
@@ -196,7 +198,7 @@ namespace SharedUnitTests.ECS.Entities
             var registry = new EntityRegistry();
             var entity = registry.CreateEntity();
             entity.AddComponent(new PositionComponent(new(1, 2, 3)));
-            entity.AddComponent(new TestServerComponent());
+            entity.AddComponent(new TestNonReplicatedComponent());
 
             // Act
             var deltas = registry.ProduceEntityDelta();

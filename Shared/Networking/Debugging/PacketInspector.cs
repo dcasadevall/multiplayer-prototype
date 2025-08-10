@@ -24,7 +24,7 @@ namespace Shared.Networking.Debugging
 
             // WorldDeltaMessage
             var wdmHeaderStart = reader.Position;
-            var deltasCount = reader.GetInt();
+            var deltasCount = reader.GetUShort();
             AddOrUpdate(result, "WorldDeltaHeader", reader.Position - wdmHeaderStart);
 
             for (var i = 0; i < deltasCount; i++)
@@ -32,13 +32,13 @@ namespace Shared.Networking.Debugging
                 // EntityDelta header
                 var edHeaderStart = reader.Position;
                 reader.SkipBytes(16); // Guid
-                reader.GetBool(); // IsNew
-                reader.GetBool(); // IsDestroyed
+                reader.GetBool();    // IsNew
+                reader.GetBool();    // IsDestroyed
                 AddOrUpdate(result, "EntityDeltaHeader", reader.Position - edHeaderStart);
 
                 // Added/Modified Components
                 var modifiedCountStart = reader.Position;
-                var modifiedCount = reader.GetInt();
+                var modifiedCount = reader.GetUShort();
                 AddOrUpdate(result, "ModifiedCount", reader.Position - modifiedCountStart);
 
                 for (var j = 0; j < modifiedCount; j++)
@@ -52,26 +52,29 @@ namespace Shared.Networking.Debugging
                         return result;
                     }
 
-                    var payloadReader = new NetDataReader(reader.RawData, reader.Position, reader.Position + componentPayloadSize);
+                    // Slice a reader for the payload (length is componentPayloadSize)
+                    var payloadReader = new NetDataReader(reader.RawData, reader.Position, componentPayloadSize);
                     var typeId = payloadReader.GetUShort();
                     var typeName = registry.GetType(typeId).Name;
 
+                    // Skip past payload
                     reader.SkipBytes(componentPayloadSize);
 
-                    var totalSizeOnStream = reader.Position - componentStartPos;
+                    var totalSizeOnStream = reader.Position - componentStartPos; // includes 2-byte length prefix
                     AddOrUpdate(result, typeName, totalSizeOnStream);
                 }
 
-                // Removed Components
+                // Removed Components (as compact IDs)
                 var removedCountStart = reader.Position;
-                var removedCount = reader.GetInt();
+                var removedCount = reader.GetUShort();
                 AddOrUpdate(result, "RemovedCount", reader.Position - removedCountStart);
 
                 for (var j = 0; j < removedCount; j++)
                 {
                     var removedStart = reader.Position;
-                    reader.GetString(); // AssemblyQualifiedName
-                    AddOrUpdate(result, "RemovedComponent", reader.Position - removedStart);
+                    var removedId = reader.GetUShort();
+                    var removedTypeName = registry.GetType(removedId).Name;
+                    AddOrUpdate(result, $"Removed:{removedTypeName}", reader.Position - removedStart);
                 }
             }
 

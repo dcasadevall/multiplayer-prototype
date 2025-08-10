@@ -8,7 +8,7 @@ namespace Server.AI
     /// TargetComponent is used to identify the target entity for AI agents.
     /// It contains the ID of the target entity that the AI should interact with or focus on.
     /// </summary>
-    public class TargetComponent : IServerComponent
+    public class TargetComponent : INonReplicatedComponent
     {
         public Guid TargetId { get; set; }
 

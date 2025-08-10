@@ -8,7 +8,7 @@ namespace Shared.Physics
     /// Represents the axis-aligned bounding box (AABB) of an entity in world space.
     /// This is often calculated by a system based on other components like Position and a collider shape.
     /// </summary>
-    public class WorldAABBComponent : IComponent
+    public class WorldAABBComponent : INonReplicatedComponent
     {
         public Vector3 Min { get; set; }
         public Vector3 Max { get; set; }
@@ -26,4 +26,3 @@ namespace Shared.Physics
         }
     }
 }
-
