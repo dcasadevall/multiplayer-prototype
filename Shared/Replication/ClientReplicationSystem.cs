@@ -1,10 +1,11 @@
 using System;
 using System.Collections.Generic;
+using Shared.ECS;
 using Shared.ECS.Entities;
 using Shared.ECS.Simulation;
 using Shared.Networking;
 
-namespace Shared.ECS.Replication
+namespace Shared.Replication
 {
     public interface IReplicationStats
     {

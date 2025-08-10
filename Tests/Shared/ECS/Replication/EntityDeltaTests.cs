@@ -1,8 +1,8 @@
 using System.Numerics;
 using LiteNetLib.Utils;
 using Shared.ECS;
-using Shared.ECS.Replication;
 using Shared.Physics;
+using Shared.Replication;
 using Xunit;
 
 namespace SharedUnitTests.ECS.Replication

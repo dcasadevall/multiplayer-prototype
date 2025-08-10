@@ -1,4 +1,4 @@
-using Shared.ECS.Replication;
+using Shared.Replication;
 
 namespace Shared.ECS.Components
 {
@@ -12,11 +12,15 @@ namespace Shared.ECS.Components
         /// <summary>
         /// This method is empty because tag components do not have any data to serialize.
         /// </summary>
-        public void Serialize(IComponentWriter writer) { }
+        public void Serialize(IComponentWriter writer)
+        {
+        }
 
         /// <summary>
         /// This method is empty because tag components do not have any data to deserialize.
         /// </summary>
-        public void Deserialize(IComponentReader reader) { }
+        public void Deserialize(IComponentReader reader)
+        {
+        }
     }
 }

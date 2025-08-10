@@ -1,7 +1,7 @@
 using System;
 using System.Collections.Generic;
 
-namespace Shared.ECS.Replication
+namespace Shared.Replication
 {
     /// <summary>
     /// A registry that maps component types to unique IDs for efficient network serialization.
@@ -37,7 +37,7 @@ namespace Shared.ECS.Replication
                 throw new KeyNotFoundException($"Component ID {id} is not registered. Run the ComponentIdGenerator tool.");
             return type;
         }
-        
+
         /// <summary>
         /// This partial method is implemented by the code generator.
         /// </summary>

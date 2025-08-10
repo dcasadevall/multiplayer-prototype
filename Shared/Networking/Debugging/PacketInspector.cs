@@ -1,6 +1,6 @@
 using System.Collections.Generic;
 using LiteNetLib.Utils;
-using Shared.ECS.Replication;
+using Shared.Replication;
 
 namespace Shared.Networking.Debugging
 {
@@ -32,7 +32,7 @@ namespace Shared.Networking.Debugging
                 // EntityDelta header
                 var edHeaderStart = reader.Position;
                 reader.SkipBytes(16); // Guid
-                reader.GetByte();     // Flags (bit-packed IsNew/IsDestroyed)
+                reader.GetByte(); // Flags (bit-packed IsNew/IsDestroyed)
                 AddOrUpdate(result, "EntityDeltaHeader", reader.Position - edHeaderStart);
 
                 // Added/Modified Components

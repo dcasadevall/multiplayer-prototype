@@ -7,8 +7,8 @@ using Shared.Logging;
 using Shared.Networking.Messages;
 using Shared.Scheduling;
 using Shared.ECS.Entities;
-using Shared.ECS.Replication;
 using System.Linq;
+using Shared.Replication;
 
 namespace Shared.Networking
 {

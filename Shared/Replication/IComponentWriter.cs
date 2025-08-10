@@ -1,7 +1,8 @@
 using System;
 using System.Numerics;
+using Shared.ECS;
 
-namespace Shared.ECS.Replication
+namespace Shared.Replication
 {
     /// <summary>
     /// Defines a generic interface for writing component data to a binary stream.
@@ -49,6 +50,7 @@ namespace Shared.ECS.Replication
         /// Writes a component to the stream.
         /// </summary>
         void Put(IComponent value);
+
         void Put(Guid value);
 
         /// <summary>

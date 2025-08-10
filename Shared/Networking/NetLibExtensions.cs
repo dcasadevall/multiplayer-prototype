@@ -1,8 +1,8 @@
 using System;
 using LiteNetLib;
 using Microsoft.Extensions.DependencyInjection;
-using Shared.ECS.Replication;
 using Shared.Networking.Messages;
+using Shared.Replication;
 using Shared.Scheduling;
 
 namespace Shared.Networking

@@ -2,12 +2,12 @@ using System;
 using System.Collections.Generic;
 using Shared.ECS;
 using Shared.ECS.Entities;
-using Shared.ECS.Replication;
 using Shared.Networking;
 using Shared.Physics;
 using NSubstitute;
 using Xunit;
 using System.Numerics;
+using Shared.Replication;
 
 namespace SharedUnitTests.ECS.Replication
 {
@@ -26,12 +26,13 @@ namespace SharedUnitTests.ECS.Replication
             var connection = Substitute.For<IClientConnection>();
             _componentSerializer = Substitute.For<IComponentSerializer>();
             _componentRegistry = new ComponentTypeRegistry();
-            
+
             // For most tests, we start with an empty snapshot.
             connection.InitialWorldSnapshot.Returns(new WorldDeltaMessage(_componentSerializer, _componentRegistry));
-            
+
             // Capture the message handler that the system registers in its constructor.
-            messageReceiver.RegisterMessageHandler(Arg.Any<string>(), Arg.Do<MessageHandler<WorldDeltaMessage>>(handler => _messageHandler = handler));
+            messageReceiver.RegisterMessageHandler(Arg.Any<string>(),
+                Arg.Do<MessageHandler<WorldDeltaMessage>>(handler => _messageHandler = handler));
 
             _system = new ClientReplicationSystem(messageReceiver, connection);
         }
@@ -102,7 +103,7 @@ namespace SharedUnitTests.ECS.Replication
             // Assert
             Assert.False(_registry.TryGet(entity.Id, out _));
         }
-        
+
         [Fact]
         public void Update_WhenDeltaReceived_UpdatesComponent()
         {
@@ -121,7 +122,7 @@ namespace SharedUnitTests.ECS.Replication
                     }
                 }
             };
-            
+
             // Act
             _messageHandler.Invoke(0, deltaMessage);
             _system.Update(_registry, 1, 0);
@@ -148,7 +149,7 @@ namespace SharedUnitTests.ECS.Replication
                     }
                 }
             };
-            
+
             // Act
             _messageHandler.Invoke(0, deltaMessage);
             _system.Update(_registry, 1, 0);

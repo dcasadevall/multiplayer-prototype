@@ -78,6 +78,16 @@ namespace Shared.Prediction
         /// Sets the ServerValue field of the predicted component, given the component type and value
         /// if the entity has a predicted component of that type.
         /// </summary>
+        public static bool TrySetServerAuthoritativeValue<T>(this Entity entity, IComponent serverComponent)
+            where T : IComponent
+        {
+            return TrySetServerAuthoritativeValue(entity, typeof(T), serverComponent);
+        }
+
+        /// <summary>
+        /// Sets the ServerValue field of the predicted component, given the component type and value
+        /// if the entity has a predicted component of that type.
+        /// </summary>
         public static bool TrySetServerAuthoritativeValue(this Entity entity, Type componentType, IComponent serverComponent)
         {
             if (entity == null) throw new ArgumentNullException(nameof(entity));

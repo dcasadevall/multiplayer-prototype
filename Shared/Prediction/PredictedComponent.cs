@@ -1,6 +1,6 @@
 using Shared.ECS;
-using Shared.ECS.Replication;
 using System;
+using Shared.Replication;
 
 namespace Shared.Prediction
 {

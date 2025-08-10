@@ -1,9 +1,10 @@
 using System;
 using System.Numerics;
 using LiteNetLib.Utils;
+using Shared.ECS;
 using Shared.Math;
 
-namespace Shared.ECS.Replication
+namespace Shared.Replication
 {
     /// <summary>
     /// An adapter that implements the <see cref="IComponentWriter"/> interface
@@ -97,10 +98,46 @@ namespace Shared.ECS.Replication
             // Make largest positive (q and -q are equivalent)
             switch (maxIndex)
             {
-                case 0: if (x < 0) { x = -x; y = -y; z = -z; w = -w; } break;
-                case 1: if (y < 0) { x = -x; y = -y; z = -z; w = -w; } break;
-                case 2: if (z < 0) { x = -x; y = -y; z = -z; w = -w; } break;
-                case 3: if (w < 0) { x = -x; y = -y; z = -z; w = -w; } break;
+                case 0:
+                    if (x < 0)
+                    {
+                        x = -x;
+                        y = -y;
+                        z = -z;
+                        w = -w;
+                    }
+
+                    break;
+                case 1:
+                    if (y < 0)
+                    {
+                        x = -x;
+                        y = -y;
+                        z = -z;
+                        w = -w;
+                    }
+
+                    break;
+                case 2:
+                    if (z < 0)
+                    {
+                        x = -x;
+                        y = -y;
+                        z = -z;
+                        w = -w;
+                    }
+
+                    break;
+                case 3:
+                    if (w < 0)
+                    {
+                        x = -x;
+                        y = -y;
+                        z = -z;
+                        w = -w;
+                    }
+
+                    break;
             }
 
             // Store the other three components scaled to Int16 range

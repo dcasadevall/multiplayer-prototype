@@ -63,27 +63,16 @@ namespace Shared.ECS.Archetypes
         {
             var projectile = registry.CreateEntity();
 
-            // Predicted spatial components with InitialValue only replication
+            // We know that position and rotation will not change after the initial spawn,
+            // We can derive the position on all clients so we only send the initial tick,
+            projectile.AddComponent(new VelocityComponent { Value = velocity });
+            projectile.AddComponent(new RotationComponent { Value = spawnRotation });
             projectile.AddComponent(new PredictedComponent<PositionComponent>
             {
                 Mode = ReplicationMode.InitialValue,
                 ServerValue = new PositionComponent { Value = spawnPosition }
             });
-            projectile.AddComponent(new PredictedComponent<VelocityComponent>
-            {
-                Mode = ReplicationMode.InitialValue,
-                ServerValue = new VelocityComponent { Value = velocity }
-            });
-            projectile.AddComponent(new PredictedComponent<RotationComponent>
-            {
-                Mode = ReplicationMode.InitialValue,
-                ServerValue = new RotationComponent { Value = spawnRotation }
-            });
 
-            // Add the base components for client-side use
-            projectile.AddComponent(new PositionComponent { Value = spawnPosition });
-            projectile.AddComponent(new VelocityComponent { Value = velocity });
-            projectile.AddComponent(new RotationComponent { Value = spawnRotation });
 
             // Gameplay/state components
             projectile.AddComponent<ProjectileTagComponent>();

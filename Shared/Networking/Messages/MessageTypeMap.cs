@@ -1,7 +1,7 @@
 using System;
 using System.Collections.Generic;
-using Shared.ECS.Replication;
 using Shared.Input;
+using Shared.Replication;
 
 namespace Shared.Networking.Messages
 {

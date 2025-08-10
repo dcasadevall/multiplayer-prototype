@@ -2,9 +2,9 @@ using System;
 using System.Threading;
 using System.Threading.Tasks;
 using LiteNetLib;
-using Shared.ECS.Replication;
 using Shared.Logging;
 using Shared.Networking.Messages;
+using Shared.Replication;
 using Shared.Scheduling;
 using ILogger = Shared.Logging.ILogger;
 

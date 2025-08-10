@@ -1,8 +1,8 @@
 using System;
 using System.Collections.Generic;
 using LiteNetLib.Utils;
-using Shared.ECS.Replication;
 using Shared.Input;
+using Shared.Replication;
 
 namespace Shared.Networking.Messages
 {
@@ -19,7 +19,8 @@ namespace Shared.Networking.Messages
         /// </summary>
         public MessageFactory(IComponentSerializer componentSerializer, ComponentTypeRegistry componentTypeRegistry)
         {
-            _constructors[MessageType.Connected] = () => new ConnectedMessage { InitialWorldSnapshot = new WorldDeltaMessage(componentSerializer, componentTypeRegistry) };
+            _constructors[MessageType.Connected] = () => new ConnectedMessage
+                { InitialWorldSnapshot = new WorldDeltaMessage(componentSerializer, componentTypeRegistry) };
             _constructors[MessageType.PlayerMovement] = () => new PlayerMovementMessage();
             _constructors[MessageType.PlayerShot] = () => new PlayerShotMessage();
             _constructors[MessageType.Delta] = () => new WorldDeltaMessage(componentSerializer, componentTypeRegistry);

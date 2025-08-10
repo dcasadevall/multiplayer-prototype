@@ -2,7 +2,6 @@ using System;
 using System.Collections.Generic;
 using Shared.ECS;
 using Shared.ECS.Entities;
-using Shared.ECS.Replication;
 using Shared.Logging;
 using Shared.Networking;
 using Shared.Networking.Messages;
@@ -11,6 +10,7 @@ using NSubstitute;
 using Xunit;
 using System.Linq;
 using Shared.Prediction;
+using Shared.Replication;
 
 namespace SharedUnitTests.ECS.Replication
 {

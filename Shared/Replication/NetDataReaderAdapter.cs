@@ -1,8 +1,9 @@
 using System;
 using System.Numerics;
 using LiteNetLib.Utils;
+using Shared.ECS;
 
-namespace Shared.ECS.Replication
+namespace Shared.Replication
 {
     /// <summary>
     /// An adapter that implements the <see cref="IComponentReader"/> interface
@@ -25,6 +26,7 @@ namespace Shared.ECS.Replication
         public float GetFloat() => _reader.GetFloat();
         public string GetString() => _reader.GetString();
         public bool GetBool() => _reader.GetBool();
+
         public Vector3 GetVector3()
         {
             return new Vector3(_reader.GetFloat(), _reader.GetFloat(), _reader.GetFloat());
@@ -78,10 +80,30 @@ namespace Shared.ECS.Replication
             float x, y, z, w;
             switch (maxIndex)
             {
-                case 0: x = missing; y = f0; z = f1; w = f2; break;
-                case 1: x = f0; y = missing; z = f1; w = f2; break;
-                case 2: x = f0; y = f1; z = missing; w = f2; break;
-                default: x = f0; y = f1; z = f2; w = missing; break;
+                case 0:
+                    x = missing;
+                    y = f0;
+                    z = f1;
+                    w = f2;
+                    break;
+                case 1:
+                    x = f0;
+                    y = missing;
+                    z = f1;
+                    w = f2;
+                    break;
+                case 2:
+                    x = f0;
+                    y = f1;
+                    z = missing;
+                    w = f2;
+                    break;
+                default:
+                    x = f0;
+                    y = f1;
+                    z = f2;
+                    w = missing;
+                    break;
             }
 
             var q = new Quaternion(x, y, z, w);

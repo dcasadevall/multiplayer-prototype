@@ -1,7 +1,8 @@
 using System;
 using LiteNetLib.Utils;
+using Shared.ECS;
 
-namespace Shared.ECS.Replication
+namespace Shared.Replication
 {
     /// <summary>
     /// A component serializer that uses a binary format.

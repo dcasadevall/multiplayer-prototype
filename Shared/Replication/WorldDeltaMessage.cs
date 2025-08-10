@@ -1,7 +1,7 @@
 using System.Collections.Generic;
 using LiteNetLib.Utils;
 
-namespace Shared.ECS.Replication
+namespace Shared.Replication
 {
     /// <summary>
     /// A container for a collection of entity deltas, representing all the changes in the world since the last update.

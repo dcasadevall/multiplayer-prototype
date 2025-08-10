@@ -1,8 +1,9 @@
 using System;
 using System.Collections.Generic;
 using LiteNetLib.Utils;
+using Shared.ECS;
 
-namespace Shared.ECS.Replication
+namespace Shared.Replication
 {
     /// <summary>
     /// Represents the changes (delta) to a single entity for replication between server and client.

@@ -1,6 +1,6 @@
 using System;
 using Shared.ECS;
-using Shared.ECS.Replication;
+using Shared.Replication;
 
 namespace Shared.ECS.Components
 {

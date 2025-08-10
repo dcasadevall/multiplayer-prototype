@@ -1,4 +1,6 @@
-namespace Shared.ECS.Replication
+using Shared.ECS;
+
+namespace Shared.Replication
 {
     /// <summary>
     /// Defines methods for serializing and deserializing ECS components for replication.

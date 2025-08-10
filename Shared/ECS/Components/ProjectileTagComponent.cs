@@ -1,5 +1,4 @@
 using Shared.ECS.Components;
-using Shared.ECS.Replication;
 
 namespace Shared.ECS.Components
 {

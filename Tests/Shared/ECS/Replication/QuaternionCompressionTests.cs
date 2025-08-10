@@ -2,7 +2,7 @@ using System;
 using System.Numerics;
 using LiteNetLib.Utils;
 using NSubstitute;
-using Shared.ECS.Replication;
+using Shared.Replication;
 using Xunit;
 
 namespace SharedUnitTests.ECS.Replication

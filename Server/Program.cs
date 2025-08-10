@@ -13,9 +13,9 @@ using Server.AI;
 using Server.Player;
 using Shared.Damage;
 using Shared.ECS.Entities;
-using Shared.ECS.Replication;
 using Shared.Physics;
 using Shared.Prediction;
+using Shared.Replication;
 using Shared.Respawn;
 
 // Add Configuration

@@ -1,7 +1,6 @@
 using System.Numerics;
 using System.Text.Json;
 using System.Text.Json.Serialization;
-using Shared.ECS.Replication;
 using Shared.ECS;
 using Shared.ECS.Archetypes;
 using Shared.ECS.Entities;
@@ -47,7 +46,8 @@ namespace Server.Scenes
             {
                 if (desc.Archetype == "Bot")
                 {
-                    var jsonPosition = JsonSerializer.Deserialize<JsonPosition>(desc.Components["PositionComponent"].GetRawText(), _jsonOptions);
+                    var jsonPosition =
+                        JsonSerializer.Deserialize<JsonPosition>(desc.Components["PositionComponent"].GetRawText(), _jsonOptions);
                     var position = jsonPosition != null ? new Vector3(jsonPosition.X, jsonPosition.Y, jsonPosition.Z) : Vector3.Zero;
                     BotArchetype.Create(entityRegistry, position);
                 }

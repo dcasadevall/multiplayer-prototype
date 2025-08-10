@@ -23,11 +23,12 @@ namespace ComponentIdGenerator
                 var sharedAssemblyPath = Path.Combine(solutionDir, "Shared", "bin", "Debug", "netstandard2.1", "Shared.dll");
                 // Add server bin dir only for dependency resolution (do NOT scan server types)
                 var serverBinDir = Path.Combine(solutionDir, "Server", "bin", "Debug", "net8.0");
-                var outputPath = Path.Combine(solutionDir, "Shared", "ECS", "Replication", "ComponentTypeRegistry.Generated.cs");
-                
+                var outputPath = Path.Combine(solutionDir, "Shared", "Replication", "ComponentTypeRegistry.Generated.cs");
+
                 if (!File.Exists(sharedAssemblyPath))
                 {
-                    Console.Error.WriteLine($"Error: Shared assembly not found at '{sharedAssemblyPath}'. Please build the 'Shared' project first.");
+                    Console.Error.WriteLine(
+                        $"Error: Shared assembly not found at '{sharedAssemblyPath}'. Please build the 'Shared' project first.");
                     Environment.Exit(1);
                 }
 
@@ -45,16 +46,16 @@ namespace ComponentIdGenerator
                 // Base concrete component types (non-generic, non-abstract)
                 var concreteComponents = SafeGetTypes(sharedAssembly)
                     .Where(t => t != null && iComponentType.IsAssignableFrom(t)
-                                && !t!.IsInterface
-                                && !t.IsAbstract
-                                && !t.IsGenericTypeDefinition)
+                                          && !t!.IsInterface
+                                          && !t.IsAbstract
+                                          && !t.IsGenericTypeDefinition)
                     .Cast<Type>()
                     .ToList();
 
                 // Open generic component type definitions that implement IComponent
                 var openGenericComponents = SafeGetTypes(sharedAssembly)
                     .Where(t => t != null && t.IsGenericTypeDefinition
-                                && iComponentType.IsAssignableFrom(t))
+                                          && iComponentType.IsAssignableFrom(t))
                     .Cast<Type>()
                     .ToList();
 
@@ -123,7 +124,8 @@ namespace ComponentIdGenerator
 
                 File.WriteAllText(outputPath, builder.ToString());
 
-                Console.WriteLine($"Successfully generated component type registry with {uniqueComponents.Count} components from the Shared assembly.");
+                Console.WriteLine(
+                    $"Successfully generated component type registry with {uniqueComponents.Count} components from the Shared assembly.");
                 Console.WriteLine($"Output file: {outputPath}");
             }
             catch (Exception ex)
@@ -133,13 +135,19 @@ namespace ComponentIdGenerator
                 Environment.Exit(1);
             }
         }
-        
+
         static IEnumerable<Type?> SafeGetTypes(Assembly assembly)
         {
-            try { return assembly.GetTypes(); }
-            catch (ReflectionTypeLoadException ex) { return ex.Types; }
+            try
+            {
+                return assembly.GetTypes();
+            }
+            catch (ReflectionTypeLoadException ex)
+            {
+                return ex.Types;
+            }
         }
-        
+
         static string GetCSharpTypeName(Type type)
         {
             if (!type.IsGenericType)
@@ -163,6 +171,7 @@ namespace ComponentIdGenerator
             {
                 dir = dir.Parent;
             }
+
             return dir?.FullName;
         }
 
@@ -183,9 +192,16 @@ namespace ComponentIdGenerator
                     var assemblyPath = Path.Combine(path, new AssemblyName(args.Name).Name + ".dll");
                     if (File.Exists(assemblyPath))
                     {
-                        try { return Assembly.LoadFrom(assemblyPath); } catch { }
+                        try
+                        {
+                            return Assembly.LoadFrom(assemblyPath);
+                        }
+                        catch
+                        {
+                        }
                     }
                 }
+
                 return null;
             }
 

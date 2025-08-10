@@ -1,7 +1,8 @@
 using System;
 using System.Numerics;
+using Shared.ECS;
 
-namespace Shared.ECS.Replication
+namespace Shared.Replication
 {
     /// <summary>
     /// Defines a generic interface for reading component data from a binary stream.

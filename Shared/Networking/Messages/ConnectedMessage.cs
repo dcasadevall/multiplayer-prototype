@@ -1,6 +1,6 @@
 using System;
 using LiteNetLib.Utils;
-using Shared.ECS.Replication;
+using Shared.Replication;
 
 namespace Shared.Networking.Messages
 {

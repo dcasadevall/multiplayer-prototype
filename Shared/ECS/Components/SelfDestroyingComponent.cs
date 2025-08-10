@@ -1,5 +1,5 @@
 using Shared.ECS;
-using Shared.ECS.Replication;
+using Shared.Replication;
 
 namespace Shared.ECS.Components
 {
@@ -21,7 +21,9 @@ namespace Shared.ECS.Components
         /// </summary>
         public bool IsMarkedForDestruction { get; set; } = false;
 
-        public SelfDestroyingComponent() { }
+        public SelfDestroyingComponent()
+        {
+        }
 
         public SelfDestroyingComponent(uint destroyAtTick)
         {
