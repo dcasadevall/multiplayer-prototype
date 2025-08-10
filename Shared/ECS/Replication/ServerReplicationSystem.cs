@@ -6,6 +6,7 @@ using Shared.Networking.Messages;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using Shared.Prediction;
 using Shared.Scheduling;
 
 namespace Shared.ECS.Replication
@@ -23,7 +24,8 @@ namespace Shared.ECS.Replication
     /// <para>
     /// By centralizing replication logic here, the <see cref="EntityRegistry"/> remains a simple
     /// state container, and this system becomes the sole authority on what data is sent over
-    /// the network and when.
+    /// the network and when. It also supports per-entity replication policies via the
+    /// <see cref="PredictedComponent{T}"/> settings.
     /// </para>
     /// </summary>
     [TickInterval(1)]
@@ -189,7 +191,7 @@ namespace Shared.ECS.Replication
         /// Clears the tracked changes after producing the deltas.
         /// </summary>
         /// <returns></returns>
-        private List<EntityDelta> ProduceEntityDelta()
+        private List<EntityDelta> ProduceEntityDelta(uint tickNumber)
         {
             var deltas = new List<EntityDelta>();
 
@@ -207,13 +209,35 @@ namespace Shared.ECS.Replication
                     throw new InvalidOperationException($"Entity {entityId} does not exist in the registry.");
                 }
 
+                var componentsToSend = new List<IComponent>();
+                foreach (var component in entity.GetAllComponents())
+                {
+                    if (component is INonReplicatedComponent)
+                    {
+                        continue;
+                    }
+
+                    if (component is PredictedComponent<IComponent> p)
+                    {
+                        // For every mode except no replication,
+                        // send the value on entity creation tick.
+                        if (p.Mode == PredictedComponent<IComponent>.ReplicationMode.None)
+                        {
+                            componentsToSend.Add(component);
+                            p.LastSentAtTick = tickNumber;
+                        }
+                    }
+                    else
+                    {
+                        componentsToSend.Add(component);
+                    }
+                }
+
                 deltas.Add(new EntityDelta
                 {
                     EntityId = entityId.Value,
                     IsNew = true,
-                    AddedOrModifiedComponents = entity.GetAllComponents()
-                        .Where(x => x is not INonReplicatedComponent)
-                        .ToList()
+                    AddedOrModifiedComponents = componentsToSend
                 });
             }
 
@@ -242,19 +266,51 @@ namespace Shared.ECS.Replication
                 var added = _addedComponents.GetValueOrDefault(entityId, new HashSet<IComponent>());
                 var modified = _modifiedComponents.GetValueOrDefault(entityId, new HashSet<IComponent>());
 
-                var addedOrModified = added.Concat(modified)
-                    .Where(c => c is not INonReplicatedComponent)
-                    .ToList();
-
-                deltas.Add(new EntityDelta
+                var componentsToSend = new List<IComponent>();
+                foreach (var component in added.Concat(modified))
                 {
-                    EntityId = entityId.Value,
-                    AddedOrModifiedComponents = addedOrModified,
-                    RemovedComponents = _removedComponents
-                        .GetValueOrDefault(entityId, new HashSet<IComponent>())
-                        .Select(c => c.GetType())
-                        .ToList()
-                });
+                    if (component is INonReplicatedComponent)
+                    {
+                        continue;
+                    }
+
+                    if (component is PredictedComponent<IComponent> p)
+                    {
+                        if (p.Mode.HasFlag(PredictedComponent<IComponent>.ReplicationMode.EveryTick))
+                        {
+                            componentsToSend.Add(component);
+                            p.LastSentAtTick = tickNumber;
+                        }
+                        else if (p.Mode.HasFlag(PredictedComponent<IComponent>.ReplicationMode.SomeTicks) &&
+                                 (tickNumber - p.LastSentAtTick >= p.ReplicationTickRate))
+                        {
+                            componentsToSend.Add(component);
+                            p.LastSentAtTick = tickNumber;
+                        }
+                        else if (p.Mode.HasFlag(PredictedComponent<IComponent>.ReplicationMode.InitialValue) &&
+                                 p.LastSentAtTick == 0)
+                        {
+                            componentsToSend.Add(component);
+                            p.LastSentAtTick = tickNumber;
+                        }
+                    }
+                    else
+                    {
+                        componentsToSend.Add(component);
+                    }
+                }
+
+                var removed = _removedComponents.GetValueOrDefault(entityId, new HashSet<IComponent>());
+
+                if (componentsToSend.Count > 0 || removed.Count > 0)
+                {
+                    deltas.Add(new EntityDelta
+                    {
+                        EntityId = entityId.Value,
+                        AddedOrModifiedComponents = componentsToSend,
+                        RemovedComponents = removed.Select(c => c.GetType()).ToList()
+                    });
+                }
             }
 
             // Remove the tracked changes after producing deltas
@@ -277,7 +333,7 @@ namespace Shared.ECS.Replication
         public void Update(EntityRegistry registry, uint tickNumber, float deltaTime)
         {
             var deltaMessage = (WorldDeltaMessage)_messageFactory.Create(MessageType.Delta);
-            deltaMessage.Deltas = ProduceEntityDelta();
+            deltaMessage.Deltas = ProduceEntityDelta(tickNumber);
 
             if (deltaMessage.Deltas.Count > 0)
             {

@@ -2,8 +2,6 @@ using System.Numerics;
 using Shared.Damage;
 using Shared.ECS.Components;
 using Shared.ECS.Entities;
-using Shared.ECS.Replication;
-using Shared.ECS.Simulation;
 using Shared.Physics;
 using Shared.Prediction;
 
@@ -63,16 +61,27 @@ namespace Shared.ECS.Archetypes
             EntityId sourceEntityId)
         {
             var projectile = registry.CreateEntity();
-
-            // Spatial components: runtime Position + DerivedPosition + SpawnVelocity
-            projectile.AddComponent(new SpawnVelocityComponent
+            
+            // Predicted spatial components with InitialValue only replication
+            projectile.AddComponent(new PredictedComponent<PositionComponent>
             {
-                SpawnPosition = spawnPosition,
-                SpawnTick = spawnTick,
-                Velocity = velocity
+                Mode = PredictedComponent<PositionComponent>.ReplicationMode.InitialValue,
+                ServerValue = new PositionComponent { Value = spawnPosition }
             });
-
-            // Rotation (initial only)
+            projectile.AddComponent(new PredictedComponent<VelocityComponent>
+            {
+                Mode = PredictedComponent<VelocityComponent>.ReplicationMode.InitialValue,
+                ServerValue = new VelocityComponent { Value = velocity }
+            });
+            projectile.AddComponent(new PredictedComponent<RotationComponent>
+            {
+                Mode = PredictedComponent<RotationComponent>.ReplicationMode.InitialValue,
+                ServerValue = new RotationComponent { Value = spawnRotation }
+            });
+            
+            // Add the base components for client-side use
+            projectile.AddComponent(new PositionComponent { Value = spawnPosition });
+            projectile.AddComponent(new VelocityComponent { Value = velocity });
             projectile.AddComponent(new RotationComponent { Value = spawnRotation });
 
             // Gameplay/state components
