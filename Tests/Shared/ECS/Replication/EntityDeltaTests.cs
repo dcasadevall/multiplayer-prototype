@@ -32,11 +32,11 @@ namespace SharedUnitTests.ECS.Replication
             var reader = new NetDataReader();
 
             // Act
-            originalDelta.Serialize(writer, serializer);
+            originalDelta.Serialize(writer, serializer, componentTypeRegistry);
             reader.SetSource(writer);
 
             var deserializedDelta = new EntityDelta();
-            deserializedDelta.Deserialize(reader, serializer);
+            deserializedDelta.Deserialize(reader, serializer, componentTypeRegistry);
 
             // Assert basic properties
             Assert.Equal(originalDelta.EntityId, deserializedDelta.EntityId);

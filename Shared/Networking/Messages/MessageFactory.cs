@@ -17,12 +17,12 @@ namespace Shared.Networking.Messages
         /// <summary>
         /// Constructs the factory with all known message types.
         /// </summary>
-        public MessageFactory(IComponentSerializer componentSerializer)
+        public MessageFactory(IComponentSerializer componentSerializer, ComponentTypeRegistry componentTypeRegistry)
         {
-            _constructors[MessageType.Connected] = () => new ConnectedMessage { InitialWorldSnapshot = new WorldDeltaMessage(componentSerializer) };
+            _constructors[MessageType.Connected] = () => new ConnectedMessage { InitialWorldSnapshot = new WorldDeltaMessage(componentSerializer, componentTypeRegistry) };
             _constructors[MessageType.PlayerMovement] = () => new PlayerMovementMessage();
             _constructors[MessageType.PlayerShot] = () => new PlayerShotMessage();
-            _constructors[MessageType.Delta] = () => new WorldDeltaMessage(componentSerializer);
+            _constructors[MessageType.Delta] = () => new WorldDeltaMessage(componentSerializer, componentTypeRegistry);
         }
 
         /// <summary>

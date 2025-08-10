@@ -18,7 +18,7 @@ namespace SharedUnitTests.ECS.Replication
             var connection = Substitute.For<IClientConnection>();
 
             var entityId = Guid.NewGuid();
-            var initialSnapshot = new WorldDeltaMessage(Substitute.For<IComponentSerializer>())
+            var initialSnapshot = new WorldDeltaMessage(Substitute.For<IComponentSerializer>(), new ComponentTypeRegistry())
             {
                 Deltas =
                 [
@@ -47,7 +47,7 @@ namespace SharedUnitTests.ECS.Replication
             var registry = new EntityRegistry();
             var messageReceiver = Substitute.For<IMessageReceiver>();
             var connection = Substitute.For<IClientConnection>();
-            connection.InitialWorldSnapshot.Returns(new WorldDeltaMessage(Substitute.For<IComponentSerializer>())
+            connection.InitialWorldSnapshot.Returns(new WorldDeltaMessage(Substitute.For<IComponentSerializer>(), new ComponentTypeRegistry())
             {
                 Deltas = new List<EntityDelta>()
             });
@@ -60,7 +60,7 @@ namespace SharedUnitTests.ECS.Replication
             var system = new ClientReplicationSystem(messageReceiver, connection);
 
             var entityId = Guid.NewGuid();
-            var deltaMessage = new WorldDeltaMessage(Substitute.For<IComponentSerializer>())
+            var deltaMessage = new WorldDeltaMessage(Substitute.For<IComponentSerializer>(), new ComponentTypeRegistry())
             {
                 Deltas =
                 [

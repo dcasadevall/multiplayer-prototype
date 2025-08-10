@@ -39,28 +39,29 @@ namespace Shared.ECS.Replication
         /// </summary>
         public List<Type> RemovedComponents { get; set; } = new();
 
-        public void Serialize(NetDataWriter writer, IComponentSerializer serializer)
+        public void Serialize(NetDataWriter writer, IComponentSerializer serializer, ComponentTypeRegistry registry)
         {
             writer.Put(EntityId.ToByteArray());
             writer.Put(IsNew);
             writer.Put(IsDestroyed);
 
             // Serialize components
-            writer.Put(AddedOrModifiedComponents.Count);
+            writer.Put((ushort)AddedOrModifiedComponents.Count);
             foreach (var component in AddedOrModifiedComponents)
             {
                 writer.PutBytesWithLength(serializer.Serialize(component));
             }
 
-            // Serialize removed components
-            writer.Put(RemovedComponents.Count);
+            // Serialize removed components as compact IDs
+            writer.Put((ushort)RemovedComponents.Count);
             foreach (var type in RemovedComponents)
             {
-                writer.Put(type.AssemblyQualifiedName);
+                var id = registry.GetId(type);
+                writer.Put(id);
             }
         }
 
-        public void Deserialize(NetDataReader reader, IComponentSerializer serializer)
+        public void Deserialize(NetDataReader reader, IComponentSerializer serializer, ComponentTypeRegistry registry)
         {
             var bytes = new byte[16];
             reader.GetBytes(bytes, 16);
@@ -70,17 +71,18 @@ namespace Shared.ECS.Replication
             IsDestroyed = reader.GetBool();
 
             // Deserialize components
-            var count = reader.GetInt();
+            var count = reader.GetUShort();
             for (var i = 0; i < count; i++)
             {
                 AddedOrModifiedComponents.Add(serializer.Deserialize(reader.GetBytesWithLength()));
             }
 
-            // Deserialize removed components
-            count = reader.GetInt();
+            // Deserialize removed components by compact IDs
+            count = reader.GetUShort();
             for (var i = 0; i < count; i++)
             {
-                RemovedComponents.Add(Type.GetType(reader.GetString()));
+                var id = reader.GetUShort();
+                RemovedComponents.Add(registry.GetType(id));
             }
         }
     }

@@ -33,6 +33,7 @@ namespace Shared.Networking
         private readonly IScheduler _scheduler;
         private readonly EntityRegistry _entityRegistry;
         private readonly IComponentSerializer _componentSerializer;
+        private readonly ComponentTypeRegistry _componentTypeRegistry;
         private IDisposable? _pollHandle;
         private CancellationTokenSource? _cts;
         private volatile bool _running;
@@ -53,7 +54,8 @@ namespace Shared.Networking
             ILogger logger,
             IScheduler scheduler,
             EntityRegistry entityRegistry,
-            IComponentSerializer componentSerializer)
+            IComponentSerializer componentSerializer,
+            ComponentTypeRegistry componentTypeRegistry)
         {
             _netManager = netManager;
             _messageSender = messageSender;
@@ -62,6 +64,7 @@ namespace Shared.Networking
             _scheduler = scheduler;
             _entityRegistry = entityRegistry;
             _componentSerializer = componentSerializer;
+            _componentTypeRegistry = componentTypeRegistry;
         }
 
         /// <inheritdoc />
@@ -117,7 +120,7 @@ namespace Shared.Networking
             {
                 PeerId = peer.Id,
                 ConnectionTime = DateTime.UtcNow,
-                InitialWorldSnapshot = new WorldDeltaMessage(_componentSerializer)
+                InitialWorldSnapshot = new WorldDeltaMessage(_componentSerializer, _componentTypeRegistry)
                 {
                     Deltas = _entityRegistry.GetAll().Select(e => new EntityDelta
                     {
