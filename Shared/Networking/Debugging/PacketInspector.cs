@@ -2,7 +2,7 @@ using System.Collections.Generic;
 using LiteNetLib.Utils;
 using Shared.ECS.Replication;
 
-namespace Shared.Networking
+namespace Shared.Networking.Debugging
 {
     /// <summary>
     /// A utility class for inspecting the contents of network packets.
@@ -32,8 +32,8 @@ namespace Shared.Networking
                 // EntityDelta header
                 var edHeaderStart = reader.Position;
                 reader.SkipBytes(16); // Guid
-                reader.GetBool();    // IsNew
-                reader.GetBool();    // IsDestroyed
+                reader.GetBool(); // IsNew
+                reader.GetBool(); // IsDestroyed
                 AddOrUpdate(result, "EntityDeltaHeader", reader.Position - edHeaderStart);
 
                 // Added/Modified Components
@@ -51,11 +51,11 @@ namespace Shared.Networking
                         AddOrUpdate(result, "MalformedComponent", reader.AvailableBytes);
                         return result;
                     }
-                    
+
                     var payloadReader = new NetDataReader(reader.RawData, reader.Position, reader.Position + componentPayloadSize);
                     var typeId = payloadReader.GetUShort();
                     var typeName = registry.GetType(typeId).Name;
-                    
+
                     reader.SkipBytes(componentPayloadSize);
 
                     var totalSizeOnStream = reader.Position - componentStartPos;

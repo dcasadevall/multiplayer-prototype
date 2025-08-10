@@ -1,6 +1,7 @@
 using LiteNetLib;
 using LiteNetLib.Utils;
 using Shared.Logging;
+using Shared.Networking.Debugging;
 using Shared.Networking.Messages;
 
 namespace Shared.Networking

@@ -1,6 +1,6 @@
 using System.Threading;
 
-namespace Shared.Networking
+namespace Shared.Networking.Debugging
 {
     /// <summary>
     /// Provides a centralized, thread-safe mechanism for tracking network statistics.
