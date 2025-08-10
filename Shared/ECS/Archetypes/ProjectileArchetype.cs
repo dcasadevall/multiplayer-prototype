@@ -2,6 +2,7 @@ using System.Numerics;
 using Shared.Damage;
 using Shared.ECS.Components;
 using Shared.ECS.Entities;
+using Shared.ECS.Simulation;
 using Shared.Physics;
 using Shared.Prediction;
 
