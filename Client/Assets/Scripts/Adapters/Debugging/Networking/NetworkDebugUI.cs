@@ -53,7 +53,7 @@ namespace Adapters.Debugging.Networking
         private void Start()
         {
 #pragma warning disable CS0618 // Type or member is obsolete
-            var serviceProvider = FindObjectOfType<RootServiceProvider>()?.ServiceProvider;
+            var serviceProvider = FindObjectOfType<GameLauncher>()?.ServiceProvider;
 #pragma warning restore CS0618 // Type or member is obsolete
             _clientConnection = serviceProvider?.GetRequiredService<IClientConnection>();
             _messageReceiver = serviceProvider?.GetRequiredService<IMessageReceiver>();

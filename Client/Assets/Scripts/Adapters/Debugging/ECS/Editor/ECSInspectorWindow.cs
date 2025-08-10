@@ -195,7 +195,7 @@ namespace Adapters.Debugging.ECS.Editor
         {
             // Try to find the entity registry from the scene
 #pragma warning disable CS0618 // Type or member is obsolete
-            var serviceProvider = FindObjectOfType<RootServiceProvider>();
+            var serviceProvider = FindObjectOfType<GameLauncher>();
 #pragma warning restore CS0618 // Type or member is obsolete
             _entityRegistry = serviceProvider?.ServiceProvider?.GetRequiredService<EntityRegistry>();
         }

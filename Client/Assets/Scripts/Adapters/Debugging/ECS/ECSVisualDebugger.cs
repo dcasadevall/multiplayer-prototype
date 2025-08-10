@@ -45,7 +45,7 @@ namespace Adapters.Debugging.ECS
         
         private void Start()
         {
-            _serviceProvider = FindAnyObjectByType<RootServiceProvider>()?.ServiceProvider;
+            _serviceProvider = FindAnyObjectByType<GameLauncher>()?.ServiceProvider;
             Debug.Log("ECS Visual Debugger initialized");
         }
         
