@@ -7,6 +7,7 @@ using Shared.Physics;
 using NSubstitute;
 using Xunit;
 using System.Numerics;
+using Shared.Prediction;
 using Shared.Replication;
 
 namespace SharedUnitTests.ECS.Replication
@@ -156,6 +157,36 @@ namespace SharedUnitTests.ECS.Replication
 
             // Assert
             Assert.False(entity.Has<PositionComponent>());
+        }
+
+        [Fact]
+        public void Update_WhenPredictedDeltaReceived_SetsServerValue()
+        {
+            // Arrange
+            var entity = _registry.CreateEntity();
+            var predicted = new PredictedComponent<PositionComponent>();
+            entity.AddComponent(predicted);
+
+            var serverAuth = new PositionComponent { Value = new Vector3(1, 2, 3) };
+            var deltaMessage = new WorldDeltaMessage(_componentSerializer, _componentRegistry)
+            {
+                Deltas = new List<EntityDelta>
+                {
+                    new()
+                    {
+                        EntityId = entity.Id.Value,
+                        AddedOrModifiedComponents = { new PredictedComponent<PositionComponent> { ServerValue = serverAuth } }
+                    }
+                }
+            };
+            
+            // Act
+            _messageHandler.Invoke(0, deltaMessage);
+            _system.Update(_registry, 1, 0);
+
+            // Assert
+            Assert.NotNull(predicted.ServerValue);
+            Assert.Equal(serverAuth.Value, predicted.ServerValue.Value);
         }
     }
 }

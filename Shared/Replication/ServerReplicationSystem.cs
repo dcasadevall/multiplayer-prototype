@@ -219,7 +219,7 @@ namespace Shared.Replication
                     }
 
                     // If the component has a predicted counterpart, do not replicate the
-                    // non predicted component.
+                    // non-predicted component yet.
                     if (entity.HasPredictedComponent(component.GetType()))
                     {
                         continue;
@@ -229,9 +229,13 @@ namespace Shared.Replication
                     {
                         if (component.ShouldBeReplicatedAtTick(0))
                         {
+                            // Add the Predicted component
                             var p = (IPredictedComponent)component;
                             p.LastSentAtTick = tickNumber;
                             componentsToSend.Add(component);
+
+                            // Now add the local counterpart
+                            componentsToSend.Add(component.GetServerAuthoritativeValue());
                         }
                     }
                     else

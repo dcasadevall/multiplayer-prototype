@@ -205,6 +205,7 @@ namespace Shared.Prediction
                 return true;
             }
 
+            // InitialValue is only sent if it has never been sent before.
             if (p.Mode.HasFlag(ReplicationMode.InitialValue) &&
                 p.LastSentAtTick == 0)
             {
@@ -242,6 +243,22 @@ namespace Shared.Prediction
                 var serverValueProp = genericType.GetProperty("ServerValue");
                 serverValueProp?.SetValue(predictedComponent, serverValue);
             }
+        }
+
+        /// <summary>
+        /// Gets the server value on a non typed client's PredictedComponent.
+        /// </summary>
+        public static IComponent GetServerAuthoritativeValue(this IComponent predictedComponent)
+        {
+            var localType = GetLocalPredictedCounterpartType(predictedComponent.GetType());
+            var genericType = typeof(PredictedComponent<>).MakeGenericType(localType);
+            var serverValueProp = genericType.GetProperty("ServerValue");
+            if (serverValueProp == null)
+            {
+                throw new InvalidOperationException($"Predicted component {localType.Name} does not have a ServerValue property.");
+            }
+
+            return (IComponent)serverValueProp.GetValue(predictedComponent);
         }
 
         /// <summary>

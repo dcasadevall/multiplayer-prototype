@@ -1,6 +1,3 @@
-using System;
-using System.Collections.Generic;
-using Shared.ECS;
 using Shared.ECS.Entities;
 using Shared.Logging;
 using Shared.Networking;
@@ -8,7 +5,6 @@ using Shared.Networking.Messages;
 using Shared.Physics;
 using NSubstitute;
 using Xunit;
-using System.Linq;
 using Shared.Prediction;
 using Shared.Replication;
 
@@ -173,21 +169,46 @@ namespace SharedUnitTests.ECS.Replication
         }
 
         [Fact]
-        public void Update_PredictedComponentWithNone_NeverSends()
+        public void Update_WhenPredictedCounterpartModified_DoesNotSendLocalComponent()
         {
             // Arrange
             var entity = _registry.CreateEntity();
-            var pred = new PredictedComponent<PositionComponent> { Mode = ReplicationMode.Never };
+            var pred = new PredictedComponent<PositionComponent> { Mode = ReplicationMode.EveryTick };
+            var local = new PositionComponent();
             entity.AddComponent(pred);
-            _system.Update(_registry, 1, 0); // Consume the "create" delta
+            entity.AddComponent(local);
+            _system.Update(_registry, 1, 0); // Clear create
             _messageSender.ClearReceivedCalls();
 
             // Act
-            entity.AddOrReplaceComponent(pred);
+            entity.AddOrReplaceComponent(local); // Modify the local, which should be ignored
             _system.Update(_registry, 2, 0);
 
             // Assert
             _messageSender.DidNotReceive().BroadcastMessage(Arg.Any<MessageType>(), Arg.Any<WorldDeltaMessage>(), Arg.Any<ChannelType>());
+        }
+
+        [Fact]
+        public void Update_OnCreate_SendsBothPredictedAndLocalComponent()
+        {
+            // Arrange
+            var entity = _registry.CreateEntity();
+            var pred = new PredictedComponent<PositionComponent>
+                { Mode = ReplicationMode.InitialValue };
+            var local = new PositionComponent();
+            entity.AddComponent(pred);
+            entity.AddComponent(local);
+
+            // Act
+            _system.Update(_registry, 1, 0);
+
+            // Assert
+            _messageSender.Received().BroadcastMessage(
+                Arg.Any<MessageType>(),
+                Arg.Is<WorldDeltaMessage>(m => m.Deltas.Any(d =>
+                    d.AddedOrModifiedComponents.Contains(pred) &&
+                    d.AddedOrModifiedComponents.Contains(local))),
+                Arg.Any<ChannelType>());
         }
     }
 }

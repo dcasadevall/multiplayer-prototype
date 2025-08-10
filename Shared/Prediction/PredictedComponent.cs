@@ -12,11 +12,6 @@ namespace Shared.Prediction
     public enum ReplicationMode
     {
         /// <summary>
-        /// No replication. The client will always derive the local value.
-        /// </summary>
-        Never = 0,
-
-        /// <summary>
         /// Replicate an initial authoritative value on entity creation only.
         /// </summary>
         InitialValue = 1 << 0,

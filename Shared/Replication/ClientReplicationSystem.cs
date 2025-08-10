@@ -1,11 +1,9 @@
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using Shared.ECS;
 using Shared.ECS.Entities;
 using Shared.ECS.Simulation;
 using Shared.Networking;
-using Shared.Prediction;
 
 namespace Shared.Replication
 {
