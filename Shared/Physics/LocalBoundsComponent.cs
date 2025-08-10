@@ -14,16 +14,18 @@ namespace Shared.Physics
         public Vector3 Center { get; set; }
         public Vector3 Size { get; set; }
 
+        private const float QuantizationStep = 0.01f;
+
         public void Serialize(IComponentWriter writer)
         {
-            writer.Put(Center);
-            writer.Put(Size);
+            writer.PutVector3Q(Center, QuantizationStep);
+            writer.PutVector3Q(Size, QuantizationStep);
         }
 
         public void Deserialize(IComponentReader reader)
         {
-            Center = reader.GetVector3();
-            Size = reader.GetVector3();
+            Center = reader.GetVector3Q(QuantizationStep);
+            Size = reader.GetVector3Q(QuantizationStep);
         }
     }
 }

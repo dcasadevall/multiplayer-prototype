@@ -11,6 +11,8 @@ namespace Shared.Physics
     {
         public Vector3 Value { get; set; }
 
+        private const float QuantizationStep = 0.01f; // centimeter precision in meters
+
         public PositionComponent()
         {
         }
@@ -22,12 +24,12 @@ namespace Shared.Physics
 
         public void Serialize(IComponentWriter writer)
         {
-            writer.Put(Value);
+            writer.PutVector3Q(Value, QuantizationStep);
         }
 
         public void Deserialize(IComponentReader reader)
         {
-            Value = reader.GetVector3();
+            Value = reader.GetVector3Q(QuantizationStep);
         }
     }
 }

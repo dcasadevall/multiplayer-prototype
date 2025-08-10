@@ -39,10 +39,10 @@ namespace SharedUnitTests.ECS.Components
 
             // Assert
             Assert.NotNull(deserialized);
-            Assert.Equal(original.Value.X, deserialized.Value.X, 5);
-            Assert.Equal(original.Value.Y, deserialized.Value.Y, 5);
-            Assert.Equal(original.Value.Z, deserialized.Value.Z, 5);
-            Assert.Equal(original.Value.W, deserialized.Value.W, 5);
+            Assert.InRange(deserialized.Value.X, original.Value.X - 0.001f, original.Value.X + 0.001f);
+            Assert.InRange(deserialized.Value.Y, original.Value.Y - 0.001f, original.Value.Y + 0.001f);
+            Assert.InRange(deserialized.Value.Z, original.Value.Z - 0.001f, original.Value.Z + 0.001f);
+            Assert.InRange(deserialized.Value.W, original.Value.W - 0.001f, original.Value.W + 0.001f);
         }
 
         [Fact]
@@ -62,7 +62,9 @@ namespace SharedUnitTests.ECS.Components
 
             // Assert
             Assert.NotNull(deserialized);
-            Assert.Equal(original.Value, deserialized.Value);
+            Assert.InRange(deserialized.Value.X, original.Value.X - 0.01f, original.Value.X + 0.01f);
+            Assert.InRange(deserialized.Value.Y, original.Value.Y - 0.01f, original.Value.Y + 0.01f);
+            Assert.InRange(deserialized.Value.Z, original.Value.Z - 0.01f, original.Value.Z + 0.01f);
         }
 
         [Fact]
@@ -82,7 +84,9 @@ namespace SharedUnitTests.ECS.Components
 
             // Assert
             Assert.NotNull(deserialized);
-            Assert.Equal(original.Value, deserialized.Value);
+            Assert.InRange(deserialized.Value.X, original.Value.X - 0.01f, original.Value.X + 0.01f);
+            Assert.InRange(deserialized.Value.Y, original.Value.Y - 0.01f, original.Value.Y + 0.01f);
+            Assert.InRange(deserialized.Value.Z, original.Value.Z - 0.01f, original.Value.Z + 0.01f);
         }
 
         [Fact]
@@ -106,8 +110,12 @@ namespace SharedUnitTests.ECS.Components
 
             // Assert
             Assert.NotNull(deserialized);
-            Assert.Equal(original.Center, deserialized.Center);
-            Assert.Equal(original.Size, deserialized.Size);
+            Assert.InRange(deserialized.Center.X, original.Center.X - 0.01f, original.Center.X + 0.01f);
+            Assert.InRange(deserialized.Center.Y, original.Center.Y - 0.01f, original.Center.Y + 0.01f);
+            Assert.InRange(deserialized.Center.Z, original.Center.Z - 0.01f, original.Center.Z + 0.01f);
+            Assert.InRange(deserialized.Size.X, original.Size.X - 0.01f, original.Size.X + 0.01f);
+            Assert.InRange(deserialized.Size.Y, original.Size.Y - 0.01f, original.Size.Y + 0.01f);
+            Assert.InRange(deserialized.Size.Z, original.Size.Z - 0.01f, original.Size.Z + 0.01f);
         }
 
         [Fact]

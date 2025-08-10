@@ -49,10 +49,22 @@ namespace Shared.ECS.Replication
         /// Writes a component to the stream.
         /// </summary>
         void Put(IComponent value);
+        void Put(Guid value);
 
         /// <summary>
-        /// Writes a Guid value to the stream.
+        /// Writes a quantized Vector3 using 3 x Int16 with the given step size.
+        /// For example, step 0.01f stores values at centimeter precision in meters.
         /// </summary>
-        void Put(Guid value);
+        /// <param name="value">Vector to write.</param>
+        /// <param name="step">Quantization step (units per LSB), e.g. 0.01f.</param>
+        void PutVector3Q(Vector3 value, float step);
+
+        /// <summary>
+        /// Writes a compressed unit quaternion using the smallest-three scheme:
+        /// drops the largest component, stores the remaining three as Int16 in [-32767, 32767],
+        /// and a header byte encoding dropped index and sign. Total 7 bytes.
+        /// </summary>
+        /// <param name="value">Unit quaternion to write. Will be normalized if needed.</param>
+        void PutQuaternionCompressed(Quaternion value);
     }
 }

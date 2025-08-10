@@ -42,8 +42,12 @@ namespace Shared.ECS.Replication
         public void Serialize(NetDataWriter writer, IComponentSerializer serializer, ComponentTypeRegistry registry)
         {
             writer.Put(EntityId.ToByteArray());
-            writer.Put(IsNew);
-            writer.Put(IsDestroyed);
+
+            // Pack IsNew/IsDestroyed into a single byte (bit 0 = IsNew, bit 1 = IsDestroyed)
+            byte flags = 0;
+            if (IsNew) flags |= 0x01;
+            if (IsDestroyed) flags |= 0x02;
+            writer.Put(flags);
 
             // Serialize components
             writer.Put((ushort)AddedOrModifiedComponents.Count);
@@ -67,8 +71,10 @@ namespace Shared.ECS.Replication
             reader.GetBytes(bytes, 16);
             EntityId = new Guid(bytes);
 
-            IsNew = reader.GetBool();
-            IsDestroyed = reader.GetBool();
+            // Unpack flags
+            var flags = reader.GetByte();
+            IsNew = (flags & 0x01) != 0;
+            IsDestroyed = (flags & 0x02) != 0;
 
             // Deserialize components
             var count = reader.GetUShort();

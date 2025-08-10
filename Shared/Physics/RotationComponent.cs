@@ -20,12 +20,12 @@ namespace Shared.Physics
 
         public void Serialize(IComponentWriter writer)
         {
-            writer.Put(Value);
+            writer.PutQuaternionCompressed(Value);
         }
 
         public void Deserialize(IComponentReader reader)
         {
-            Value = reader.GetQuaternion();
+            Value = reader.GetQuaternionCompressed();
         }
     }
 }

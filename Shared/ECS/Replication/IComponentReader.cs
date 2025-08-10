@@ -54,5 +54,19 @@ namespace Shared.ECS.Replication
         /// Reads a Guid value from the stream.
         /// </summary>
         Guid GetGuid();
+
+        /// <summary>
+        /// Reads a quantized Vector3 previously written with PutVector3Q using the same step size.
+        /// This is useful for reading values that were quantized to save bandwidth.
+        /// </summary>
+        /// <param name="step">Quantization step used during write.</param>
+        /// <returns>Dequantized Vector3.</returns>
+        Vector3 GetVector3Q(float step);
+
+        /// <summary>
+        /// Reads a compressed unit quaternion previously written with PutQuaternionCompressed.
+        /// </summary>
+        /// <returns>Decompressed unit quaternion.</returns>
+        Quaternion GetQuaternionCompressed();
     }
 }
