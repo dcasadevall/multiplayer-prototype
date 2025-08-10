@@ -27,10 +27,11 @@ namespace Shared.Prediction
         private static readonly object _serverValuePropertyCacheLock = new();
 
         /// <summary>
-        /// Gets the closed generic type for PredictedComponent<T> based on the provided component type.
+        /// Gets the closed generic type for PredictedComponent[T] based on the provided component type.
         /// Uses a cache for high performance.
+        /// That is, gets the PredictedComponent[T] type for the provided componentType of type T.
         /// </summary>
-        public static Type GetLocalPredictedCounterpartType(Type componentType)
+        public static Type GetPredictedType(Type componentType)
         {
             lock (_predictedTypeCacheLock)
             {
@@ -45,6 +46,27 @@ namespace Shared.Prediction
                 _predictedTypeCache[componentType] = predictedType;
                 return predictedType;
             }
+        }
+
+        /// <summary>
+        /// Gets the local counterpart type of the given PredictedComponent[T].
+        /// That is, if the predictedComponentType is PredictedComponent[T],
+        /// this returns T, the original component type.
+        /// </summary>
+        /// <returns></returns>
+        public static Type GetLocalType(Type predictedComponentType)
+        {
+            if (predictedComponentType == null) throw new ArgumentNullException(nameof(predictedComponentType));
+
+            // Check if the type is a predicted component
+            if (!IsPredicted(predictedComponentType))
+            {
+                throw new InvalidOperationException($"Type {predictedComponentType.Name} is not a predicted component.");
+            }
+
+            // Get the generic type argument, which is the original component type
+            return predictedComponentType.GetGenericArguments().FirstOrDefault() ?? throw new InvalidOperationException(
+                $"Predicted component {predictedComponentType.Name} does not have a valid generic argument.");
         }
 
         /// <summary>
@@ -86,6 +108,28 @@ namespace Shared.Prediction
         }
 
         /// <summary>
+        /// Gets the server authoritative value for a predicted component.
+        /// This retrieves the ServerValue property from the PredictedComponent[T] wrapper.
+        /// </summary>
+        /// <param name="component"></param>
+        /// <returns></returns>
+        /// <exception cref="ArgumentNullException"></exception>
+        /// <exception cref="InvalidOperationException"></exception>
+        public static IComponent GetServerAuthoritativeValue(this IComponent component)
+        {
+            if (component == null) throw new ArgumentNullException(nameof(component));
+
+            var prop = GetServerValueProperty(component.GetType());
+            if (prop == null)
+            {
+                throw new InvalidOperationException(
+                    $"Predicted component {component.GetType().Name} does not have a ServerValue property.");
+            }
+
+            return (IComponent)prop.GetValue(component);
+        }
+
+        /// <summary>
         /// Sets the ServerValue field of the predicted component, given the component type and value
         /// if the entity has a predicted component of that type.
         /// </summary>
@@ -95,7 +139,7 @@ namespace Shared.Prediction
             if (componentType == null) throw new ArgumentNullException(nameof(componentType));
             if (serverComponent == null) throw new ArgumentNullException(nameof(serverComponent));
 
-            var predictedType = GetLocalPredictedCounterpartType(componentType);
+            var predictedType = GetPredictedType(componentType);
             if (!entity.TryGet(predictedType, out var wrapper))
             {
                 return false;
@@ -130,7 +174,7 @@ namespace Shared.Prediction
             if (entity == null) throw new ArgumentNullException(nameof(entity));
             if (componentType == null) throw new ArgumentNullException(nameof(componentType));
 
-            var predictedType = GetLocalPredictedCounterpartType(componentType);
+            var predictedType = GetPredictedType(componentType);
             return entity.Has(predictedType);
         }
 
@@ -213,60 +257,6 @@ namespace Shared.Prediction
             }
 
             return false;
-        }
-
-        /// <summary>
-        /// Gets the non-generic IPredictedComponent interface from a predicted component on an entity.
-        /// </summary>
-        public static bool TryGetPredictedComponent(this Entity entity, Type innerType, out IPredictedComponent? predictedComponent)
-        {
-            var genericType = typeof(PredictedComponent<>).MakeGenericType(innerType);
-            if (entity.TryGet(genericType, out var component))
-            {
-                predictedComponent = (IPredictedComponent)component;
-                return true;
-            }
-
-            predictedComponent = null;
-            return false;
-        }
-
-        /// <summary>
-        /// Sets the server value on a client's PredictedComponent.
-        /// </summary>
-        public static void SetServerValue(this Entity entity, IComponent serverValue)
-        {
-            var innerType = serverValue.GetType();
-            if (entity.TryGetPredictedComponent(innerType, out var predictedComponent))
-            {
-                var genericType = typeof(PredictedComponent<>).MakeGenericType(innerType);
-                var serverValueProp = genericType.GetProperty("ServerValue");
-                serverValueProp?.SetValue(predictedComponent, serverValue);
-            }
-        }
-
-        /// <summary>
-        /// Gets the server value on a non typed client's PredictedComponent.
-        /// </summary>
-        public static IComponent GetServerAuthoritativeValue(this IComponent predictedComponent)
-        {
-            var localType = GetLocalPredictedCounterpartType(predictedComponent.GetType());
-            var genericType = typeof(PredictedComponent<>).MakeGenericType(localType);
-            var serverValueProp = genericType.GetProperty("ServerValue");
-            if (serverValueProp == null)
-            {
-                throw new InvalidOperationException($"Predicted component {localType.Name} does not have a ServerValue property.");
-            }
-
-            return (IComponent)serverValueProp.GetValue(predictedComponent);
-        }
-
-        /// <summary>
-        /// Gets all IPredictedComponent interfaces from an entity.
-        /// </summary>
-        public static IEnumerable<IPredictedComponent> GetPredictedComponents(this Entity entity)
-        {
-            return entity.GetAllComponents().OfType<IPredictedComponent>();
         }
     }
 }

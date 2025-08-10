@@ -88,6 +88,49 @@ namespace SharedUnitTests.ECS.Replication
             // The local component should have the initial value, and the predicted wrapper's server value should be null after initial spawn
             Assert.Equal(serverPosition.Value, clientPosition.Value);
             Assert.NotNull(clientPredicted.ServerValue);
+            Assert.Equal(serverPosition.Value, clientPredicted.ServerValue.Value);
+        }
+
+        [Fact]
+        public void ModifyPredictedEntity_ServerToClient_UpdatesServerValueOnly()
+        {
+            // --- SERVER SIDE ---
+            // Arrange: Create an entity and run replication once to establish it on the client.
+            var serverEntity = _serverRegistry.CreateEntity();
+            var serverPosition = new PositionComponent { Value = new(1, 1, 1) };
+            var serverPredicted = new PredictedComponent<PositionComponent>
+            {
+                Mode = ReplicationMode.EveryTick,
+                ServerValue = serverPosition
+            };
+            serverEntity.AddComponent(serverPredicted);
+            serverEntity.AddComponent(serverPosition);
+            _serverSystem.Update(_serverRegistry, 1, 0);
+            _clientSystem.Update(_clientRegistry, 1, 0);
+
+            // Arrange: Modify the server's component and the client's local predicted component
+            if (!_clientRegistry.TryGet(serverEntity.Id, out var clientEntity))
+            {
+                throw new InvalidOperationException("Client entity not found after initial replication.");
+            }
+
+            clientEntity.GetRequired<PositionComponent>().Value = new(2, 2, 2); // Client predicts
+
+            var newServerPosition = new PositionComponent { Value = new(3, 3, 3) };
+            serverPredicted.ServerValue = newServerPosition;
+            serverEntity.AddOrReplaceComponent(serverPredicted); // Mark for modification
+
+            // Act: Server sends the update, client consumes it
+            _serverSystem.Update(_serverRegistry, 2, 0);
+            _clientSystem.Update(_clientRegistry, 2, 0);
+
+            // Assert: The client's predicted wrapper has the new server value, but the local component is unchanged.
+            var clientPredicted = clientEntity.GetRequired<PredictedComponent<PositionComponent>>();
+            var clientPosition = clientEntity.GetRequired<PositionComponent>();
+
+            Assert.NotNull(clientPredicted.ServerValue);
+            Assert.Equal(newServerPosition.Value, clientPredicted.ServerValue.Value);
+            Assert.Equal(new(2, 2, 2), clientPosition.Value); // Unchanged by replication
         }
     }
 }
