@@ -4,7 +4,7 @@
 
 using System;
 
-namespace Shared.ECS.Replication
+namespace Shared.Replication
 {
     public partial class ComponentTypeRegistry
     { 
@@ -46,54 +46,46 @@ namespace Shared.ECS.Replication
             _typeToId.Add(typeof(Shared.Physics.VelocityComponent), 16);
             _idToType.Add(17, typeof(Shared.Physics.WorldAABBComponent));
             _typeToId.Add(typeof(Shared.Physics.WorldAABBComponent), 17);
-            _idToType.Add(18, typeof(Shared.Prediction.DerivedPositionComponent));
-            _typeToId.Add(typeof(Shared.Prediction.DerivedPositionComponent), 18);
-            _idToType.Add(19, typeof(Shared.Prediction.PredictedComponent<Shared.Damage.DamageApplyingComponent>));
-            _typeToId.Add(typeof(Shared.Prediction.PredictedComponent<Shared.Damage.DamageApplyingComponent>), 19);
-            _idToType.Add(20, typeof(Shared.Prediction.PredictedComponent<Shared.Damage.HealthComponent>));
-            _typeToId.Add(typeof(Shared.Prediction.PredictedComponent<Shared.Damage.HealthComponent>), 20);
-            _idToType.Add(21, typeof(Shared.Prediction.PredictedComponent<Shared.ECS.Components.BotTagComponent>));
-            _typeToId.Add(typeof(Shared.Prediction.PredictedComponent<Shared.ECS.Components.BotTagComponent>), 21);
-            _idToType.Add(22, typeof(Shared.Prediction.PredictedComponent<Shared.ECS.Components.LocalEntityTagComponent>));
-            _typeToId.Add(typeof(Shared.Prediction.PredictedComponent<Shared.ECS.Components.LocalEntityTagComponent>), 22);
-            _idToType.Add(23, typeof(Shared.Prediction.PredictedComponent<Shared.ECS.Components.NameComponent>));
-            _typeToId.Add(typeof(Shared.Prediction.PredictedComponent<Shared.ECS.Components.NameComponent>), 23);
-            _idToType.Add(24, typeof(Shared.Prediction.PredictedComponent<Shared.ECS.Components.PeerComponent>));
-            _typeToId.Add(typeof(Shared.Prediction.PredictedComponent<Shared.ECS.Components.PeerComponent>), 24);
-            _idToType.Add(25, typeof(Shared.Prediction.PredictedComponent<Shared.ECS.Components.PlayerTagComponent>));
-            _typeToId.Add(typeof(Shared.Prediction.PredictedComponent<Shared.ECS.Components.PlayerTagComponent>), 25);
-            _idToType.Add(26, typeof(Shared.Prediction.PredictedComponent<Shared.ECS.Components.PrefabComponent>));
-            _typeToId.Add(typeof(Shared.Prediction.PredictedComponent<Shared.ECS.Components.PrefabComponent>), 26);
-            _idToType.Add(27, typeof(Shared.Prediction.PredictedComponent<Shared.ECS.Components.ProjectileTagComponent>));
-            _typeToId.Add(typeof(Shared.Prediction.PredictedComponent<Shared.ECS.Components.ProjectileTagComponent>), 27);
-            _idToType.Add(28, typeof(Shared.Prediction.PredictedComponent<Shared.ECS.Components.SelfDestroyingComponent>));
-            _typeToId.Add(typeof(Shared.Prediction.PredictedComponent<Shared.ECS.Components.SelfDestroyingComponent>), 28);
-            _idToType.Add(29, typeof(Shared.Prediction.PredictedComponent<Shared.ECS.Components.SpawnAuthorityComponent>));
-            _typeToId.Add(typeof(Shared.Prediction.PredictedComponent<Shared.ECS.Components.SpawnAuthorityComponent>), 29);
-            _idToType.Add(30, typeof(Shared.Prediction.PredictedComponent<Shared.ECS.TickSync.ServerTickComponent>));
-            _typeToId.Add(typeof(Shared.Prediction.PredictedComponent<Shared.ECS.TickSync.ServerTickComponent>), 30);
-            _idToType.Add(31, typeof(Shared.Prediction.PredictedComponent<Shared.Physics.CollidingTagComponent>));
-            _typeToId.Add(typeof(Shared.Prediction.PredictedComponent<Shared.Physics.CollidingTagComponent>), 31);
-            _idToType.Add(32, typeof(Shared.Prediction.PredictedComponent<Shared.Physics.LocalBoundsComponent>));
-            _typeToId.Add(typeof(Shared.Prediction.PredictedComponent<Shared.Physics.LocalBoundsComponent>), 32);
-            _idToType.Add(33, typeof(Shared.Prediction.PredictedComponent<Shared.Physics.PositionComponent>));
-            _typeToId.Add(typeof(Shared.Prediction.PredictedComponent<Shared.Physics.PositionComponent>), 33);
-            _idToType.Add(34, typeof(Shared.Prediction.PredictedComponent<Shared.Physics.RotationComponent>));
-            _typeToId.Add(typeof(Shared.Prediction.PredictedComponent<Shared.Physics.RotationComponent>), 34);
-            _idToType.Add(35, typeof(Shared.Prediction.PredictedComponent<Shared.Physics.VelocityComponent>));
-            _typeToId.Add(typeof(Shared.Prediction.PredictedComponent<Shared.Physics.VelocityComponent>), 35);
-            _idToType.Add(36, typeof(Shared.Prediction.PredictedComponent<Shared.Physics.WorldAABBComponent>));
-            _typeToId.Add(typeof(Shared.Prediction.PredictedComponent<Shared.Physics.WorldAABBComponent>), 36);
-            _idToType.Add(37, typeof(Shared.Prediction.PredictedComponent<Shared.Prediction.DerivedPositionComponent>));
-            _typeToId.Add(typeof(Shared.Prediction.PredictedComponent<Shared.Prediction.DerivedPositionComponent>), 37);
-            _idToType.Add(38, typeof(Shared.Prediction.PredictedComponent<Shared.Prediction.SpawnVelocityComponent>));
-            _typeToId.Add(typeof(Shared.Prediction.PredictedComponent<Shared.Prediction.SpawnVelocityComponent>), 38);
-            _idToType.Add(39, typeof(Shared.Prediction.PredictedComponent<Shared.Respawn.RespawnComponent>));
-            _typeToId.Add(typeof(Shared.Prediction.PredictedComponent<Shared.Respawn.RespawnComponent>), 39);
-            _idToType.Add(40, typeof(Shared.Prediction.SpawnVelocityComponent));
-            _typeToId.Add(typeof(Shared.Prediction.SpawnVelocityComponent), 40);
-            _idToType.Add(41, typeof(Shared.Respawn.RespawnComponent));
-            _typeToId.Add(typeof(Shared.Respawn.RespawnComponent), 41);
+            _idToType.Add(18, typeof(Shared.Prediction.PredictedComponent<Shared.Damage.DamageApplyingComponent>));
+            _typeToId.Add(typeof(Shared.Prediction.PredictedComponent<Shared.Damage.DamageApplyingComponent>), 18);
+            _idToType.Add(19, typeof(Shared.Prediction.PredictedComponent<Shared.Damage.HealthComponent>));
+            _typeToId.Add(typeof(Shared.Prediction.PredictedComponent<Shared.Damage.HealthComponent>), 19);
+            _idToType.Add(20, typeof(Shared.Prediction.PredictedComponent<Shared.ECS.Components.BotTagComponent>));
+            _typeToId.Add(typeof(Shared.Prediction.PredictedComponent<Shared.ECS.Components.BotTagComponent>), 20);
+            _idToType.Add(21, typeof(Shared.Prediction.PredictedComponent<Shared.ECS.Components.LocalEntityTagComponent>));
+            _typeToId.Add(typeof(Shared.Prediction.PredictedComponent<Shared.ECS.Components.LocalEntityTagComponent>), 21);
+            _idToType.Add(22, typeof(Shared.Prediction.PredictedComponent<Shared.ECS.Components.NameComponent>));
+            _typeToId.Add(typeof(Shared.Prediction.PredictedComponent<Shared.ECS.Components.NameComponent>), 22);
+            _idToType.Add(23, typeof(Shared.Prediction.PredictedComponent<Shared.ECS.Components.PeerComponent>));
+            _typeToId.Add(typeof(Shared.Prediction.PredictedComponent<Shared.ECS.Components.PeerComponent>), 23);
+            _idToType.Add(24, typeof(Shared.Prediction.PredictedComponent<Shared.ECS.Components.PlayerTagComponent>));
+            _typeToId.Add(typeof(Shared.Prediction.PredictedComponent<Shared.ECS.Components.PlayerTagComponent>), 24);
+            _idToType.Add(25, typeof(Shared.Prediction.PredictedComponent<Shared.ECS.Components.PrefabComponent>));
+            _typeToId.Add(typeof(Shared.Prediction.PredictedComponent<Shared.ECS.Components.PrefabComponent>), 25);
+            _idToType.Add(26, typeof(Shared.Prediction.PredictedComponent<Shared.ECS.Components.ProjectileTagComponent>));
+            _typeToId.Add(typeof(Shared.Prediction.PredictedComponent<Shared.ECS.Components.ProjectileTagComponent>), 26);
+            _idToType.Add(27, typeof(Shared.Prediction.PredictedComponent<Shared.ECS.Components.SelfDestroyingComponent>));
+            _typeToId.Add(typeof(Shared.Prediction.PredictedComponent<Shared.ECS.Components.SelfDestroyingComponent>), 27);
+            _idToType.Add(28, typeof(Shared.Prediction.PredictedComponent<Shared.ECS.Components.SpawnAuthorityComponent>));
+            _typeToId.Add(typeof(Shared.Prediction.PredictedComponent<Shared.ECS.Components.SpawnAuthorityComponent>), 28);
+            _idToType.Add(29, typeof(Shared.Prediction.PredictedComponent<Shared.ECS.TickSync.ServerTickComponent>));
+            _typeToId.Add(typeof(Shared.Prediction.PredictedComponent<Shared.ECS.TickSync.ServerTickComponent>), 29);
+            _idToType.Add(30, typeof(Shared.Prediction.PredictedComponent<Shared.Physics.CollidingTagComponent>));
+            _typeToId.Add(typeof(Shared.Prediction.PredictedComponent<Shared.Physics.CollidingTagComponent>), 30);
+            _idToType.Add(31, typeof(Shared.Prediction.PredictedComponent<Shared.Physics.LocalBoundsComponent>));
+            _typeToId.Add(typeof(Shared.Prediction.PredictedComponent<Shared.Physics.LocalBoundsComponent>), 31);
+            _idToType.Add(32, typeof(Shared.Prediction.PredictedComponent<Shared.Physics.PositionComponent>));
+            _typeToId.Add(typeof(Shared.Prediction.PredictedComponent<Shared.Physics.PositionComponent>), 32);
+            _idToType.Add(33, typeof(Shared.Prediction.PredictedComponent<Shared.Physics.RotationComponent>));
+            _typeToId.Add(typeof(Shared.Prediction.PredictedComponent<Shared.Physics.RotationComponent>), 33);
+            _idToType.Add(34, typeof(Shared.Prediction.PredictedComponent<Shared.Physics.VelocityComponent>));
+            _typeToId.Add(typeof(Shared.Prediction.PredictedComponent<Shared.Physics.VelocityComponent>), 34);
+            _idToType.Add(35, typeof(Shared.Prediction.PredictedComponent<Shared.Physics.WorldAABBComponent>));
+            _typeToId.Add(typeof(Shared.Prediction.PredictedComponent<Shared.Physics.WorldAABBComponent>), 35);
+            _idToType.Add(36, typeof(Shared.Prediction.PredictedComponent<Shared.Respawn.RespawnComponent>));
+            _typeToId.Add(typeof(Shared.Prediction.PredictedComponent<Shared.Respawn.RespawnComponent>), 36);
+            _idToType.Add(37, typeof(Shared.Respawn.RespawnComponent));
+            _typeToId.Add(typeof(Shared.Respawn.RespawnComponent), 37);
         }
     }
 }

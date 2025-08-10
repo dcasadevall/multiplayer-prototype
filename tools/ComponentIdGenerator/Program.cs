@@ -102,7 +102,7 @@ namespace ComponentIdGenerator
                 builder.AppendLine();
                 builder.AppendLine("using System;");
                 builder.AppendLine();
-                builder.AppendLine("namespace Shared.ECS.Replication");
+                builder.AppendLine("namespace Shared.Replication");
                 builder.AppendLine("{");
                 builder.AppendLine("    public partial class ComponentTypeRegistry");
                 builder.AppendLine("    { ");
