@@ -2,6 +2,7 @@ using System.Numerics;
 using Shared.Damage;
 using Shared.ECS.Components;
 using Shared.ECS.Entities;
+using Shared.ECS.Simulation;
 using Shared.Physics;
 using Shared.Prediction;
 
@@ -61,24 +62,24 @@ namespace Shared.ECS.Archetypes
             EntityId sourceEntityId)
         {
             var projectile = registry.CreateEntity();
-            
+
             // Predicted spatial components with InitialValue only replication
             projectile.AddComponent(new PredictedComponent<PositionComponent>
             {
-                Mode = PredictedComponent<PositionComponent>.ReplicationMode.InitialValue,
+                Mode = ReplicationMode.InitialValue,
                 ServerValue = new PositionComponent { Value = spawnPosition }
             });
             projectile.AddComponent(new PredictedComponent<VelocityComponent>
             {
-                Mode = PredictedComponent<VelocityComponent>.ReplicationMode.InitialValue,
+                Mode = ReplicationMode.InitialValue,
                 ServerValue = new VelocityComponent { Value = velocity }
             });
             projectile.AddComponent(new PredictedComponent<RotationComponent>
             {
-                Mode = PredictedComponent<RotationComponent>.ReplicationMode.InitialValue,
+                Mode = ReplicationMode.InitialValue,
                 ServerValue = new RotationComponent { Value = spawnRotation }
             });
-            
+
             // Add the base components for client-side use
             projectile.AddComponent(new PositionComponent { Value = spawnPosition });
             projectile.AddComponent(new VelocityComponent { Value = velocity });

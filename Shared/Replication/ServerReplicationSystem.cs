@@ -217,14 +217,13 @@ namespace Shared.ECS.Replication
                         continue;
                     }
 
-                    if (component is PredictedComponent<IComponent> p)
+                    if (component.IsPredicted())
                     {
-                        // For every mode except no replication,
-                        // send the value on entity creation tick.
-                        if (p.Mode == PredictedComponent<IComponent>.ReplicationMode.None)
+                        if (component.ShouldBeReplicatedAtTick(0))
                         {
-                            componentsToSend.Add(component);
+                            var p = (IPredictedComponent)component;
                             p.LastSentAtTick = tickNumber;
+                            componentsToSend.Add(component);
                         }
                     }
                     else
@@ -274,24 +273,13 @@ namespace Shared.ECS.Replication
                         continue;
                     }
 
-                    if (component is PredictedComponent<IComponent> p)
+                    if (component.IsPredicted())
                     {
-                        if (p.Mode.HasFlag(PredictedComponent<IComponent>.ReplicationMode.EveryTick))
+                        if (component.ShouldBeReplicatedAtTick(tickNumber))
                         {
-                            componentsToSend.Add(component);
+                            var p = (IPredictedComponent)component;
                             p.LastSentAtTick = tickNumber;
-                        }
-                        else if (p.Mode.HasFlag(PredictedComponent<IComponent>.ReplicationMode.SomeTicks) &&
-                                 (tickNumber - p.LastSentAtTick >= p.ReplicationTickRate))
-                        {
                             componentsToSend.Add(component);
-                            p.LastSentAtTick = tickNumber;
-                        }
-                        else if (p.Mode.HasFlag(PredictedComponent<IComponent>.ReplicationMode.InitialValue) &&
-                                 p.LastSentAtTick == 0)
-                        {
-                            componentsToSend.Add(component);
-                            p.LastSentAtTick = tickNumber;
                         }
                     }
                     else

@@ -5,6 +5,67 @@ using System;
 namespace Shared.Prediction
 {
     /// <summary>
+    /// Controls how often the server replicates this predicted component. Flags can be combined.
+    /// For example, InitialValue | SomeTicks to send an initial snapshot and then periodic updates.
+    /// </summary>
+    [Flags]
+    public enum ReplicationMode
+    {
+        /// <summary>
+        /// No replication. The client will always derive the local value.
+        /// </summary>
+        Never = 0,
+
+        /// <summary>
+        /// Replicate an initial authoritative value on entity creation only.
+        /// </summary>
+        InitialValue = 1 << 0,
+
+        /// <summary>
+        /// Replicate an authoritative value every server tick.
+        /// </summary>
+        EveryTick = 1 << 1,
+
+        /// <summary>
+        /// Replicate periodically according to <see cref="IPredictedComponent.ReplicationTickRate"/>.
+        /// </summary>
+        SomeTicks = 1 << 2,
+
+        // We serialize as byte
+        MaxValue = 1 << 8,
+    }
+
+    /// <summary>
+    /// Wrapper interface so that we can generically access common properties
+    /// of predicted components without knowing their specific type.
+    /// </summary>
+    public interface IPredictedComponent
+    {
+        /// <summary>
+        /// Whether this predicted component has received authoritative data from the server.
+        /// </summary>
+        bool HasServerValue { get; }
+
+        /// <summary>
+        /// The replication frequency mode for this predicted component.
+        /// Defaults to <see cref="ReplicationMode.EveryTick"/>.
+        /// </summary>
+        public ReplicationMode Mode { get; set; }
+
+        /// <summary>
+        /// When <see cref="Mode"/> includes <see cref="ReplicationMode.SomeTicks"/>,
+        /// the server should replicate this component every N ticks (N = <see cref="ReplicationTickRate"/>).
+        /// Defaults to 1.
+        /// </summary>
+        public uint ReplicationTickRate { get; set; }
+
+        /// <summary>
+        /// The last tick at which this component was sent to the client.
+        /// </summary>
+        uint LastSentAtTick { get; set; }
+    }
+
+    /// <summary>
     /// A component wrapper used for client-side prediction and reconciliation.
     /// 
     /// <para>
@@ -20,63 +81,23 @@ namespace Shared.Prediction
     /// </para>
     /// </summary>
     /// <typeparam name="T">The type of the predicted component (must implement <see cref="IComponent"/>).</typeparam>
-    public class PredictedComponent<T> : IComponent where T : IComponent
+    public class PredictedComponent<T> : IComponent, IPredictedComponent where T : IComponent
     {
-        /// <summary>
-        /// Controls how often the server replicates this predicted component. Flags can be combined.
-        /// For example, InitialValue | SomeTicks to send an initial snapshot and then periodic updates.
-        /// </summary>
-        [Flags]
-        public enum ReplicationMode
-        {
-            /// <summary>
-            /// No replication. The client will always derive the local value.
-            /// </summary>
-            None = 0,
-
-            /// <summary>
-            /// Replicate an initial authoritative value on entity creation only.
-            /// </summary>
-            InitialValue = 1 << 0,
-
-            /// <summary>
-            /// Replicate an authoritative value every server tick.
-            /// </summary>
-            EveryTick = 1 << 1,
-
-            /// <summary>
-            /// Replicate periodically according to <see cref="ReplicationTickRate"/>.
-            /// </summary>
-            SomeTicks = 1 << 2,
-
-            // We serialize as byte
-            MaxValue = 1 << 8,
-        }
-
         /// <summary>
         /// The last server-authoritative value for this component.
         /// </summary>
         public T? ServerValue { get; set; }
 
-        /// <summary>
-        /// Whether this predicted component has received authoritative data from the server.
-        /// </summary>
+        /// <inheritdoc />
         public bool HasServerValue => ServerValue != null;
 
-        /// <summary>
-        /// The replication frequency mode for this predicted component.
-        /// Defaults to <see cref="ReplicationMode.EveryTick"/>.
-        /// </summary>
+        /// <inheritdoc />
         public ReplicationMode Mode { get; set; } = ReplicationMode.EveryTick;
 
-        /// <summary>
-        /// When <see cref="Mode"/> includes <see cref="ReplicationMode.SomeTicks"/>,
-        /// the server should replicate this component every N ticks (N = <see cref="ReplicationTickRate"/>).
-        /// Defaults to 1.
-        /// </summary>
+        /// <inheritdoc />
         public uint ReplicationTickRate { get; set; } = 1;
 
-        public uint LastSentAtTick { get; set; } = 0;
+        public uint LastSentAtTick { get; set; }
 
         public void Serialize(IComponentWriter writer)
         {

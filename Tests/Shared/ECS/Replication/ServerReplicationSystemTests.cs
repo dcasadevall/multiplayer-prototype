@@ -10,6 +10,7 @@ using Shared.Physics;
 using NSubstitute;
 using Xunit;
 using System.Linq;
+using Shared.Prediction;
 
 namespace SharedUnitTests.ECS.Replication
 {
@@ -38,14 +39,14 @@ namespace SharedUnitTests.ECS.Replication
             // Arrange
             var entity = _registry.CreateEntity();
             entity.AddComponent(new PositionComponent());
-            
+
             // Act
             _system.Update(_registry, 0, 0);
 
             // Assert
             _messageSender.Received().BroadcastMessage(
                 Arg.Is(MessageType.Delta),
-                Arg.Is<WorldDeltaMessage>(m => 
+                Arg.Is<WorldDeltaMessage>(m =>
                     m.Deltas.Count == 1 &&
                     m.Deltas[0].IsNew &&
                     m.Deltas[0].EntityId == entity.Id.Value &&
@@ -65,9 +66,9 @@ namespace SharedUnitTests.ECS.Replication
             _system.Update(_registry, 1, 0);
 
             // Assert
-             _messageSender.Received().BroadcastMessage(
+            _messageSender.Received().BroadcastMessage(
                 Arg.Is(MessageType.Delta),
-                Arg.Is<WorldDeltaMessage>(m => 
+                Arg.Is<WorldDeltaMessage>(m =>
                     m.Deltas.Count == 1 &&
                     !m.Deltas[0].IsNew &&
                     m.Deltas[0].AddedOrModifiedComponents.Count == 1),
@@ -86,12 +87,107 @@ namespace SharedUnitTests.ECS.Replication
             _system.Update(_registry, 1, 0);
 
             // Assert
-             _messageSender.Received().BroadcastMessage(
+            _messageSender.Received().BroadcastMessage(
                 Arg.Is(MessageType.Delta),
-                Arg.Is<WorldDeltaMessage>(m => 
+                Arg.Is<WorldDeltaMessage>(m =>
                     m.Deltas.Count == 1 &&
                     m.Deltas[0].IsDestroyed),
                 Arg.Is(ChannelType.ReliableOrdered));
+        }
+
+        [Fact]
+        public void Update_PredictedComponentWithInitialValue_SendsOnlyOnCreate()
+        {
+            // Arrange
+            var entity = _registry.CreateEntity();
+            var pred = new PredictedComponent<PositionComponent>
+                { Mode = ReplicationMode.InitialValue };
+            entity.AddComponent(pred);
+
+            // Act & Assert (Create)
+            _system.Update(_registry, 1, 0);
+            _messageSender.Received(1).BroadcastMessage(
+                Arg.Any<MessageType>(),
+                Arg.Is<WorldDeltaMessage>(m => m.Deltas.Any(d => d.AddedOrModifiedComponents.Contains(pred) && d.IsNew)),
+                Arg.Any<ChannelType>());
+
+            _messageSender.ClearReceivedCalls();
+
+            // Act (Modify Tick)
+            entity.AddOrReplaceComponent(pred); // This marks it as modified for the next delta
+            _system.Update(_registry, 2, 0);
+
+            // Assert (Modify Tick) - No message should be sent for an InitialValue component
+            _messageSender.DidNotReceive().BroadcastMessage(Arg.Any<MessageType>(), Arg.Any<WorldDeltaMessage>(), Arg.Any<ChannelType>());
+        }
+
+        [Fact]
+        public void Update_PredictedComponentWithSomeTicks_SendsPeriodically()
+        {
+            // Arrange
+            var entity = _registry.CreateEntity();
+            var pred = new PredictedComponent<PositionComponent>
+            {
+                Mode = ReplicationMode.SomeTicks,
+                ReplicationTickRate = 3
+            };
+            entity.AddComponent(pred);
+            _system.Update(_registry, 1, 0); // Consume the "create" delta and clear internal state
+            _messageSender.ClearReceivedCalls();
+
+            // Act & Assert (Tick 2 - Modify, No Send)
+            entity.AddOrReplaceComponent(pred);
+            _system.Update(_registry, 2, 0);
+            _messageSender.DidNotReceive().BroadcastMessage(Arg.Any<MessageType>(), Arg.Any<WorldDeltaMessage>(), Arg.Any<ChannelType>());
+
+            // Act & Assert (Tick 4 - Modify, Send)
+            entity.AddOrReplaceComponent(pred);
+            _system.Update(_registry, 4, 0);
+            _messageSender.Received(1).BroadcastMessage(
+                Arg.Any<MessageType>(),
+                Arg.Is<WorldDeltaMessage>(m => m.Deltas.Any(d => d.AddedOrModifiedComponents.Contains(pred))),
+                Arg.Any<ChannelType>());
+            Assert.Equal(4u, pred.LastSentAtTick);
+        }
+
+        [Fact]
+        public void Update_PredictedComponentWithEveryTick_SendsEveryTime()
+        {
+            // Arrange
+            var entity = _registry.CreateEntity();
+            var pred = new PredictedComponent<PositionComponent> { Mode = ReplicationMode.EveryTick };
+            entity.AddComponent(pred);
+            _system.Update(_registry, 1, 0); // Consume the "create" delta
+            _messageSender.ClearReceivedCalls();
+
+            // Act & Assert (Tick 2)
+            entity.AddOrReplaceComponent(pred);
+            _system.Update(_registry, 2, 0);
+            _messageSender.Received(1).BroadcastMessage(Arg.Any<MessageType>(), Arg.Any<WorldDeltaMessage>(), Arg.Any<ChannelType>());
+
+            // Act & Assert (Tick 3)
+            _messageSender.ClearReceivedCalls();
+            entity.AddOrReplaceComponent(pred);
+            _system.Update(_registry, 3, 0);
+            _messageSender.Received(1).BroadcastMessage(Arg.Any<MessageType>(), Arg.Any<WorldDeltaMessage>(), Arg.Any<ChannelType>());
+        }
+
+        [Fact]
+        public void Update_PredictedComponentWithNone_NeverSends()
+        {
+            // Arrange
+            var entity = _registry.CreateEntity();
+            var pred = new PredictedComponent<PositionComponent> { Mode = ReplicationMode.Never };
+            entity.AddComponent(pred);
+            _system.Update(_registry, 1, 0); // Consume the "create" delta
+            _messageSender.ClearReceivedCalls();
+
+            // Act
+            entity.AddOrReplaceComponent(pred);
+            _system.Update(_registry, 2, 0);
+
+            // Assert
+            _messageSender.DidNotReceive().BroadcastMessage(Arg.Any<MessageType>(), Arg.Any<WorldDeltaMessage>(), Arg.Any<ChannelType>());
         }
     }
 }

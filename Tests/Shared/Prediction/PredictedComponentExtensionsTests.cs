@@ -6,7 +6,7 @@ using Xunit;
 
 namespace SharedUnitTests.Prediction
 {
-    public class PredictionExtensionsTests
+    public class PredictedComponentExtensionsTests
     {
         [Fact]
         public void AddPredictedComponent_AddsBothPredictedAndBaseComponents()

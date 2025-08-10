@@ -10,7 +10,7 @@ namespace Shared.Prediction
     /// Extension methods for working with predicted components on entities.
     /// These helpers simplify adding, retrieving, and updating predicted state for client-side prediction and reconciliation.
     /// </summary>
-    public static class PredictionExtensions
+    public static class PredictedComponentExtensions
     {
         // The cache stores the results of MakeGenericType, mapping a component type (e.g., typeof(Position))
         // to its corresponding predicted type (e.g., typeof(PredictedComponent<Position>)).
@@ -131,6 +131,52 @@ namespace Shared.Prediction
             // Add the component to the entity, which will hold the server state on the server,
             // and the predicted state on the client.
             entity.AddComponent(component);
+        }
+
+        /// <summary>
+        /// Checks if the component is a predicted component.
+        /// </summary>
+        /// <param name="component">The component instance to check.</param>
+        /// <returns>True if the component is of type PredictedComponent<T> for any T.</returns>
+        /// <exception cref="ArgumentNullException">Thrown if the component is null.</exception>
+        public static bool IsPredicted(this IComponent component)
+        {
+            if (component == null)
+            {
+                throw new ArgumentNullException(nameof(component));
+            }
+
+            var type = component.GetType();
+            return type.IsGenericType && type.GetGenericTypeDefinition() == typeof(PredictedComponent<>);
+        }
+
+        /// <summary>
+        /// Returns true if the predicted component should be replicated at the given tick number.
+        /// </summary>
+        /// <param name="component"></param>
+        /// <param name="tickNumber"></param>
+        /// <returns></returns>
+        public static bool ShouldBeReplicatedAtTick(this IComponent component, uint tickNumber)
+        {
+            var p = (IPredictedComponent)component;
+            if (p.Mode.HasFlag(ReplicationMode.EveryTick))
+            {
+                return true;
+            }
+
+            if (p.Mode.HasFlag(ReplicationMode.SomeTicks) &&
+                (tickNumber - p.LastSentAtTick >= p.ReplicationTickRate))
+            {
+                return true;
+            }
+
+            if (p.Mode.HasFlag(ReplicationMode.InitialValue) &&
+                p.LastSentAtTick == 0)
+            {
+                return true;
+            }
+
+            return false;
         }
     }
 }
