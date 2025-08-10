@@ -1,14 +1,41 @@
-using NSubstitute;
+using System;
+using System.Collections.Generic;
 using Shared.ECS;
 using Shared.ECS.Entities;
 using Shared.ECS.Replication;
 using Shared.Networking;
+using Shared.Physics;
+using NSubstitute;
 using Xunit;
+using System.Numerics;
 
 namespace SharedUnitTests.ECS.Replication
 {
     public class ClientReplicationSystemTests
     {
+        private readonly EntityRegistry _registry;
+        private readonly ClientReplicationSystem _system;
+        private readonly IComponentSerializer _componentSerializer;
+        private readonly ComponentTypeRegistry _componentRegistry;
+        private MessageHandler<WorldDeltaMessage> _messageHandler = null!;
+
+        public ClientReplicationSystemTests()
+        {
+            _registry = new EntityRegistry();
+            var messageReceiver = Substitute.For<IMessageReceiver>();
+            var connection = Substitute.For<IClientConnection>();
+            _componentSerializer = Substitute.For<IComponentSerializer>();
+            _componentRegistry = new ComponentTypeRegistry();
+            
+            // For most tests, we start with an empty snapshot.
+            connection.InitialWorldSnapshot.Returns(new WorldDeltaMessage(_componentSerializer, _componentRegistry));
+            
+            // Capture the message handler that the system registers in its constructor.
+            messageReceiver.RegisterMessageHandler(Arg.Any<string>(), Arg.Do<MessageHandler<WorldDeltaMessage>>(handler => _messageHandler = handler));
+
+            _system = new ClientReplicationSystem(messageReceiver, connection);
+        }
+
         [Fact]
         public void Update_WhenInitialized_ConsumesInitialWorldSnapshot()
         {
@@ -16,21 +43,12 @@ namespace SharedUnitTests.ECS.Replication
             var registry = new EntityRegistry();
             var messageReceiver = Substitute.For<IMessageReceiver>();
             var connection = Substitute.For<IClientConnection>();
-
             var entityId = Guid.NewGuid();
-            var initialSnapshot = new WorldDeltaMessage(Substitute.For<IComponentSerializer>(), new ComponentTypeRegistry())
+            var initialSnapshot = new WorldDeltaMessage(_componentSerializer, _componentRegistry)
             {
-                Deltas =
-                [
-                    new EntityDelta
-                    {
-                        EntityId = entityId,
-                        IsNew = true
-                    }
-                ]
+                Deltas = new List<EntityDelta> { new() { EntityId = entityId, IsNew = true } }
             };
             connection.InitialWorldSnapshot.Returns(initialSnapshot);
-
             var system = new ClientReplicationSystem(messageReceiver, connection);
 
             // Act
@@ -41,59 +59,102 @@ namespace SharedUnitTests.ECS.Replication
         }
 
         [Fact]
-        public void Update_WhenDeltaMessageIsReceived_ConsumesTheMessage()
+        public void Update_WhenDeltaReceived_CreatesEntityWithComponents()
         {
             // Arrange
-            var registry = new EntityRegistry();
-            var messageReceiver = Substitute.For<IMessageReceiver>();
-            var connection = Substitute.For<IClientConnection>();
-            connection.InitialWorldSnapshot.Returns(new WorldDeltaMessage(Substitute.For<IComponentSerializer>(), new ComponentTypeRegistry())
-            {
-                Deltas = new List<EntityDelta>()
-            });
-
-            // Capture the message handler that the system registers in its constructor.
-            MessageHandler<WorldDeltaMessage> messageHandler = null!;
-            messageReceiver.RegisterMessageHandler(Arg.Any<string>(),
-                Arg.Do<MessageHandler<WorldDeltaMessage>>(handler => messageHandler = handler));
-
-            var system = new ClientReplicationSystem(messageReceiver, connection);
-
             var entityId = Guid.NewGuid();
-            var deltaMessage = new WorldDeltaMessage(Substitute.For<IComponentSerializer>(), new ComponentTypeRegistry())
+            var deltaMessage = new WorldDeltaMessage(_componentSerializer, _componentRegistry)
             {
-                Deltas =
-                [
-                    new EntityDelta()
+                Deltas = new List<EntityDelta>
+                {
+                    new()
                     {
                         EntityId = entityId,
-                        IsNew = true
+                        IsNew = true,
+                        AddedOrModifiedComponents = new List<IComponent> { new PositionComponent() }
                     }
-                ]
+                }
             };
 
             // Act
-            // Manually invoke the captured handler to simulate a message being received.
-            Assert.NotNull(messageHandler);
-            messageHandler.Invoke(0, deltaMessage);
-
-            // Now, run the system's update, which should process the enqueued message.
-            system.Update(registry, 1, 0);
+            _messageHandler.Invoke(0, deltaMessage);
+            _system.Update(_registry, 1, 0);
 
             // Assert
-            Assert.True(registry.TryGet(new EntityId(entityId), out _));
+            Assert.True(_registry.TryGet(new EntityId(entityId), out var entity));
+            Assert.True(entity.Has<PositionComponent>());
         }
 
         [Fact]
-        public void Constructor_ThrowsException_WhenInitialWorldSnapshotIsNull()
+        public void Update_WhenDeltaReceived_DestroysEntity()
         {
             // Arrange
-            var messageReceiver = Substitute.For<IMessageReceiver>();
-            var connection = Substitute.For<IClientConnection>();
-            connection.InitialWorldSnapshot.Returns((WorldDeltaMessage)null!);
+            var entity = _registry.CreateEntity();
+            var deltaMessage = new WorldDeltaMessage(_componentSerializer, _componentRegistry)
+            {
+                Deltas = new List<EntityDelta> { new() { EntityId = entity.Id.Value, IsDestroyed = true } }
+            };
 
-            // Act & Assert
-            Assert.Throws<ArgumentNullException>(() => new ClientReplicationSystem(messageReceiver, connection));
+            // Act
+            _messageHandler.Invoke(0, deltaMessage);
+            _system.Update(_registry, 1, 0);
+
+            // Assert
+            Assert.False(_registry.TryGet(entity.Id, out _));
+        }
+        
+        [Fact]
+        public void Update_WhenDeltaReceived_UpdatesComponent()
+        {
+            // Arrange
+            var entity = _registry.CreateEntity();
+            entity.AddComponent(new PositionComponent(new(1, 2, 3)));
+            var deltaMessage = new WorldDeltaMessage(_componentSerializer, _componentRegistry)
+            {
+                Deltas = new List<EntityDelta>
+                {
+                    new()
+                    {
+                        EntityId = entity.Id.Value,
+                        IsNew = false,
+                        AddedOrModifiedComponents = new List<IComponent> { new PositionComponent(new(4, 5, 6)) }
+                    }
+                }
+            };
+            
+            // Act
+            _messageHandler.Invoke(0, deltaMessage);
+            _system.Update(_registry, 1, 0);
+
+            // Assert
+            Assert.Equal(new Vector3(4, 5, 6), entity.Get<PositionComponent>()!.Value);
+        }
+
+        [Fact]
+        public void Update_WhenDeltaReceived_RemovesComponent()
+        {
+            // Arrange
+            var entity = _registry.CreateEntity();
+            entity.AddComponent(new PositionComponent());
+            var deltaMessage = new WorldDeltaMessage(_componentSerializer, _componentRegistry)
+            {
+                Deltas = new List<EntityDelta>
+                {
+                    new()
+                    {
+                        EntityId = entity.Id.Value,
+                        IsNew = false,
+                        RemovedComponents = new List<Type> { typeof(PositionComponent) }
+                    }
+                }
+            };
+            
+            // Act
+            _messageHandler.Invoke(0, deltaMessage);
+            _system.Update(_registry, 1, 0);
+
+            // Assert
+            Assert.False(entity.Has<PositionComponent>());
         }
     }
 }

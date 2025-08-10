@@ -12,22 +12,22 @@ namespace Shared.ECS.Entities
         private readonly Dictionary<Type, IComponent> _components = new();
 
         /// <summary>
-        /// Internal events for component updates and creation.
-        /// Used by the entity registry to track component changes.
+        /// Event triggered on entity creation.
+        /// Used by the replication system to track when entities are created.
         /// </summary>
-        internal event Action<Entity, IComponent>? OnComponentAdded;
+        public event Action<Entity, IComponent>? OnComponentAdded;
 
         /// <summary>
-        /// Internal event for component modifications.
-        /// Used by the entity registry to track when components are modified.
+        /// Event for component modifications.
+        /// Used by the replication system to track when components are modified.
         /// </summary>
-        internal event Action<Entity, IComponent>? OnComponentModified;
+        public event Action<Entity, IComponent>? OnComponentModified;
 
         /// <summary>
         /// Internal event for component removals.
-        /// Used by the entity registry to track when components are removed from an entity.
+        /// Used by the replication system to track when components are removed from an entity.
         /// </summary>
-        internal event Action<Entity, IComponent>? OnComponentRemoved;
+        public event Action<Entity, IComponent>? OnComponentRemoved;
 
         public EntityId Id { get; }
 

@@ -15,16 +15,18 @@ namespace Shared.ECS.Replication
     }
 
     /// <summary>
-    /// ECS system responsible for consuming world deltas received from the server.
+    /// Receives world state updates from the server and applies them to the local entity registry.
     /// 
     /// <para>
-    /// This system acts as the client-side counterpart to the ServerReplicationSystem.
-    /// It receives world deltas from the server and applies them to the local entity registry
-    /// to keep the client's world state synchronized with the authoritative server state.
+    /// This system is the client-side counterpart to the <see cref="ServerReplicationSystem"/>.
+    /// It subscribes to <see cref="WorldDeltaMessage"/>s from the network, queues them, and
+    /// applies the changes to the local <see cref="EntityRegistry"/> during its update tick.
+    /// This keeps the client's world state synchronized with the server's authoritative state.
     /// </para>
     ///
     /// <para>
-    /// One can assume that this system is always the first system to run on the client
+    /// It is assumed that this system is the first to run on the client each tick,
+    /// ensuring other systems see the most up-to-date state.
     /// </para>
     /// </summary>
     [TickInterval(1)]
@@ -33,7 +35,7 @@ namespace Shared.ECS.Replication
         public TimeSpan TimeBetweenDeltas { get; private set; } = TimeSpan.Zero;
 
         private readonly IDisposable _subscription;
-        private Queue<WorldDeltaMessage> _deltaMessages = new Queue<WorldDeltaMessage>();
+        private readonly Queue<WorldDeltaMessage> _deltaMessages = new();
         private DateTime _lastUpdate = DateTime.MinValue;
 
         /// <summary>
@@ -72,13 +74,63 @@ namespace Shared.ECS.Replication
                 _lastUpdate = now;
 
                 // Consume the world delta message
-                registry.ConsumeEntityDelta(message.Deltas);
+                ConsumeEntityDelta(registry, message.Deltas);
             }
         }
 
         private void HandleMessageReceived(int peerId, WorldDeltaMessage msg)
         {
             _deltaMessages.Enqueue(msg);
+        }
+
+
+        /// <summary>
+        /// Applies a list of entity deltas to the local entity registry.
+        /// This method processes each delta, creating, updating, or destroying entities and their components.
+        /// </summary>
+        /// <param name="registry">The entity registry to modify.</param>
+        /// <param name="deltas">The list of changes to apply.</param>
+        private void ConsumeEntityDelta(EntityRegistry registry, List<EntityDelta> deltas)
+        {
+            foreach (var delta in deltas)
+            {
+                // If the entity is marked as destroyed, remove it from the registry
+                if (delta.IsDestroyed)
+                {
+                    if (registry.TryGet(new EntityId(delta.EntityId), out var entity))
+                    {
+                        registry.DestroyEntity(entity.Id);
+                    }
+
+                    continue;
+                }
+
+                // If the entity is new, create it and add components
+                if (delta.IsNew)
+                {
+                    var newEntity = registry.CreateEntity(new EntityId(delta.EntityId));
+                    foreach (var component in delta.AddedOrModifiedComponents)
+                    {
+                        newEntity.AddComponent(component);
+                    }
+
+                    continue;
+                }
+
+                // If the entity already exists, update its components
+                if (registry.TryGet(new EntityId(delta.EntityId), out var existingEntity))
+                {
+                    foreach (var componentType in delta.RemovedComponents)
+                    {
+                        existingEntity.Remove(componentType);
+                    }
+
+                    foreach (var component in delta.AddedOrModifiedComponents)
+                    {
+                        existingEntity.AddOrReplaceComponent(component);
+                    }
+                }
+            }
         }
 
         /// <summary>
