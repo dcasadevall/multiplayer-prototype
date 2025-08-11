@@ -73,6 +73,11 @@ namespace Server.AI
                     Random.Shared.NextSingle() - 0.5f
                 );
 
+                // Face away from the player while retreating
+                var retreatRotation = Quaternion.CreateFromYawPitchRoll(MathF.Atan2(direction.X, direction.Z), 0, 0);
+                bot.AddOrReplaceComponent(new RotationComponent { Value = retreatRotation });
+
+                // Move away from the player
                 bot.AddOrReplaceComponent(new VelocityComponent { Value = direction * botSettings.BotRetreatSpeed });
             }
         }
