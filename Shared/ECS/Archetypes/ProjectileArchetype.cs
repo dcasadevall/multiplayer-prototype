@@ -1,3 +1,4 @@
+using System.Drawing;
 using System.Numerics;
 using Shared.Damage;
 using Shared.ECS.Components;
@@ -30,6 +31,7 @@ namespace Shared.ECS.Archetypes
             var playerPosition = shootingPlayerEntity.GetRequired<PositionComponent>().Value;
             var playerRotation = shootingPlayerEntity.GetRequired<RotationComponent>().Value;
             var entityName = shootingPlayerEntity.Get<NameComponent>()?.Name ?? "Unknown";
+            var entityColor = shootingPlayerEntity.Get<ColorComponent>()?.Value ?? Color.White;
 
             // Transform the spawn offsets by the player's rotation to get the correct world-space position
             var spawnOffset = new Vector3(0, GameplayConstants.ProjectileSpawnHeight, GameplayConstants.ProjectileSpawnForward);
@@ -45,7 +47,8 @@ namespace Shared.ECS.Archetypes
                 velocity,
                 spawnTick,
                 entityName,
-                shootingPlayerEntity.Id
+                shootingPlayerEntity.Id,
+                entityColor
             );
         }
 
@@ -59,7 +62,8 @@ namespace Shared.ECS.Archetypes
             Vector3 velocity,
             uint spawnTick,
             string spawnedByName,
-            EntityId sourceEntityId)
+            EntityId sourceEntityId,
+            Color color)
         {
             var projectile = registry.CreateEntity();
 
@@ -67,6 +71,7 @@ namespace Shared.ECS.Archetypes
             // We can derive the position on all clients so we only send the initial tick,
             projectile.AddComponent(new VelocityComponent { Value = velocity });
             projectile.AddComponent(new RotationComponent { Value = spawnRotation });
+            projectile.AddComponent(new ColorComponent { Value = color });
             projectile.AddComponent(new PredictedComponent<PositionComponent>
             {
                 Mode = ReplicationMode.InitialValue,

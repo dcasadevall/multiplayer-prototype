@@ -14,7 +14,12 @@ namespace Core.Physics
     /// </summary>
     public class WorldAABBRenderSystem : ISystem
     {
-        private readonly Dictionary<EntityId, AABBVisualizer> _visualizers = new();
+        private readonly IEntityViewRegistry _entityViewRegistry;
+
+        public WorldAABBRenderSystem(IEntityViewRegistry entityViewRegistry)
+        {
+            _entityViewRegistry = entityViewRegistry;
+        }
 
         public void Update(EntityRegistry registry, uint tickNumber, float deltaTime)
         {
@@ -23,32 +28,21 @@ namespace Core.Physics
             {
                 var entityId = entity.Id;
                 boundedEntities.Add(entityId);
-
-                if (!_visualizers.TryGetValue(entityId, out var visualizer))
+                
+                // Get the view from the registry
+                if (!_entityViewRegistry.TryGetEntityView(entityId, out var entityView))
                 {
-                    var go = new GameObject($"BoundingBox_{entityId}");
-                    visualizer = go.AddComponent<AABBVisualizer>();
-                    _visualizers[entityId] = visualizer;
+                    continue;
+                }
+
+                if (!entityView.TryGetComponent<AABBVisualizer>(out var visualizer))
+                {
+                    visualizer = entityView.gameObject.AddComponent<AABBVisualizer>();
                 }
                 
                 var boundingBox = entity.GetRequired<WorldAABBComponent>();
                 visualizer.Center = (boundingBox.Min + boundingBox.Max) / 2;
                 visualizer.Size = boundingBox.Max - boundingBox.Min;
-            }
-
-            // Cleanup
-            var toRemove = new List<EntityId>();
-            foreach (var pair in _visualizers)
-            {
-                if (!boundedEntities.Contains(pair.Key))
-                {
-                    Object.Destroy(pair.Value.gameObject);
-                    toRemove.Add(pair.Key);
-                }
-            }
-            foreach (var id in toRemove)
-            {
-                _visualizers.Remove(id);
             }
         }
     }

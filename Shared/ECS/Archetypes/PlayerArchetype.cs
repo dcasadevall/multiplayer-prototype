@@ -46,6 +46,8 @@ namespace Shared.ECS.Archetypes
             });
             playerEntity.AddComponent<CollidingTagComponent>();
 
+            playerEntity.AddComponent(ColorComponent.RandomColor());
+
             return playerEntity;
         }
     }

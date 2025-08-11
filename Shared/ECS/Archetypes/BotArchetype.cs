@@ -37,6 +37,7 @@ namespace Shared.ECS.Archetypes
                 Size = GameplayConstants.PlayerLocalBoundsSize
             });
             botEntity.AddComponent<CollidingTagComponent>();
+            botEntity.AddComponent(ColorComponent.RandomColor());
 
             return botEntity;
         }

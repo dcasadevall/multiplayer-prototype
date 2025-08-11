@@ -32,7 +32,7 @@ namespace Adapters.Health
                 {
                     if (_entityViewRegistry.TryGetEntityView(entityId, out var entityView))
                     {
-                        var healthBarInstance = Object.Instantiate(_healthBarPrefab);
+                        var healthBarInstance = Object.Instantiate(_healthBarPrefab, entityView);
                         var healthBarDisplay = healthBarInstance.GetComponent<HealthBarView>();
                         healthBarDisplay.SetTarget(entityView);
                         _healthBars[entityId] = healthBarDisplay;

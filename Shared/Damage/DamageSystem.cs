@@ -37,7 +37,9 @@ namespace Shared.Damage
         /// <param name="deltaTime">Delta time for the tick.</param>
         public void Update(EntityRegistry registry, uint tickNumber, float deltaTime)
         {
-            var projectiles = registry.WithAll<DamageApplyingComponent, SpawnAuthorityComponent>().ToList();
+            var projectiles = registry
+                .WithAll<DamageApplyingComponent, SpawnAuthorityComponent>()
+                .ToList();
 
             foreach (var projectile in projectiles)
             {

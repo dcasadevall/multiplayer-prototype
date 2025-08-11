@@ -1,6 +1,7 @@
 using System;
 using System.Linq;
 using Adapters.Health;
+using Adapters.Rendering;
 using Core.ECS;
 using Core.ECS.Simulation;
 using Core.Input;
@@ -66,6 +67,9 @@ namespace Adapters
             // Notice death system is not registered here, we want that to be fully server-side.
             serviceCollection.AddSingleton<ISystem, HealthBarRenderSystem>();
             serviceCollection.AddSingleton<ISystem, DamageSystem>();
+
+            // Rendering stuff
+            serviceCollection.AddSingleton<ISystem, ColorRenderingSystem>();
 
             // Entity lifecycle systems
             serviceCollection.AddSingleton<ISystem, SelfDestroyingSystem>();
