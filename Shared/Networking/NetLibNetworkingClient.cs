@@ -97,6 +97,7 @@ namespace Shared.Networking
                 connectedPeer = peer;
                 var messageSender = new NetLibBinaryMessageSender(_netManager, _logger);
                 var connection = new ClientConnection(peer,
+                    _listener,
                     _logger,
                     messageSender,
                     messageReceiver,
@@ -160,8 +161,11 @@ namespace Shared.Networking
         private sealed class ClientConnection : IClientConnection
         {
             private readonly NetPeer _peer;
+            private readonly EventBasedNetListener _listener;
             private bool _disposed;
             private readonly ILogger logger;
+
+            public event Action? OnDisconnected;
 
             public int AssignedPeerId { get; }
             public IMessageSender MessageSender { get; }
@@ -173,6 +177,7 @@ namespace Shared.Networking
             public WorldDeltaMessage InitialWorldSnapshot { get; set; }
 
             public ClientConnection(NetPeer peer,
+                EventBasedNetListener listener,
                 ILogger logger,
                 IMessageSender messageSender,
                 NetLibBinaryMessageReceiver messageReceiver,
@@ -180,6 +185,7 @@ namespace Shared.Networking
                 int assignedPeerId)
             {
                 _peer = peer;
+                _listener = listener;
                 this.logger = logger;
                 MessageSender = messageSender;
                 AssignedPeerId = assignedPeerId;
@@ -188,6 +194,7 @@ namespace Shared.Networking
                 // We store the concrete implementation as we need
                 // to manage its disposal
                 _binaryMessageReceiver = messageReceiver;
+                _listener.PeerDisconnectedEvent += OnPeerDisconnected;
             }
 
             /// <summary>
@@ -201,9 +208,22 @@ namespace Shared.Networking
                 }
 
                 logger.Info("Disconnecting from server...");
+                _listener.PeerDisconnectedEvent -= OnPeerDisconnected;
                 _peer.Disconnect();
                 _binaryMessageReceiver.Dispose();
                 _disposed = true;
+            }
+
+            private void OnPeerDisconnected(NetPeer peer, DisconnectInfo info)
+            {
+                if (_disposed || !Equals(peer, _peer))
+                {
+                    return;
+                }
+
+                logger.Info($"Disconnected from server: {info.Reason}");
+                OnDisconnected?.Invoke();
+                Dispose();
             }
         }
     }

@@ -10,6 +10,11 @@ namespace Shared.Networking
     public interface IClientConnection : IDisposable
     {
         /// <summary>
+        /// Event triggered if the client is disconnected from the server.
+        /// </summary>
+        event Action OnDisconnected;
+
+        /// <summary>
         /// The unique peer ID assigned by the server for this connection.
         /// </summary>
         int AssignedPeerId { get; }

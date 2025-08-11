@@ -204,6 +204,22 @@ namespace Shared.ECS.Entities
         }
 
         /// <summary>
+        /// Attempts to remove a component from the entity, if it exists.
+        /// </summary>
+        /// <typeparam name="T">The type of the component to remove.</typeparam>
+        /// <returns>True if the component was found and removed, false otherwise.</returns>
+        public bool TryRemove<T>() where T : IComponent
+        {
+            var type = typeof(T);
+            if (_components.ContainsKey(type))
+            {
+                Remove(type);
+                return true;
+            }
+            return false;
+        }
+
+        /// <summary>
         /// Remove a component from the entity.
         /// </summary>
         /// <typeparam name="T">The type of the component to remove.</typeparam>

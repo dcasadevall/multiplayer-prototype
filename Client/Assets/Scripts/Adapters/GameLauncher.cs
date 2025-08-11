@@ -49,6 +49,7 @@ namespace Adapters
         private IServiceCollection _services;
         private GameSceneServiceProvider _gameSceneServiceProvider;
         private ILogger _logger;
+        private IClientConnection _connection;
         
         /// <summary>
         /// Allow access to the service provider for the login scene for other unity
@@ -105,20 +106,31 @@ namespace Adapters
             var client = _serviceProvider.GetRequiredService<INetworkingClient>();
             
             _logger.Info(LoggedFeature.Networking, "Connecting to server...");
-            var connection = await client.ConnectAsync(SharedConstants.ServerAddress, 
+            _connection = await client.ConnectAsync(SharedConstants.ServerAddress, 
                 SharedConstants.ServerPort, 
                 SharedConstants.NetSecret);
             
-            _logger.Info(LoggedFeature.Networking, $"Connected successfully. Peer ID: {connection.AssignedPeerId}");
+            _logger.Info(LoggedFeature.Networking, $"Connected successfully. Peer ID: {_connection.AssignedPeerId}");
 
             // 2. Load the main game scene
             await SceneManager.LoadSceneAsync(_gameSceneName, LoadSceneMode.Additive);
             
             // 3. Initialize the GameSceneServiceProvider
-            _gameSceneServiceProvider = new GameSceneServiceProvider(_services, connection);
+            _gameSceneServiceProvider = new GameSceneServiceProvider(_services, _connection);
             _gameSceneServiceProvider.Initialize();
             
+            // 4. Subscribe to disconnects so we can reload the login scene if disconnected
+            _connection.OnDisconnected += HandleOnDisconnected;
+            
+            // 5. Notify that the game has started and the service provider is ready
             OnGameStarted?.Invoke(_gameSceneServiceProvider.ServiceProvider);
+        }
+
+        private void HandleOnDisconnected()
+        {
+            _connection.OnDisconnected -= HandleOnDisconnected;
+            _logger.Warn(LoggedFeature.Networking, "Disconnected from server. Reloading login scene...");
+            SceneManager.LoadSceneAsync("LoginScene", LoadSceneMode.Single);
         }
         
         /// <summary>
@@ -135,7 +147,13 @@ namespace Adapters
             // Dispose the GameSceneServiceProvider
             _gameSceneServiceProvider?.Dispose();
             _gameSceneServiceProvider = null;
-            
+
+            if (_connection != null)
+            {
+                _connection.OnDisconnected -= HandleOnDisconnected;
+                _connection = null;
+            }
+
             Debug.Log("LoginSceneServiceProvider: Disposed successfully");
         }
     }

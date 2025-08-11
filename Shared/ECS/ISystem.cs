@@ -1,4 +1,6 @@
+using System.Collections.Generic;
 using Shared.ECS.Entities;
+using Shared.ECS.Simulation;
 
 namespace Shared.ECS
 {

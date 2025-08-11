@@ -122,13 +122,7 @@ namespace Shared.ECS.Entities
         /// <returns></returns>
         public IEnumerable<Entity> With<T>() where T : IComponent
         {
-            foreach (var entity in _entities.Values)
-            {
-                if (entity.Has<T>())
-                {
-                    yield return entity;
-                }
-            }
+            return GetAll().Where(entity => entity.Has<T>());
         }
 
         /// <summary>
@@ -139,13 +133,7 @@ namespace Shared.ECS.Entities
         /// <returns></returns>
         public IEnumerable<Entity> WithAll<T, T1>() where T : IComponent where T1 : IComponent
         {
-            foreach (var entity in _entities.Values)
-            {
-                if (entity.Has<T>() && entity.Has<T1>())
-                {
-                    yield return entity;
-                }
-            }
+            return GetAll().Where(entity => entity.Has<T>() && entity.Has<T1>());
         }
 
         /// <summary>
@@ -157,13 +145,7 @@ namespace Shared.ECS.Entities
         /// <returns></returns>
         public IEnumerable<Entity> WithAll<T, T1, T2>() where T : IComponent where T1 : IComponent where T2 : IComponent
         {
-            foreach (var entity in _entities.Values)
-            {
-                if (entity.Has<T>() && entity.Has<T1>() && entity.Has<T2>())
-                {
-                    yield return entity;
-                }
-            }
+            return GetAll().Where(entity => entity.Has<T>() && entity.Has<T1>() && entity.Has<T2>());
         }
     }
 }
