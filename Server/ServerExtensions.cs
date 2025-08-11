@@ -15,6 +15,7 @@ using Shared.ECS.Archetypes;
 using Shared.ECS.Entities;
 using Shared.ECS.TickSync;
 using Shared.Settings;
+using Server.Health;
 
 namespace Server
 {
@@ -90,6 +91,11 @@ namespace Server
             services.AddSingleton<PlayerShotHandler>();
             services.AddSingleton<IInitializable, PlayerShotHandler>();
             services.AddSingleton<IDisposable, PlayerShotHandler>();
+
+            // Heroku HTTP health server
+            services.AddSingleton<HttpHealthServer>();
+            services.AddSingleton<IInitializable>(sp => sp.GetRequiredService<HttpHealthServer>());
+            services.AddSingleton<IDisposable>(sp => sp.GetRequiredService<HttpHealthServer>());
         }
     }
 }

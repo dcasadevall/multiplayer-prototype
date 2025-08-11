@@ -43,6 +43,7 @@ namespace Server
                         var envPort = Environment.GetEnvironmentVariable("PORT");
                         if (!string.IsNullOrEmpty(envPort) && int.TryParse(envPort, out var herokuPort))
                         {
+                            // Align UDP server port with Heroku assigned port.
                             networkSettings.ServerPort = herokuPort;
                         }
 
