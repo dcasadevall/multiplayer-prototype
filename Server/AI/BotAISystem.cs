@@ -30,7 +30,8 @@ namespace Server.AI
             // We use ToList() to avoid modifying the collection while iterating
             // In a real application, we would want to create a copy of all entities for systems to iterate over
             var players = registry.With<PlayerTagComponent>().ToList();
-            foreach (var bot in registry.With<BotTagComponent>().ToList())
+            var bots = registry.With<BotTagComponent>().ToList();
+            foreach (var bot in bots)
             {
                 var botHealth = bot.GetRequired<HealthComponent>();
                 var botPosition = bot.GetRequired<PositionComponent>().Value;
