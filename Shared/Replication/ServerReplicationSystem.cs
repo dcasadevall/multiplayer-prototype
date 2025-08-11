@@ -369,11 +369,25 @@ namespace Shared.Replication
                     // the local version if it didn't exist yet.
                     // This does mean we don't support removing local counterparts
                     // of predicted components, but that seems fine.
-                    if (entity.HasPredictedComponent(component.GetType()))
+                    if (entity.TrySetServerAuthoritativeValue(component.GetType(), component))
                     {
                         if (!entity.Has(component.GetType()))
                         {
                             componentsToSend.Add(component);
+                        }
+
+                        // We just "changed" the server value, so we send it
+                        // if the replicated tick allows.
+                        // We may already send this if a system has directly mutated
+                        // the predicted component wrapper, but this doesn't hurt.
+                        var predictedType = PredictedComponentExtensions.GetPredictedType(component.GetType());
+                        if (entity.TryGet(predictedType, out var predicted))
+                        {
+                            if (predicted.ShouldBeReplicatedAtTick(tickNumber))
+                            {
+                                ((IPredictedComponent)predicted).LastSentAtTick = tickNumber;
+                                componentsToSend.Add(predicted);
+                            }
                         }
 
                         continue;

@@ -171,7 +171,7 @@ namespace SharedUnitTests.ECS.Replication
         }
 
         [Fact]
-        public void Update_WhenPredictedCounterpartModified_DoesNotSendLocalComponent()
+        public void Update_WhenPredictedCounterpartModified_SendsPredictedButNotLocal()
         {
             // Arrange
             var entity = _registry.CreateEntity();
@@ -183,8 +183,55 @@ namespace SharedUnitTests.ECS.Replication
             _messageSender.ClearReceivedCalls();
 
             // Act
-            entity.AddOrReplaceComponent(local); // Modify the local, which should be ignored
+            entity.AddOrReplaceComponent(local); // Modify the local, which should trigger replication of the wrapper
             _system.Update(_registry, 2, 0);
+
+            // Assert
+            _messageSender.Received(1).BroadcastMessage(
+                Arg.Any<MessageType>(),
+                Arg.Is<WorldDeltaMessage>(m =>
+                    m.Deltas.Any(d =>
+                        d.AddedOrModifiedComponents.Contains(pred) &&
+                        !d.AddedOrModifiedComponents.Contains(local)
+                    )),
+                Arg.Any<ChannelType>());
+        }
+
+        [Fact]
+        public void Update_WhenPredictedCounterpartModified_SkipsInitialOnly()
+        {
+            // Arrange
+            var entity = _registry.CreateEntity();
+            var pred = new PredictedComponent<PositionComponent> { Mode = ReplicationMode.InitialValue };
+            var local = new PositionComponent();
+            entity.AddComponent(pred);
+            entity.AddComponent(local);
+            _system.Update(_registry, 1, 0); // Clear create
+            _messageSender.ClearReceivedCalls();
+
+            // Act
+            entity.AddOrReplaceComponent(local);
+            _system.Update(_registry, 2, 0);
+
+            // Assert
+            _messageSender.DidNotReceive().BroadcastMessage(Arg.Any<MessageType>(), Arg.Any<WorldDeltaMessage>(), Arg.Any<ChannelType>());
+        }
+
+        [Fact]
+        public void Update_WhenPredictedCounterpartModified_SkipsSomeTicksOffRate()
+        {
+            // Arrange
+            var entity = _registry.CreateEntity();
+            var pred = new PredictedComponent<PositionComponent> { Mode = ReplicationMode.SomeTicks, ReplicationTickRate = 5 };
+            var local = new PositionComponent();
+            entity.AddComponent(pred);
+            entity.AddComponent(local);
+            _system.Update(_registry, 1, 0); // Clear create and set LastSentAtTick to 1
+            _messageSender.ClearReceivedCalls();
+
+            // Act
+            entity.AddOrReplaceComponent(local);
+            _system.Update(_registry, 3, 0); // Tick 3 is off-rate (1 + 5 = 6)
 
             // Assert
             _messageSender.DidNotReceive().BroadcastMessage(Arg.Any<MessageType>(), Arg.Any<WorldDeltaMessage>(), Arg.Any<ChannelType>());

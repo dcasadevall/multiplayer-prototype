@@ -65,6 +65,23 @@ namespace Shared.ECS.Entities
         public bool TryGet(EntityId id, out Entity entity) => _entities.TryGetValue(id, out entity);
 
         /// <summary>
+        /// Gets an entity by its ID.
+        /// Assumes the entity exists and throws an exception if it does not.
+        /// </summary>
+        /// <param name="id"></param>
+        /// <returns></returns>
+        /// <exception cref="KeyNotFoundException"></exception>
+        public Entity Get(EntityId id)
+        {
+            if (TryGet(id, out var entity))
+            {
+                return entity;
+            }
+
+            throw new KeyNotFoundException($"Entity with ID {id} does not exist.");
+        }
+
+        /// <summary>
         /// Removes an entity from the world by its ID.
         /// </summary>
         /// <param name="id">The entity's unique identifier.</param>

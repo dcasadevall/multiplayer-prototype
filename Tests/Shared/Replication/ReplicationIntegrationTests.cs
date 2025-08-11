@@ -131,5 +131,97 @@ namespace SharedUnitTests.Replication
             Assert.Equal(newServerPosition.Value, clientPredicted.ServerValue.Value);
             Assert.Equal(new(2, 2, 2), clientPosition.Value); // Unchanged by replication
         }
+
+        [Fact]
+        public void ModifyLocalCounterpart_OnServer_ReplicatesPredictedComponent()
+        {
+            // --- SERVER SIDE ---
+            // Arrange: Create a predicted entity and establish it on the client.
+            var serverEntity = _serverRegistry.CreateEntity();
+            var serverPosition = new PositionComponent { Value = new(1, 1, 1) };
+            var serverPredicted = new PredictedComponent<PositionComponent> { Mode = ReplicationMode.EveryTick };
+            serverEntity.AddComponent(serverPredicted);
+            serverEntity.AddComponent(serverPosition);
+            _serverSystem.Update(_serverRegistry, 1, 0);
+            _clientSystem.Update(_clientRegistry, 1, 0);
+
+            // Arrange: Modify ONLY the local component on the server.
+            serverPosition.Value = new(3, 3, 3);
+            serverEntity.AddOrReplaceComponent(serverPosition);
+
+            // Act: Server sends the update, client consumes it.
+            _serverSystem.Update(_serverRegistry, 2, 0);
+            _clientSystem.Update(_clientRegistry, 2, 0);
+
+            // Assert: The client's predicted wrapper received the update.
+            var clientEntity = _clientRegistry.Get(serverEntity.Id);
+            var clientPredicted = clientEntity.GetRequired<PredictedComponent<PositionComponent>>();
+            Assert.NotNull(clientPredicted.ServerValue);
+            Assert.Equal(new(3, 3, 3), clientPredicted.ServerValue.Value);
+        }
+
+        [Fact]
+        public void Update_WhenPredictedCounterpartModified_SendsPredictedComponentButNotLocal()
+        {
+            // Arrange
+            var entity = _serverRegistry.CreateEntity();
+            var pred = new PredictedComponent<PositionComponent> { Mode = ReplicationMode.EveryTick };
+            var local = new PositionComponent();
+            entity.AddComponent(pred);
+            entity.AddComponent(local);
+            _serverSystem.Update(_serverRegistry, 1, 0); // Clear create
+            _capturedDeltaMessage = null; // Clear captured message
+
+            // Act
+            entity.AddOrReplaceComponent(local); // Modify the local
+            _serverSystem.Update(_serverRegistry, 2, 0);
+
+            // Assert
+            Assert.NotNull(_capturedDeltaMessage);
+            Assert.Contains(_capturedDeltaMessage.Deltas, d =>
+                    d.AddedOrModifiedComponents.Contains(pred) && // Wrapper IS sent
+                    !d.AddedOrModifiedComponents.Contains(local) // Local IS NOT sent
+            );
+        }
+
+        [Fact]
+        public void Update_WhenPredictedCounterpartModified_SkipsInitialOnly()
+        {
+            // Arrange
+            var entity = _serverRegistry.CreateEntity();
+            var pred = new PredictedComponent<PositionComponent> { Mode = ReplicationMode.InitialValue };
+            var local = new PositionComponent();
+            entity.AddComponent(pred);
+            entity.AddComponent(local);
+            _serverSystem.Update(_serverRegistry, 1, 0); // Clear create
+            _capturedDeltaMessage = null; // Clear captured message
+
+            // Act
+            entity.AddOrReplaceComponent(local);
+            _serverSystem.Update(_serverRegistry, 2, 0);
+
+            // Assert
+            Assert.Null(_capturedDeltaMessage);
+        }
+
+        [Fact]
+        public void Update_WhenPredictedCounterpartModified_SkipsSomeTicksOffRate()
+        {
+            // Arrange
+            var entity = _serverRegistry.CreateEntity();
+            var pred = new PredictedComponent<PositionComponent> { Mode = ReplicationMode.SomeTicks, ReplicationTickRate = 5 };
+            var local = new PositionComponent();
+            entity.AddComponent(pred);
+            entity.AddComponent(local);
+            _serverSystem.Update(_serverRegistry, 1, 0); // Clear create and set LastSentAtTick to 1
+            _capturedDeltaMessage = null; // Clear captured message
+
+            // Act
+            entity.AddOrReplaceComponent(local);
+            _serverSystem.Update(_serverRegistry, 3, 0); // Tick 3 is off-rate (1 + 5 = 6)
+
+            // Assert
+            Assert.Null(_capturedDeltaMessage);
+        }
     }
 }

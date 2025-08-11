@@ -179,6 +179,27 @@ namespace Shared.Prediction
         }
 
         /// <summary>
+        /// Attempts to get the predicted component of the specified type from the entity.
+        /// That is, it tries to get the component of type PredictedComponent[T]
+        /// where T is the provided componentType.
+        /// </summary>
+        public static bool TryGetPredictedComponent(this Entity entity, Type componentType, out IComponent? component)
+        {
+            if (entity == null) throw new ArgumentNullException(nameof(entity));
+            if (componentType == null) throw new ArgumentNullException(nameof(componentType));
+
+            var predictedType = GetPredictedType(componentType);
+            if (entity.TryGet(predictedType, out var predictedComponent))
+            {
+                component = predictedComponent;
+                return true;
+            }
+
+            component = null;
+            return false;
+        }
+
+        /// <summary>
         /// Adds a predicted component to the entity.
         /// This should be used only on server-side to create a component that will be predicted by the client.
         /// Both ServerValue and the predicted component value are initialized to the provided component.
