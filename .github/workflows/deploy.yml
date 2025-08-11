@@ -1,0 +1,33 @@
+# .github/workflows/deploy.yml
+
+name: Deploy to Heroku
+
+# Run this workflow automatically on pushes to the 'master' branch
+on:
+  push:
+    branches:
+      - master
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest # Use a standard Linux amd64 runner
+    steps:
+      # 1. Check out the repository's code
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      # 2. Build, push, and release the Docker container to Heroku
+      # This single action handles login, building, pushing, and releasing.
+      - name: Deploy to Heroku
+        uses: akhileshns/heroku-deploy@v3.12.12
+        with:
+          # Use the secret API key we created
+          heroku_api_key: ${{ secrets.HEROKU_API_KEY }}
+          # The email address associated with the Heroku account
+          heroku_email: ${{ secrets.HEROKU_EMAIL }}
+          # The exact name of the Heroku app
+          heroku_app_name: "ecs-multiplayer-prototype"
+          
+          # Tell Heroku where to find the Dockerfile
+          dockerfile_directory: "./deploy"
+          dockerfile_name: "Dockerfile"
