@@ -226,39 +226,7 @@ namespace Shared.Replication
             var deltas = new List<EntityDelta>();
             foreach (var entity in _entityRegistry.GetAll())
             {
-                var componentsToSend = new List<IComponent>();
-                foreach (var component in entity.GetAllComponents())
-                {
-                    if (component is INonReplicatedComponent)
-                    {
-                        continue;
-                    }
-
-                    // If the component is predicted, we always 
-                    // send the server value on entity creation
-                    // since we know it's a fresh component.
-                    if (component.IsPredicted())
-                    {
-                        var p = (IPredictedComponent)component;
-                        p.LastSentAtTick = _tickSync.ServerTick;
-                        componentsToSend.Add(component);
-
-                        // Add the local counterpart if it hasn't been added yet
-                        // This handles cases where the predicted component is added
-                        // but the local counterpart is not. It makes the 
-                        // API more robust as server / local counterpart always
-                        // stay in sync
-                        var localType = PredictedComponentExtensions.GetLocalType(component.GetType());
-                        if (!entity.Has(localType))
-                        {
-                            componentsToSend.Add(component.GetServerAuthoritativeValue());
-                        }
-                    }
-                    else
-                    {
-                        componentsToSend.Add(component);
-                    }
-                }
+                var componentsToSend = BuildComponentsForNewEntity(entity, _tickSync.ServerTick);
 
                 deltas.Add(new EntityDelta
                 {
@@ -294,40 +262,7 @@ namespace Shared.Replication
                     throw new InvalidOperationException($"Entity {entityId} does not exist in the registry.");
                 }
 
-                var componentsToSend = new List<IComponent>();
-                foreach (var component in entity.GetAllComponents().ToList())
-                {
-                    if (component is INonReplicatedComponent)
-                    {
-                        continue;
-                    }
-
-                    // If the component is predicted, we always 
-                    // send the server value on entity creation
-                    // since we know it's a fresh component.
-                    if (component.IsPredicted())
-                    {
-                        var p = (IPredictedComponent)component;
-                        p.LastSentAtTick = tickNumber;
-                        componentsToSend.Add(component);
-
-                        // Add the local counterpart if it hasn't been added yet
-                        // This handles cases where the predicted component is added
-                        // but the local counterpart is not. It makes the 
-                        // API more robust as server / local counterpart always
-                        // stay in sync
-                        var localType = PredictedComponentExtensions.GetLocalType(component.GetType());
-                        if (!entity.Has(localType))
-                        {
-                            componentsToSend.Add(component.GetServerAuthoritativeValue());
-                        }
-                    }
-                    else
-                    {
-                        componentsToSend.Add(component);
-                    }
-                }
-
+                var componentsToSend = BuildComponentsForNewEntity(entity, tickNumber);
                 deltas.Add(new EntityDelta
                 {
                     EntityId = entityId.Value,
@@ -451,6 +386,51 @@ namespace Shared.Replication
             _removedEntities.Clear();
 
             return deltas;
+        }
+
+        /// <summary>
+        /// Builds the list of components to send when an entity is treated as newly created.
+        /// This method preserves existing replication rules and the semantics used by callers.
+        /// </summary>
+        /// <param name="entity">The entity to read components from for auxiliary checks (e.g. Has local).</param>
+        /// <param name="tickNumber">The tick used to stamp predicted components' LastSentAtTick.</param>
+        /// <returns>A list of components to include in the delta.</returns>
+        private static List<IComponent> BuildComponentsForNewEntity(Entity entity, uint tickNumber)
+        {
+            var componentsToSend = new List<IComponent>();
+            var components = entity.GetAllComponents();
+            foreach (var component in components)
+            {
+                if (component is INonReplicatedComponent)
+                {
+                    continue;
+                }
+
+                // If the component is predicted, we always send the server value on entity creation
+                // since we know it's a fresh component.
+                if (component.IsPredicted())
+                {
+                    var predicted = (IPredictedComponent)component;
+                    predicted.LastSentAtTick = tickNumber;
+                    componentsToSend.Add(component);
+
+                    // Add the local counterpart if it hasn't been added yet.
+                    // This handles cases where the predicted component is added
+                    // but the local counterpart is not. It makes the API more robust
+                    // as server / local counterpart always stay in sync.
+                    var localType = PredictedComponentExtensions.GetLocalType(component.GetType());
+                    if (!entity.Has(localType))
+                    {
+                        componentsToSend.Add(component.GetServerAuthoritativeValue());
+                    }
+                }
+                else
+                {
+                    componentsToSend.Add(component);
+                }
+            }
+
+            return componentsToSend;
         }
 
         /// <summary>

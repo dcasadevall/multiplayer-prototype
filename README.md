@@ -116,6 +116,28 @@
 
 > CI note: On deploy, GitHub Actions runs unit tests and uploads the HTML coverage report from `coveragereport/` as a build artifact.
 
+## Deploying to Heroku (Docker)
+
+This repository includes a Dockerfile for building the server and a helper script to deploy to Heroku using the Container Registry (under `deploy/`).
+
+Prerequisites:
+- Docker installed and running
+- Heroku CLI installed and authenticated (`heroku login`)
+- Set up your docker environment to allow for 4-8GB or the image will run out of memory
+
+Build and deploy (default app name `ecs-multiplayer-sample`):
+```shell
+# From repo root
+./deploy/heroku-deploy.sh
+
+# Or specify a different app name and optional tag
+./deploy/heroku-deploy.sh my-heroku-app v1
+```
+
+Notes:
+- Ensure your Heroku app has the “Container Registry” feature enabled.
+- The server listens on `Settings:NetworkSettings:ServerPort` from `Server/appsettings.json` (default 9050). If the `PORT` environment variable is set (e.g., on Heroku), the server will bind to that value automatically at runtime.
+
 ## Component ID Generation
 
 This project uses a code generation step to map components to compact integer IDs for network serialization.
