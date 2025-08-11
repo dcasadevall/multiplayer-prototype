@@ -64,7 +64,7 @@ namespace Shared.Physics
                     }
 
                     // Move along the smallest penetration axis
-                    var push = Vector3.Zero;
+                    Vector3 push;
                     var centerA = CenterVec(aabbA);
                     var centerB = CenterVec(aabbB);
                     if (overlapX <= overlapY && overlapX <= overlapZ)

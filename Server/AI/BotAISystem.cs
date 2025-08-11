@@ -51,11 +51,17 @@ namespace Server.AI
                 if ((float)botHealth.CurrentHealth / botHealth.MaxHealth < botSettings.BotRetreatHealthPercentThreshold)
                 {
                     HandleRetreatState(bot, players);
+                    continue;
                 }
-                else
+
+                // Scatter when no target (no players)
+                if (players.Count == 0)
                 {
-                    HandleAttackState(bot, players, tickNumber);
+                    HandleScatterState(bot, bots);
+                    continue;
                 }
+
+                HandleAttackState(bot, players, tickNumber);
             }
         }
 
@@ -77,6 +83,69 @@ namespace Server.AI
             }
         }
 
+        private void HandleScatterState(Entity bot, List<Entity> allBots)
+        {
+            var myPos = bot.GetRequired<PositionComponent>().Value;
+
+            // Parameters: reuse existing settings to avoid adding new ones
+            var maxGroupRadius = botSettings.BoatRoamRadius; // soft boundary for group
+            var desiredSeparation = System.MathF.Max(0.5f, maxGroupRadius * 0.4f);
+
+            // Compute centroid of all bots to keep group bounded
+            Vector3 centroid = Vector3.Zero;
+            int count = 0;
+            foreach (var b in allBots)
+            {
+                centroid += b.GetRequired<PositionComponent>().Value;
+                count++;
+            }
+            if (count > 0) centroid /= count;
+
+            // Separation: push away from nearby bots
+            Vector3 separation = Vector3.Zero;
+            foreach (var b in allBots)
+            {
+                if (b.Id.Value == bot.Id.Value) continue;
+                var otherPos = b.GetRequired<PositionComponent>().Value;
+                var toMe = myPos - otherPos;
+                var dist = toMe.Length();
+                if (dist > 1e-4f && dist < desiredSeparation)
+                {
+                    separation += Vector3.Normalize(toMe) * ((desiredSeparation - dist) / desiredSeparation);
+                }
+            }
+
+            // Cohesion limiter: if too far from centroid, gently steer back
+            Vector3 cohesion = Vector3.Zero;
+            var fromCenter = myPos - centroid;
+            var distFromCenter = fromCenter.Length();
+            if (distFromCenter > maxGroupRadius)
+            {
+                cohesion = -Vector3.Normalize(fromCenter) * System.MathF.Min(1f, (distFromCenter - maxGroupRadius) / maxGroupRadius);
+            }
+
+            var steer = separation + 0.5f * cohesion;
+            if (steer.LengthSquared() < 1e-6f)
+            {
+                // No steering required; slow down
+                if (!bot.Has<VelocityComponent>() || bot.GetRequired<VelocityComponent>().Value != Vector3.Zero)
+                {
+                    bot.AddOrReplaceComponent(new VelocityComponent { Value = Vector3.Zero });
+                }
+                return;
+            }
+
+            var moveDir = Vector3.Normalize(steer);
+            bot.AddOrReplaceComponent(new VelocityComponent { Value = moveDir * botSettings.BotApproachSpeed });
+
+            // Face movement direction
+            var rotation = Quaternion.CreateFromYawPitchRoll(System.MathF.Atan2(moveDir.X, moveDir.Z), 0, 0);
+            if (!bot.Has<RotationComponent>() || bot.GetRequired<RotationComponent>().Value != rotation)
+            {
+                bot.AddOrReplaceComponent(new RotationComponent { Value = rotation });
+            }
+        }
+
         private void HandleAttackState(Entity bot, List<Entity> players, uint tickNumber)
         {
             var target = GetOrAcquireTarget(bot, players);
@@ -89,7 +158,15 @@ namespace Server.AI
 
                 if (distance > botSettings.BotAttackDistance)
                 {
+                    // Move towards target
                     bot.AddOrReplaceComponent(new VelocityComponent { Value = direction * botSettings.BotApproachSpeed });
+
+                    // Face movement direction while approaching
+                    var approachRotation = Quaternion.CreateFromYawPitchRoll(System.MathF.Atan2(direction.X, direction.Z), 0, 0);
+                    if (!bot.Has<RotationComponent>() || bot.GetRequired<RotationComponent>().Value != approachRotation)
+                    {
+                        bot.AddOrReplaceComponent(new RotationComponent { Value = approachRotation });
+                    }
                 }
                 else
                 {
@@ -98,7 +175,7 @@ namespace Server.AI
                         bot.AddOrReplaceComponent(new VelocityComponent { Value = Vector3.Zero });
                     }
 
-                    var rotation = Quaternion.CreateFromYawPitchRoll(MathF.Atan2(direction.X, direction.Z), 0, 0);
+                    var rotation = Quaternion.CreateFromYawPitchRoll(System.MathF.Atan2(direction.X, direction.Z), 0, 0);
                     if (!bot.Has<RotationComponent>() || bot.GetRequired<RotationComponent>().Value != rotation)
                     {
                         bot.AddOrReplaceComponent(new RotationComponent { Value = rotation });
