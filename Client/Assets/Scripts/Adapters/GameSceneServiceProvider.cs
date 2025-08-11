@@ -71,6 +71,8 @@ namespace Adapters
             serviceCollection.AddSingleton<ICollisionDetector>(sp => sp.GetRequiredService<CollisionSystem>());
             serviceCollection.AddSingleton<ISystem, WorldAABBRenderSystem>();
 
+            serviceCollection.AddSingleton<ISystem, UnitCollisionSystem>();
+            
             // Health / Damage systems
             // Notice death system is not registered here, we want that to be fully server-side.
             serviceCollection.AddSingleton<ISystem, HealthBarRenderSystem>();

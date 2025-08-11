@@ -101,6 +101,7 @@ namespace Shared.ECS.Archetypes
                 Size = _projectileSettings.ProjectileLocalBoundsSize
             });
             projectile.AddComponent<CollidingTagComponent>();
+            projectile.AddComponent<DoesNotOccupySpaceTagComponent>();
 
             // set to self destroy after a certain configured time
             projectile.AddComponent(SelfDestroyingComponent.CreateWithTTL(

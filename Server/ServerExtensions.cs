@@ -40,6 +40,7 @@ namespace Server
             services.AddSingleton<CollisionSystem>();
             services.AddSingleton<ISystem>(sp => sp.GetRequiredService<CollisionSystem>());
             services.AddSingleton<ICollisionDetector>(sp => sp.GetRequiredService<CollisionSystem>());
+            services.AddSingleton<ISystem, UnitCollisionSystem>();
             services.AddSingleton<ISystem, DamageSystem>();
             services.AddSingleton<ISystem, DeathSystem>();
             services.AddSingleton<ISystem, RespawnSystem>();

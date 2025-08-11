@@ -43,8 +43,16 @@ namespace Shared.Networking.Messages
             writer.Put(PeerId);
             writer.Put(ConnectionTime.ToBinary());
             writer.Put(ServerVersion);
-            InitialWorldSnapshot?.Serialize(writer);
-            Settings.Serialize(writer);
+
+            // Snapshot as length-prefixed payload
+            var snapshotWriter = new NetDataWriter();
+            InitialWorldSnapshot?.Serialize(snapshotWriter);
+            writer.PutBytesWithLength(snapshotWriter.CopyData());
+
+            // Settings as length-prefixed payload
+            var settingsWriter = new NetDataWriter();
+            Settings.Serialize(settingsWriter);
+            writer.PutBytesWithLength(settingsWriter.CopyData());
         }
 
         public void Deserialize(NetDataReader reader)
@@ -52,8 +60,19 @@ namespace Shared.Networking.Messages
             PeerId = reader.GetInt();
             ConnectionTime = DateTime.FromBinary(reader.GetLong());
             ServerVersion = reader.GetString();
-            InitialWorldSnapshot?.Deserialize(reader);
-            Settings.Deserialize(reader);
+
+            // Snapshot length-prefixed payload
+            var snapshotBytes = reader.GetBytesWithLength();
+            if (InitialWorldSnapshot != null)
+            {
+                var snapshotReader = new NetDataReader(snapshotBytes);
+                InitialWorldSnapshot.Deserialize(snapshotReader);
+            }
+
+            // Settings length-prefixed payload
+            var settingsBytes = reader.GetBytesWithLength();
+            var settingsReader = new NetDataReader(settingsBytes);
+            Settings.Deserialize(settingsReader);
         }
     }
 }
