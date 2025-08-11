@@ -89,7 +89,12 @@ namespace Server.AI
 
                 if (distance > botSettings.BotAttackDistance)
                 {
+                    // Move towards target
                     bot.AddOrReplaceComponent(new VelocityComponent { Value = direction * botSettings.BotApproachSpeed });
+
+                    // Face movement direction while approaching
+                    var approachRotation = Quaternion.CreateFromYawPitchRoll(System.MathF.Atan2(direction.X, direction.Z), 0, 0);
+                    bot.AddOrReplaceComponent(new RotationComponent { Value = approachRotation });
                 }
                 else
                 {
@@ -99,10 +104,7 @@ namespace Server.AI
                     }
 
                     var rotation = Quaternion.CreateFromYawPitchRoll(MathF.Atan2(direction.X, direction.Z), 0, 0);
-                    if (!bot.Has<RotationComponent>() || bot.GetRequired<RotationComponent>().Value != rotation)
-                    {
-                        bot.AddOrReplaceComponent(new RotationComponent { Value = rotation });
-                    }
+                    bot.AddOrReplaceComponent(new RotationComponent { Value = rotation });
 
                     if (!bot.Has<ShootingCooldownComponent>() || tickNumber >= bot.GetRequired<ShootingCooldownComponent>().EndTick)
                     {
