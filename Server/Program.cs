@@ -20,8 +20,9 @@ namespace Server
             var host = new HostBuilder()
                 .ConfigureAppConfiguration((_, configApp) =>
                 {
-                    configApp.SetBasePath(Directory.GetCurrentDirectory());
-                    configApp.AddJsonFile("Server/appsettings.json", optional: false);
+                    var basePath = AppContext.BaseDirectory;
+                    configApp.SetBasePath(basePath);
+                    configApp.AddJsonFile("appsettings.json", optional: false);
                 })
                 .ConfigureServices((hostContext, services) =>
                 {

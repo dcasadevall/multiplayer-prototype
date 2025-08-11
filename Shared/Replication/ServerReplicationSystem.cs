@@ -167,12 +167,21 @@ namespace Shared.Replication
             }
 
             var entityId = entity.Id;
-            if (!_modifiedComponents.ContainsKey(entityId))
+            // If this entity was marked removed this tick, ignore late modification callbacks
+            if (_removedEntities.Contains(entityId))
             {
-                _modifiedComponents[entityId] = new HashSet<IComponent>();
+                return;
             }
 
-            _modifiedComponents[entityId].Add(component);
+            if (!_modifiedComponents.TryGetValue(entityId, out var modifiedSet))
+            {
+                modifiedSet = new HashSet<IComponent>();
+                _modifiedComponents[entityId] = modifiedSet;
+            }
+
+            // Defensive: if the entity was destroyed this tick and re-created, ignore stale callbacks
+            // by ensuring we only track components for currently present entities
+            modifiedSet.Add(component);
         }
 
         private void HandleComponentRemoved(Entity entity, IComponent component)

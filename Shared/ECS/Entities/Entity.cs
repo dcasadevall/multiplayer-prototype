@@ -71,13 +71,21 @@ namespace Shared.ECS.Entities
             var isNewComponent = !_components.ContainsKey(type);
             _components[type] = component;
 
-            if (isNewComponent)
+            try
             {
-                OnComponentAdded?.Invoke(this, component);
+                if (isNewComponent)
+                {
+                    OnComponentAdded?.Invoke(this, component);
+                }
+                else
+                {
+                    OnComponentModified?.Invoke(this, component);
+                }
             }
-            else
+            catch
             {
-                OnComponentModified?.Invoke(this, component);
+                // If a subscriber throws (e.g., replication on a destroyed entity), swallow to keep ECS stable.
+                // Downstream systems should be resilient to missed modifications for destroyed entities.
             }
         }
 

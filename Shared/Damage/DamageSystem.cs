@@ -38,7 +38,7 @@ namespace Shared.Damage
         public void Update(EntityRegistry registry, uint tickNumber, float deltaTime)
         {
             var projectiles = registry
-                .WithAll<DamageApplyingComponent, SpawnAuthorityComponent>()
+                .With<DamageApplyingComponent>()
                 .ToList();
 
             foreach (var projectile in projectiles)

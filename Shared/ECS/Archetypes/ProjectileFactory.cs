@@ -78,11 +78,12 @@ namespace Shared.ECS.Archetypes
             projectile.AddComponent(new VelocityComponent { Value = velocity });
             projectile.AddComponent(new RotationComponent { Value = spawnRotation });
             projectile.AddComponent(new ColorComponent { Value = color });
-            projectile.AddComponent(new PredictedComponent<PositionComponent>
+            // PositionComponent is a predicted component and due to the nature of projectiles,
+            // we can let the client use dead reckoning to predict the position at every tick.
+            projectile.AddPredictedComponent(new PositionComponent
             {
-                Mode = ReplicationMode.InitialValue,
-                ServerValue = new PositionComponent { Value = spawnPosition }
-            });
+                Value = spawnPosition
+            }, ReplicationMode.InitialValue);
 
 
             // Gameplay/state components
