@@ -38,6 +38,7 @@ namespace Shared.Networking
         private readonly PlayerSettings _playerSettings;
         private readonly ProjectileSettings _projectileSettings;
         private readonly BotSettings _botSettings;
+        private readonly SimulationSettings _simulationSettings;
         private IDisposable? _pollHandle;
         private CancellationTokenSource? _cts;
         private volatile bool _running;
@@ -65,7 +66,8 @@ namespace Shared.Networking
             ComponentTypeRegistry componentTypeRegistry,
             PlayerSettings playerSettings,
             ProjectileSettings projectileSettings,
-            BotSettings botSettings)
+            BotSettings botSettings,
+            SimulationSettings simulationSettings)
         {
             _netManager = netManager;
             _messageSender = messageSender;
@@ -78,6 +80,7 @@ namespace Shared.Networking
             _playerSettings = playerSettings;
             _projectileSettings = projectileSettings;
             _botSettings = botSettings;
+            _simulationSettings = simulationSettings;
         }
 
         /// <inheritdoc />
@@ -139,9 +142,10 @@ namespace Shared.Networking
                 },
                 Settings = new SettingsMessage
                 {
-                    Player = _playerSettings,
-                    Projectile = _projectileSettings,
-                    Bot = _botSettings
+                    PlayerSettings = _playerSettings,
+                    ProjectileSettings = _projectileSettings,
+                    BotSettings = _botSettings,
+                    SimulationSettings = _simulationSettings
                 }
             };
 

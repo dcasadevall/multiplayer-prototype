@@ -63,6 +63,18 @@ namespace Adapters
         
         private void Awake()
         {
+            if (_loginScreen == null)
+            {
+                Debug.LogError("Login screen transform is not assigned. Please assign it in the inspector.");
+                return;
+            }
+            
+            if (_gameSettings == null)
+            {
+                Debug.LogError("Game settings are not assigned. Please assign them in the inspector.");
+                return;
+            }
+            
             // 1. Build a persistent, root service provider for networking
             _services = new ServiceCollection();
 

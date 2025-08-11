@@ -8,22 +8,25 @@ namespace Shared.Settings
     /// </summary>
     public class SettingsMessage : INetSerializable
     {
-        public PlayerSettings Player { get; set; } = new();
-        public ProjectileSettings Projectile { get; set; } = new();
-        public BotSettings Bot { get; set; } = new();
+        public PlayerSettings PlayerSettings { get; set; } = new();
+        public ProjectileSettings ProjectileSettings { get; set; } = new();
+        public BotSettings BotSettings { get; set; } = new();
+        public SimulationSettings SimulationSettings { get; set; } = new();
 
         public void Serialize(NetDataWriter writer)
         {
-            writer.Put(JsonSerializer.Serialize(Player));
-            writer.Put(JsonSerializer.Serialize(Projectile));
-            writer.Put(JsonSerializer.Serialize(Bot));
+            writer.Put(JsonSerializer.Serialize(PlayerSettings));
+            writer.Put(JsonSerializer.Serialize(ProjectileSettings));
+            writer.Put(JsonSerializer.Serialize(BotSettings));
+            writer.Put(JsonSerializer.Serialize(SimulationSettings));
         }
 
         public void Deserialize(NetDataReader reader)
         {
-            Player = JsonSerializer.Deserialize<PlayerSettings>(reader.GetString())!;
-            Projectile = JsonSerializer.Deserialize<ProjectileSettings>(reader.GetString())!;
-            Bot = JsonSerializer.Deserialize<BotSettings>(reader.GetString())!;
+            PlayerSettings = JsonSerializer.Deserialize<PlayerSettings>(reader.GetString())!;
+            ProjectileSettings = JsonSerializer.Deserialize<ProjectileSettings>(reader.GetString())!;
+            BotSettings = JsonSerializer.Deserialize<BotSettings>(reader.GetString())!;
+            SimulationSettings = JsonSerializer.Deserialize<SimulationSettings>(reader.GetString())!;
         }
     }
 }

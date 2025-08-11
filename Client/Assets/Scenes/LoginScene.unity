@@ -862,6 +862,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   _gameSceneName: GameScene
   _loginScreen: {fileID: 1486532932}
+  _gameSettings: {fileID: 11400000, guid: fb0eb4c9b830642758b06774c142a3b9, type: 2}
 --- !u!1 &1486532931
 GameObject:
   m_ObjectHideFlags: 0
