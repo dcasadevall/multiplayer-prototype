@@ -21,6 +21,7 @@ namespace Server.Health
             var envPort = Environment.GetEnvironmentVariable("PORT");
             if (string.IsNullOrEmpty(envPort) || !int.TryParse(envPort, out var herokuPort))
             {
+                logger.Info("No PORT environment variable found; skipping HTTP health server. Using configured UDP port {0}.", networkSettings.ServerPort);
                 return;
             }
 
