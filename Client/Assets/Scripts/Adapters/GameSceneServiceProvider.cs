@@ -11,9 +11,9 @@ using Shared.Damage;
 using Shared.ECS;
 using Shared.Networking;
 using Shared.Physics;
-using Shared.Prediction;
 using Shared.Respawn;
 using Shared.Scheduling;
+using Shared.Settings;
 
 namespace Adapters
 {
@@ -36,6 +36,8 @@ namespace Adapters
             serviceCollection.AddSingleton(clientConnection.Settings.ProjectileSettings);
             serviceCollection.AddSingleton(clientConnection.Settings.BotSettings);
             serviceCollection.AddSingleton(clientConnection.Settings.SimulationSettings);
+            serviceCollection.AddSingleton<SettingsValidator>();
+            serviceCollection.AddSingleton<IInitializable>(sp => sp.GetRequiredService<SettingsValidator>());
 
             // Register the core ECS services
             // This includes the replication system, tick sync, entity view system, etc.

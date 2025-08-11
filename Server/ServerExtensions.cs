@@ -14,6 +14,7 @@ using Shared.Damage;
 using Shared.ECS.Archetypes;
 using Shared.ECS.Entities;
 using Shared.ECS.TickSync;
+using Shared.Settings;
 
 namespace Server
 {
@@ -21,6 +22,10 @@ namespace Server
     {
         public static void RegisterServerTypes(this IServiceCollection services)
         {
+            // Add settings validation
+            services.AddSingleton<SettingsValidator>();
+            services.AddSingleton<IInitializable>(sp => sp.GetRequiredService<SettingsValidator>());
+
             // Register Entity Registry and factories
             services.AddSingleton<EntityRegistry>();
             services.AddSingleton<PlayerFactory>();

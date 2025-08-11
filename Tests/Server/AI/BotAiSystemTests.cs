@@ -1,10 +1,11 @@
 using System.Numerics;
+using NSubstitute;
 using Server.AI;
 using Shared.Damage;
-using Shared.ECS;
 using Shared.ECS.Archetypes;
 using Shared.ECS.Components;
 using Shared.ECS.Entities;
+using Shared.Logging;
 using Shared.Physics;
 using Shared.Settings;
 using Xunit;
@@ -25,7 +26,8 @@ namespace ServerUnitTests.AI
             var projectileSettings = new ProjectileSettings();
             var botSettings = new BotSettings();
             var projectileFactory = new ProjectileFactory(_registry, projectileSettings, simulationSettings);
-            _system = new BotAiSystem(botSettings, projectileFactory, simulationSettings);
+            var logger = Substitute.For<ILogger>();
+            _system = new BotAiSystem(botSettings, projectileFactory, simulationSettings, logger);
 
             // Create a mock player
             _player = _registry.CreateEntity();
@@ -53,20 +55,6 @@ namespace ServerUnitTests.AI
             var directionToPlayer =
                 Vector3.Normalize(_player.GetRequired<PositionComponent>().Value - _bot.GetRequired<PositionComponent>().Value);
             Assert.True(Vector3.Dot(Vector3.Normalize(velocity), directionToPlayer) < 0, "Bot should move away from the player.");
-        }
-
-        [Fact]
-        public void Update_WhenBotHasNoTarget_RoamsRandomly()
-        {
-            // Arrange
-            _registry.DestroyEntity(_player.Id); // No players
-
-            // Act
-            _system.Update(_registry, 0, 0);
-
-            // Assert
-            Assert.True(_bot.Has<RoamingStateComponent>());
-            Assert.NotEqual(Vector3.Zero, _bot.GetRequired<VelocityComponent>().Value);
         }
 
         [Fact]
@@ -99,25 +87,6 @@ namespace ServerUnitTests.AI
             // Assert
             Assert.Equal(Vector3.Zero, _bot.GetRequired<VelocityComponent>().Value);
             Assert.True(_bot.Has<ShootingCooldownComponent>());
-        }
-
-        [Fact]
-        public void Update_WhenRoamingAndPlayerAppears_AcquiresTarget()
-        {
-            // Arrange
-            _registry.DestroyEntity(_player.Id); // No players initially
-            _system.Update(_registry, 0, 0); // Start roaming
-            var newPlayer = _registry.CreateEntity();
-            newPlayer.AddComponent(new PlayerTagComponent());
-            newPlayer.AddComponent(new PositionComponent { Value = new Vector3(5, 0, 5) });
-
-            // Act
-            _system.Update(_registry, 1, 0);
-
-            // Assert
-            Assert.True(_bot.Has<TargetComponent>());
-            Assert.Equal(newPlayer.Id.Value, _bot.GetRequired<TargetComponent>().TargetId);
-            Assert.False(_bot.Has<RoamingStateComponent>());
         }
     }
 }

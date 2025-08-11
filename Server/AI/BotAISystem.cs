@@ -4,6 +4,7 @@ using Shared.ECS;
 using Shared.ECS.Archetypes;
 using Shared.ECS.Components;
 using Shared.ECS.Entities;
+using Shared.Logging;
 using Shared.Physics;
 using Shared.Settings;
 
@@ -12,13 +13,14 @@ namespace Server.AI
     /// <summary>
     /// This system controls the behavior of the bots in the game.
     /// It includes logic for chasing and attacking players, as well as retreating when health is low.
-    /// When no players are present, bots will roam around randomly.
+    /// When no players are present, bots will stand still.
     /// </summary>
-    public class BotAiSystem(BotSettings botSettings, ProjectileFactory projectileFactory, SimulationSettings simulationSettings)
-        : ISystem
+    public class BotAiSystem(
+        BotSettings botSettings,
+        ProjectileFactory projectileFactory,
+        SimulationSettings simulationSettings,
+        ILogger logger) : ISystem
     {
-        private readonly Random _random = new();
-
         /// <summary>
         /// Updates the state of all bots in the game.
         /// </summary>
@@ -27,109 +29,98 @@ namespace Server.AI
         /// <param name="deltaTime">The time since the last tick.</param>
         public void Update(EntityRegistry registry, uint tickNumber, float deltaTime)
         {
-            // We use ToList() to avoid modifying the collection while iterating
-            // In a real application, we would want to create a copy of all entities for systems to iterate over
             var players = registry.With<PlayerTagComponent>().ToList();
             var bots = registry.With<BotTagComponent>().ToList();
+
             foreach (var bot in bots)
             {
                 var botHealth = bot.GetRequired<HealthComponent>();
-                var botPosition = bot.GetRequired<PositionComponent>().Value;
 
-                // Retreat logic
-                if ((float)botHealth.CurrentHealth / botHealth.MaxHealth < botSettings.BotRetreatHealthPercentThreshold)
+                // Skip dead bots
+                if (botHealth.CurrentHealth <= 0)
                 {
-                    bot.TryRemove<RoamingStateComponent>(); // Stop roaming when retreating
-                    // Find a safe spot to run to (e.g., away from the nearest player)
-                    var nearestPlayer = FindClosestPlayer(botPosition, players);
-                    if (nearestPlayer != null)
-                    {
-                        var playerPosition = nearestPlayer.GetRequired<PositionComponent>().Value;
-                        var direction = Vector3.Normalize(botPosition - playerPosition);
-                        // Randomize the direction, as long as its away from the player
-                        direction += new Vector3(
-                            Random.Shared.NextSingle() - 0.5f,
-                            0,
-                            Random.Shared.NextSingle() - 0.5f
-                        );
-
-                        bot.AddOrReplaceComponent(new VelocityComponent { Value = direction * botSettings.BotRetreatSpeed });
-                    }
-
                     continue;
                 }
 
-                // Targeting and Attack logic
-                var target = GetOrAcquireTarget(bot, players);
-                if (target != null)
+                if (botHealth.MaxHealth <= 0)
                 {
-                    bot.TryRemove<RoamingStateComponent>(); // Stop roaming when a target is acquired
-                    var targetPosition = target.GetRequired<PositionComponent>().Value;
-                    var direction = Vector3.Normalize(targetPosition - botPosition);
-                    var distance = Vector3.Distance(botPosition, targetPosition);
+                    logger.Warn(LoggedFeature.Game, $"Bot {bot.Id} has zero max health, skipping AI update.");
+                    continue;
+                }
 
-                    if (distance > botSettings.BotAttackDistance)
-                    {
-                        bot.AddOrReplaceComponent(new VelocityComponent { Value = direction * botSettings.BotApproachSpeed });
-                    }
-                    else
-                    {
-                        // Stop moving when in attack range
-                        // Check for existing velocity to avoid unnecessary replications
-                        // This shouldn't be necessary, but with our system we don't currently check
-                        // for component equality
-                        if (!bot.Has<VelocityComponent>() || bot.GetRequired<VelocityComponent>().Value != Vector3.Zero)
-                        {
-                            bot.AddOrReplaceComponent(new VelocityComponent { Value = Vector3.Zero });
-                        }
-
-                        // Face the target
-                        var rotation = Quaternion.CreateFromYawPitchRoll(
-                            MathF.Atan2(direction.X, direction.Z),
-                            0,
-                            0
-                        );
-
-                        // Same deal, be conservative about replacing the rotation component
-                        if (!bot.Has<RotationComponent>() || bot.GetRequired<RotationComponent>().Value != rotation)
-                        {
-                            bot.AddOrReplaceComponent(new RotationComponent { Value = rotation });
-                        }
-
-                        // Shoot
-                        if (!bot.Has<ShootingCooldownComponent>() || tickNumber >= bot.GetRequired<ShootingCooldownComponent>().EndTick)
-                        {
-                            bot.AddOrReplaceComponent(new ShootingCooldownComponent
-                            {
-                                EndTick = tickNumber + (uint)(botSettings.BotShootingCooldown.TotalSeconds *
-                                                              simulationSettings.WorldTicksPerSecond)
-                            });
-
-                            // Shoot the thing :)
-                            projectileFactory.CreateFromEntity(bot, tickNumber);
-                        }
-                    }
+                if ((float)botHealth.CurrentHealth / botHealth.MaxHealth < botSettings.BotRetreatHealthPercentThreshold)
+                {
+                    HandleRetreatState(bot, players);
                 }
                 else
                 {
-                    // Roaming logic
-                    var roamState = bot.GetOrCreate<RoamingStateComponent>();
-                    if (tickNumber >= roamState.NextRoamTick || Vector3.Distance(botPosition, roamState.TargetPosition) < 1f)
+                    HandleAttackState(bot, players, tickNumber);
+                }
+            }
+        }
+
+        private void HandleRetreatState(Entity bot, List<Entity> players)
+        {
+            var botPosition = bot.GetRequired<PositionComponent>().Value;
+            var nearestPlayer = FindClosestPlayer(botPosition, players);
+            if (nearestPlayer != null)
+            {
+                var playerPosition = nearestPlayer.GetRequired<PositionComponent>().Value;
+                var direction = Vector3.Normalize(botPosition - playerPosition);
+                direction += new Vector3(
+                    Random.Shared.NextSingle() - 0.5f,
+                    0,
+                    Random.Shared.NextSingle() - 0.5f
+                );
+
+                bot.AddOrReplaceComponent(new VelocityComponent { Value = direction * botSettings.BotRetreatSpeed });
+            }
+        }
+
+        private void HandleAttackState(Entity bot, List<Entity> players, uint tickNumber)
+        {
+            var target = GetOrAcquireTarget(bot, players);
+            if (target != null)
+            {
+                var botPosition = bot.GetRequired<PositionComponent>().Value;
+                var targetPosition = target.GetRequired<PositionComponent>().Value;
+                var direction = Vector3.Normalize(targetPosition - botPosition);
+                var distance = Vector3.Distance(botPosition, targetPosition);
+
+                if (distance > botSettings.BotAttackDistance)
+                {
+                    bot.AddOrReplaceComponent(new VelocityComponent { Value = direction * botSettings.BotApproachSpeed });
+                }
+                else
+                {
+                    if (!bot.Has<VelocityComponent>() || bot.GetRequired<VelocityComponent>().Value != Vector3.Zero)
                     {
-                        // Pick a new random point to roam to
-                        var randomDirection = new Vector3((float)_random.NextDouble() * 2 - 1, 0, (float)_random.NextDouble() * 2 - 1);
-                        roamState.TargetPosition = botPosition + Vector3.Normalize(randomDirection) * botSettings.BoatRoamRadius;
-                        roamState.NextRoamTick = tickNumber +
-                                                 (uint)(botSettings.BotRoamInterval.TotalSeconds *
-                                                        simulationSettings.WorldTicksPerSecond);
+                        bot.AddOrReplaceComponent(new VelocityComponent { Value = Vector3.Zero });
                     }
 
-                    var direction = Vector3.Normalize(roamState.TargetPosition - botPosition);
-                    bot.AddOrReplaceComponent(new VelocityComponent { Value = direction * botSettings.BotApproachSpeed });
+                    var rotation = Quaternion.CreateFromYawPitchRoll(MathF.Atan2(direction.X, direction.Z), 0, 0);
+                    if (!bot.Has<RotationComponent>() || bot.GetRequired<RotationComponent>().Value != rotation)
+                    {
+                        bot.AddOrReplaceComponent(new RotationComponent { Value = rotation });
+                    }
 
-                    var rotation = Quaternion.CreateFromYawPitchRoll(
-                        MathF.Atan2(direction.X, direction.Z), 0, 0);
-                    bot.AddOrReplaceComponent(new RotationComponent { Value = rotation });
+                    if (!bot.Has<ShootingCooldownComponent>() || tickNumber >= bot.GetRequired<ShootingCooldownComponent>().EndTick)
+                    {
+                        bot.AddOrReplaceComponent(new ShootingCooldownComponent
+                        {
+                            EndTick = tickNumber + (uint)(botSettings.BotShootingCooldown.TotalSeconds *
+                                                          simulationSettings.WorldTicksPerSecond)
+                        });
+
+                        projectileFactory.CreateFromEntity(bot, tickNumber);
+                    }
+                }
+            }
+            else
+            {
+                if (!bot.Has<VelocityComponent>() || bot.GetRequired<VelocityComponent>().Value != Vector3.Zero)
+                {
+                    bot.AddOrReplaceComponent(new VelocityComponent { Value = Vector3.Zero });
                 }
             }
         }
