@@ -26,8 +26,8 @@ jobs:
       - name: Build
         run: dotnet build --no-restore --configuration Release
 
-      - name: Run tests
-        run: dotnet test --no-build --configuration Release --logger "trx;LogFileName=test_results.trx"
+      - name: Run tests (with coverage)
+        run: dotnet test --no-build --configuration Release --collect:"XPlat Code Coverage" --logger "trx;LogFileName=test_results.trx"
 
       - name: Upload test results
         if: always()
@@ -39,10 +39,16 @@ jobs:
       - name: Install reportgenerator tool
         run: dotnet tool install --global dotnet-reportgenerator-globaltool
 
-      - name: Run coverage script
+      - name: Generate coverage summary and HTML
         run: |
-          chmod +x tools/coverage.sh
-          ./tools/coverage.sh
+          export PATH="$PATH:$HOME/.dotnet/tools"
+          reportgenerator \
+            -reports:**/coverage.cobertura.xml \
+            -targetdir:coveragereport \
+            -reporttypes:"MarkdownSummaryGithub;Html"
+          if [ -f coveragereport/SummaryGithub.md ]; then
+            cat coveragereport/SummaryGithub.md >> $GITHUB_STEP_SUMMARY
+          fi
 
       - name: Upload coverage report
         if: always()
