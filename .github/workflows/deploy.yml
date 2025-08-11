@@ -2,7 +2,6 @@
 
 name: Deploy to Heroku
 
-# Run this workflow automatically on pushes to the 'master' branch
 on:
   push:
     branches:
@@ -11,24 +10,37 @@ on:
 
 jobs:
   deploy:
-    runs-on: ubuntu-latest # Use a standard Linux amd64 runner
+    runs-on: ubuntu-latest
     steps:
-      # 1. Check out the repository's code
+      # 1. Check out your repository's code
       - name: Checkout code
         uses: actions/checkout@v4
 
-      # 2. Build, push, and release the Docker container to Heroku
-      # This single action handles login, building, pushing, and releasing.
-      - name: Deploy to Heroku
-        uses: akhileshns/heroku-deploy@v3.12.12
+      # 2. Log in to the Heroku Container Registry
+      # This uses your HEROKU_API_KEY to authorize Docker pushes.
+      - name: Log in to Heroku Container Registry
+        uses: heroku/actions/container-login@v1.0.0
+        env:
+          HEROKU_API_KEY: ${{ secrets.HEROKU_API_KEY }}
+
+      # 3. Build and push the Docker image to Heroku
+      # This uses Docker's official build-and-push action.
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v5
         with:
-          # Use the secret API key we created
+          # The path to your Dockerfile, relative to the root
+          file: ./deploy/Dockerfile
+          # The full name of the image on Heroku's registry
+          tags: registry.heroku.com/${{ vars.HEROKU_APP_NAME }}/web:latest
+          # Push the image directly to the registry
+          push: true
+          # We don't need to specify a platform, as the runner is amd64.
+
+      # 4. Release the new image on Heroku
+      # This tells Heroku to deploy the image we just pushed.
+      - name: Release new image
+        uses: heroku/actions/container-release@v1.0.0
+        with:
           heroku_api_key: ${{ secrets.HEROKU_API_KEY }}
-          # The email address associated with the Heroku account
-          heroku_email: ${{ secrets.HEROKU_EMAIL }}
-          # The exact name of the Heroku app
-          heroku_app_name: "ecs-multiplayer-prototype"
-          
-          # Tell Heroku where to find the Dockerfile
-          dockerfile_directory: "./deploy"
-          dockerfile_name: "Dockerfile"
+          heroku_app_name: ${{ vars.HEROKU_APP_NAME }}
+          process_type: "web"
