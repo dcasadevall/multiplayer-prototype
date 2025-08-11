@@ -44,7 +44,14 @@ namespace Server.AI
                     {
                         var playerPosition = nearestPlayer.GetRequired<PositionComponent>().Value;
                         var direction = Vector3.Normalize(botPosition - playerPosition);
-                        bot.AddOrReplaceComponent(new VelocityComponent { Value = direction * 3f });
+                        // Randomize the direction, as long as its away from the player
+                        direction += new Vector3(
+                            Random.Shared.NextSingle() - 0.5f,
+                            0,
+                            Random.Shared.NextSingle() - 0.5f
+                        );
+
+                        bot.AddOrReplaceComponent(new VelocityComponent { Value = direction * ServerConstants.BotRetreatSpeed });
                     }
 
                     continue;
@@ -60,12 +67,18 @@ namespace Server.AI
 
                     if (distance > ServerConstants.BotAttackDistance)
                     {
-                        bot.AddOrReplaceComponent(new VelocityComponent { Value = direction * 2f });
+                        bot.AddOrReplaceComponent(new VelocityComponent { Value = direction * ServerConstants.BotRetreatSpeed });
                     }
                     else
                     {
                         // Stop moving when in attack range
-                        bot.AddOrReplaceComponent(new VelocityComponent { Value = Vector3.Zero });
+                        // Check for existing velocity to avoid unnecessary replications
+                        // This shouldn't be necessary, but with our system we don't currently check
+                        // for component equality
+                        if (bot.GetRequired<VelocityComponent>().Value != Vector3.Zero)
+                        {
+                            bot.AddOrReplaceComponent(new VelocityComponent { Value = Vector3.Zero });
+                        }
 
                         // Face the target
                         var rotation = Quaternion.CreateFromYawPitchRoll(
@@ -73,7 +86,12 @@ namespace Server.AI
                             0,
                             0
                         );
-                        bot.AddOrReplaceComponent(new RotationComponent { Value = rotation });
+
+                        // Same deal, be conservative about replacing the rotation component
+                        if (bot.GetRequired<RotationComponent>().Value != rotation)
+                        {
+                            bot.AddOrReplaceComponent(new RotationComponent { Value = rotation });
+                        }
 
                         // Shoot
                         if (!bot.Has<ShootingCooldownComponent>() || tickNumber >= bot.GetRequired<ShootingCooldownComponent>().EndTick)

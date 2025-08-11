@@ -37,6 +37,12 @@ namespace Shared.Replication
         void Put(bool value);
 
         /// <summary>
+        /// Writes a byte value to the stream.
+        /// </summary>
+        /// <param name="value"></param>
+        void PutByte(byte value);
+
+        /// <summary>
         /// Writes a Vector3 value to the stream.
         /// </summary>
         void Put(Vector3 value);

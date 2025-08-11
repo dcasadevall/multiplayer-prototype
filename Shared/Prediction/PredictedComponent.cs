@@ -97,12 +97,14 @@ namespace Shared.Prediction
         public void Serialize(IComponentWriter writer)
         {
             // Serialize the replication mode as a byte
-            writer.Put((byte)Mode);
+            writer.PutByte((byte)Mode);
 
             // Payload
             writer.Put(HasServerValue);
             if (HasServerValue)
+            {
                 writer.Put(ServerValue!);
+            }
         }
 
         public void Deserialize(IComponentReader reader)
@@ -112,7 +114,9 @@ namespace Shared.Prediction
 
             // Payload
             if (reader.GetBool())
+            {
                 ServerValue = reader.GetComponent<T>();
+            }
         }
     }
 }

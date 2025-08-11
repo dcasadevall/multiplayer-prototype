@@ -1,3 +1,4 @@
+using System.Numerics;
 using NSubstitute;
 using Shared.ECS.Entities;
 using Shared.Logging;
@@ -158,6 +159,45 @@ namespace SharedUnitTests.Replication
             var clientPredicted = clientEntity.GetRequired<PredictedComponent<PositionComponent>>();
             Assert.NotNull(clientPredicted.ServerValue);
             Assert.Equal(new(3, 3, 3), clientPredicted.ServerValue.Value);
+        }
+
+        [Fact]
+        public void CreateMixedComponentEntity_ServerToClient_ReplicatesCorrectly()
+        {
+            // --- SERVER SIDE ---
+            // Arrange
+            var serverEntity = _serverRegistry.CreateEntity();
+            var serverPosition = new PositionComponent { Value = new(1, 1, 1) };
+            var serverVelocity = new VelocityComponent { Value = new(2, 2, 2) };
+            var serverRotation = new RotationComponent { Value = Quaternion.Identity };
+
+            serverEntity.AddComponent(new PredictedComponent<PositionComponent>
+                { Mode = ReplicationMode.EveryTick, ServerValue = serverPosition });
+            serverEntity.AddComponent(serverPosition);
+            serverEntity.AddComponent(new PredictedComponent<VelocityComponent>
+                { Mode = ReplicationMode.EveryTick, ServerValue = serverVelocity });
+            serverEntity.AddComponent(serverVelocity);
+            serverEntity.AddComponent(serverRotation);
+
+            // Act
+            _serverSystem.Update(_serverRegistry, 1, 0);
+            _clientSystem.Update(_clientRegistry, 1, 0);
+
+            // Assert
+            Assert.True(_clientRegistry.TryGet(serverEntity.Id, out var clientEntity));
+            Assert.True(clientEntity.Has<PositionComponent>());
+            Assert.True(clientEntity.Has<VelocityComponent>());
+            Assert.True(clientEntity.Has<RotationComponent>());
+            Assert.True(clientEntity.Has<PredictedComponent<PositionComponent>>());
+            Assert.True(clientEntity.Has<PredictedComponent<VelocityComponent>>());
+
+            var clientPosPredicted = clientEntity.GetRequired<PredictedComponent<PositionComponent>>();
+            var clientVelPredicted = clientEntity.GetRequired<PredictedComponent<VelocityComponent>>();
+
+            Assert.NotNull(clientPosPredicted.ServerValue);
+            Assert.NotNull(clientVelPredicted.ServerValue);
+            Assert.Equal(serverPosition.Value, clientPosPredicted.ServerValue.Value);
+            Assert.Equal(serverVelocity.Value, clientVelPredicted.ServerValue.Value);
         }
 
         [Fact]

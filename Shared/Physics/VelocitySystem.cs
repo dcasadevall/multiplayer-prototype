@@ -25,10 +25,17 @@ namespace Shared.Physics
                     entity.TryGet<VelocityComponent>(out var velocity))
                 {
                     // Update position based on velocity and delta time
-                    entity.AddOrReplaceComponent(new PositionComponent
+                    // Do not replace unless there is a change (this avoids unnecessary replication)
+                    // Ideally, we shouldn't have to compare here, but our system is not performing
+                    // equality checks on diffing.
+                    var newPosition = position.Value + velocity.Value * (float)SharedConstants.FixedDeltaTime.TotalSeconds;
+                    if (newPosition != position.Value)
                     {
-                        Value = position.Value + velocity.Value * (float)SharedConstants.FixedDeltaTime.TotalSeconds
-                    });
+                        entity.AddOrReplaceComponent(new PositionComponent
+                        {
+                            Value = position.Value + velocity.Value * (float)SharedConstants.FixedDeltaTime.TotalSeconds
+                        });
+                    }
                 }
             }
         }

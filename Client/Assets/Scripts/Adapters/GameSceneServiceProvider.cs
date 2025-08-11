@@ -63,9 +63,9 @@ namespace Adapters
             serviceCollection.AddSingleton<ISystem, WorldAABBRenderSystem>();
 
             // Health / Damage systems
+            // Notice death system is not registered here, we want that to be fully server-side.
             serviceCollection.AddSingleton<ISystem, HealthBarRenderSystem>();
             serviceCollection.AddSingleton<ISystem, DamageSystem>();
-            serviceCollection.AddSingleton<ISystem, DeathSystem>();
 
             // Entity lifecycle systems
             serviceCollection.AddSingleton<ISystem, SelfDestroyingSystem>();

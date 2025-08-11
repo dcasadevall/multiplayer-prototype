@@ -27,6 +27,7 @@ namespace Shared.Replication
         public void Put(float value) => _writer.Put(value);
         public void Put(string value) => _writer.Put(value);
         public void Put(bool value) => _writer.Put(value);
+        public void PutByte(byte value) => _writer.Put(value);
 
         public void Put(Vector3 value)
         {

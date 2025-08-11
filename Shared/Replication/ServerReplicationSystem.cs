@@ -286,7 +286,7 @@ namespace Shared.Replication
                 }
 
                 var componentsToSend = new List<IComponent>();
-                foreach (var component in entity.GetAllComponents())
+                foreach (var component in entity.GetAllComponents().ToList())
                 {
                     if (component is INonReplicatedComponent)
                     {
