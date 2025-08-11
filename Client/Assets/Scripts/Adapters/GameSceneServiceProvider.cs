@@ -31,6 +31,11 @@ namespace Adapters
         
         public GameSceneServiceProvider(IServiceCollection serviceCollection, IClientConnection clientConnection)
         {
+            // Register the settings instances from the client connection
+            serviceCollection.AddSingleton(clientConnection.Settings.Player);
+            serviceCollection.AddSingleton(clientConnection.Settings.Projectile);
+            serviceCollection.AddSingleton(clientConnection.Settings.Bot);
+
             // Register the core ECS services
             // This includes the replication system, tick sync, entity view system, etc.
             serviceCollection.RegisterEcsServices();

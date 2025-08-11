@@ -4,6 +4,7 @@ using Shared.ECS.Components;
 using Shared.ECS.Entities;
 using Shared.ECS.Simulation;
 using Shared.Respawn;
+using Shared.Settings;
 
 namespace Shared.Damage
 {
@@ -14,6 +15,17 @@ namespace Shared.Damage
     /// </summary>
     public class DeathSystem : ISystem
     {
+        private readonly PlayerSettings _playerSettings;
+        private readonly BotSettings _botSettings;
+        private readonly SimulationSettings _simulationSettings;
+
+        public DeathSystem(PlayerSettings playerSettings, BotSettings botSettings, SimulationSettings simulationSettings)
+        {
+            _playerSettings = playerSettings;
+            _botSettings = botSettings;
+            _simulationSettings = simulationSettings;
+        }
+
         /// <summary>
         /// Identifies dead entities, creates death records, and destroys the original entities.
         /// </summary>
@@ -34,7 +46,7 @@ namespace Shared.Damage
                 {
                     deathRecord.AddComponent(new RespawnComponent
                     {
-                        RespawnAtTick = tickNumber + GameplayConstants.PlayerRespawnTime.ToNumTicks()
+                        RespawnAtTick = tickNumber + _playerSettings.PlayerRespawnTime.ToNumTicks(_simulationSettings.WorldTicksPerSecond)
                     });
 
                     deathRecord.AddComponent(entity.GetRequired<PeerComponent>());
@@ -43,7 +55,7 @@ namespace Shared.Damage
                 {
                     deathRecord.AddComponent(new RespawnComponent
                     {
-                        RespawnAtTick = tickNumber + GameplayConstants.BotRespawnTime.ToNumTicks()
+                        RespawnAtTick = tickNumber + _botSettings.BotRespawnTime.ToNumTicks(_simulationSettings.WorldTicksPerSecond)
                     });
                 }
 

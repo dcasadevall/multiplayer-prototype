@@ -9,6 +9,7 @@ using Shared.Scheduling;
 using Shared.ECS.Entities;
 using System.Linq;
 using Shared.Replication;
+using Shared.Settings;
 
 namespace Shared.Networking
 {
@@ -34,6 +35,9 @@ namespace Shared.Networking
         private readonly IWorldSnapshotProvider _worldSnapshotProvider;
         private readonly IComponentSerializer _componentSerializer;
         private readonly ComponentTypeRegistry _componentTypeRegistry;
+        private readonly PlayerSettings _playerSettings;
+        private readonly ProjectileSettings _projectileSettings;
+        private readonly BotSettings _botSettings;
         private IDisposable? _pollHandle;
         private CancellationTokenSource? _cts;
         private volatile bool _running;
@@ -58,7 +62,10 @@ namespace Shared.Networking
             IScheduler scheduler,
             IWorldSnapshotProvider worldSnapshotProvider,
             IComponentSerializer componentSerializer,
-            ComponentTypeRegistry componentTypeRegistry)
+            ComponentTypeRegistry componentTypeRegistry,
+            PlayerSettings playerSettings,
+            ProjectileSettings projectileSettings,
+            BotSettings botSettings)
         {
             _netManager = netManager;
             _messageSender = messageSender;
@@ -68,6 +75,9 @@ namespace Shared.Networking
             _worldSnapshotProvider = worldSnapshotProvider;
             _componentSerializer = componentSerializer;
             _componentTypeRegistry = componentTypeRegistry;
+            _playerSettings = playerSettings;
+            _projectileSettings = projectileSettings;
+            _botSettings = botSettings;
         }
 
         /// <inheritdoc />
@@ -126,6 +136,12 @@ namespace Shared.Networking
                 InitialWorldSnapshot = new WorldDeltaMessage(_componentSerializer, _componentTypeRegistry)
                 {
                     Deltas = _worldSnapshotProvider.ProduceEntitySnapshot()
+                },
+                Settings = new SettingsMessage
+                {
+                    Player = _playerSettings,
+                    Projectile = _projectileSettings,
+                    Bot = _botSettings
                 }
             };
 

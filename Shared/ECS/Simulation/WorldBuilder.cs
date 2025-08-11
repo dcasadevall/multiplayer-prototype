@@ -58,7 +58,7 @@ namespace Shared.ECS.Simulation
         /// </summary>
         /// <param name="frequencyHz">The frequency in Hz (e.g., 30 for 30Hz).</param>
         /// <returns>This builder for method chaining.</returns>
-        public WorldBuilder WithFrequency(int frequencyHz)
+        public WorldBuilder WithFrequency(uint frequencyHz)
         {
             _tickRate = TimeSpan.FromMilliseconds(1000.0 / frequencyHz);
             return this;

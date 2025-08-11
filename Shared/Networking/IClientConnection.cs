@@ -1,5 +1,7 @@
 using System;
+using Shared.Networking.Messages;
 using Shared.Replication;
+using Shared.Settings;
 
 namespace Shared.Networking
 {
@@ -39,5 +41,6 @@ namespace Shared.Networking
         /// The message receiver for receiving messages from the server or other peers.
         /// </summary>
         IMessageReceiver MessageReceiver { get; }
+        SettingsMessage Settings { get; set; }
     }
 }

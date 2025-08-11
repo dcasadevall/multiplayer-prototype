@@ -14,7 +14,15 @@ namespace Shared.Respawn
     /// </summary>
     public class RespawnSystem : ISystem
     {
+        private readonly BotFactory _botFactory;
+        private readonly PlayerFactory _playerFactory;
         private readonly Random _rand = new();
+
+        public RespawnSystem(BotFactory botFactory, PlayerFactory playerFactory)
+        {
+            _botFactory = botFactory;
+            _playerFactory = playerFactory;
+        }
 
         /// <summary>
         /// Processes death records and respawns entities when their respawn time is reached.
@@ -39,11 +47,11 @@ namespace Shared.Respawn
                 if (entity.Has<PeerComponent>())
                 {
                     var peerId = entity.GetRequired<PeerComponent>().PeerId;
-                    PlayerArchetype.Create(registry, peerId, spawnPosition);
+                    _playerFactory.Create(peerId, spawnPosition);
                 }
                 else
                 {
-                    BotArchetype.Create(registry, spawnPosition);
+                    _botFactory.Create(spawnPosition);
                 }
 
                 registry.DestroyEntity(entity.Id);

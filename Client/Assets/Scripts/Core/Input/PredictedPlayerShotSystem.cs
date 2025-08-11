@@ -1,7 +1,6 @@
 using System;
 using Core.ECS.Entities;
 using Core.ECS.Rendering;
-using Shared;
 using Shared.ECS;
 using Shared.ECS.Archetypes;
 using Shared.ECS.Components;
@@ -13,6 +12,7 @@ using Shared.Logging;
 using Shared.Networking;
 using Shared.Networking.Messages;
 using Shared.Scheduling;
+using Shared.Settings;
 using ILogger = Shared.Logging.ILogger;
 
 namespace Core.Input
@@ -32,6 +32,9 @@ namespace Core.Input
         private readonly ITickSync _tickSync;
         private readonly int _localPeerId;
         private readonly ILogger _logger;
+        private readonly ProjectileFactory _projectileFactory;
+        private readonly PlayerSettings _playerSettings;
+        private readonly SimulationSettings _simulationSettings;
         
         // Cooldown tracking
         private uint _lastShotTick;
@@ -42,13 +45,19 @@ namespace Core.Input
             IMessageSender messageSender,
             IClientConnection clientConnection,
             ITickSync tickSync,
-            ILogger logger)
+            ILogger logger,
+            ProjectileFactory projectileFactory,
+            PlayerSettings playerSettings,
+            SimulationSettings simulationSettings)
         {
             _inputListener = inputListener;
             _entityRegistry = entityRegistry;
             _messageSender = messageSender;
             _tickSync = tickSync;
             _logger = logger;
+            _projectileFactory = projectileFactory;
+            _playerSettings = playerSettings;
+            _simulationSettings = simulationSettings;
             _localPeerId = clientConnection.AssignedPeerId;
         }
 
@@ -71,7 +80,11 @@ namespace Core.Input
             var clientTick = _tickSync.ClientTick;
             
             // Check cooldown
-            if (clientTick < _lastShotTick + GameplayConstants.PlayerShotCooldown.ToNumTicks())
+            var cooldownTicks = _playerSettings
+                .PlayerShotCooldown
+                .ToNumTicks(_simulationSettings.WorldTicksPerSecond);
+            
+            if (clientTick < _lastShotTick + cooldownTicks)
             {
                 return;
             }
@@ -80,9 +93,7 @@ namespace Core.Input
             var localPlayer = _entityRegistry.GetLocalPlayerEntity(_localPeerId);
 
             // Create predicted projectile entity
-            var projectile = ProjectileArchetype.CreateFromEntity(_entityRegistry, 
-                localPlayer, 
-                clientTick); 
+            var projectile = _projectileFactory.CreateFromEntity(localPlayer, clientTick); 
             
             // This projectile will be destroyed once the server sends the authoritative projectile entity.
             // Adding LocalEntityTagComponent will take care of that.
@@ -92,7 +103,10 @@ namespace Core.Input
             var predictedProjectileId = projectile.Id;
             SendShotMessage(clientTick, predictedProjectileId.Value);
 
-            _logger.Debug(LoggedFeature.Input, "Fired predicted projectile {0} at tick {1}", predictedProjectileId, _tickSync.ServerTick);
+            _logger.Debug(LoggedFeature.Input, 
+                "Fired predicted projectile {0} at tick {1}", 
+                predictedProjectileId, 
+                _tickSync.ServerTick);
         }
 
         private void SendShotMessage(uint tick, Guid predictedProjectileId)

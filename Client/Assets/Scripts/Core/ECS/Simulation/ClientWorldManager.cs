@@ -7,6 +7,7 @@ using Shared.ECS.Entities;
 using Shared.ECS.Simulation;
 using Shared.ECS.TickSync;
 using Shared.Scheduling;
+using Shared.Settings;
 using UnityEngine;
 
 namespace Core.ECS.Simulation
@@ -27,17 +28,20 @@ namespace Core.ECS.Simulation
         private readonly ITickSync _tickSync;
         private readonly IScheduler _scheduler;
         private readonly IEnumerable<ISystem> _systems;
+        private readonly SimulationSettings _simulationSettings;
         private World _world;
 
         public ClientWorldManager(EntityRegistry entityRegistry, 
             ITickSync tickSync,
             IScheduler scheduler, 
-            IEnumerable<ISystem> systems)
+            IEnumerable<ISystem> systems,
+            SimulationSettings simulationSettings)
         {
             _entityRegistry = entityRegistry;
             _tickSync = tickSync;
             _scheduler = scheduler;
             _systems = systems;
+            _simulationSettings = simulationSettings;
         }
 
         public void Initialize()
@@ -46,7 +50,7 @@ namespace Core.ECS.Simulation
             
             // Create a world using the WorldBuilder pattern (like the server)
             var worldBuilder = new WorldBuilder(_entityRegistry, _tickSync, _scheduler)
-                .WithFrequency(SharedConstants.WorldTicksPerSecond)
+                .WithFrequency(_simulationSettings.WorldTicksPerSecond)
                 .WithWorldMode(WorldMode.Client);
             
             // Add all registered systems to the world
@@ -56,7 +60,7 @@ namespace Core.ECS.Simulation
             _world = worldBuilder.Build();
             _world.Start();
             
-            Debug.Log($"ClientWorldManager: ECS world initialized with {SharedConstants.WorldTicksPerSecond} " +
+            Debug.Log($"ClientWorldManager: ECS world initialized with {_simulationSettings.WorldTicksPerSecond} " +
                       $"ticks per second and {_systems.Count()} systems");
         }
         

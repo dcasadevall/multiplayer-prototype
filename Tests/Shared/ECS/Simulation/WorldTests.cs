@@ -4,6 +4,7 @@ using Shared.ECS.Entities;
 using Shared.ECS.Simulation;
 using Shared.Networking;
 using Shared.Scheduling;
+using Shared.Settings;
 using Xunit;
 
 namespace SharedUnitTests.ECS.Simulation
@@ -207,8 +208,9 @@ namespace SharedUnitTests.ECS.Simulation
         {
             var tickSync = new Shared.ECS.TickSync.TickSync();
             var connection = Substitute.For<IClientConnection>();
+            var simulationSettings = new SimulationSettings();
             connection.PingMs.Returns(0); // No ping for simplicity
-            var clientTickSystem = new Shared.ECS.TickSync.ClientTickSystem(tickSync, connection);
+            var clientTickSystem = new Shared.ECS.TickSync.ClientTickSystem(simulationSettings, tickSync, connection);
 
             var registry = new EntityRegistry();
             var tickRate = TimeSpan.FromMilliseconds(20);

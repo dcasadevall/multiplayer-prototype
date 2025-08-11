@@ -1,6 +1,7 @@
 using System;
 using LiteNetLib.Utils;
 using Shared.Replication;
+using Shared.Settings;
 
 namespace Shared.Networking.Messages
 {
@@ -32,12 +33,18 @@ namespace Shared.Networking.Messages
         /// </summary>
         public WorldDeltaMessage? InitialWorldSnapshot { get; set; }
 
+        /// <summary>
+        /// The game settings.
+        /// </summary>
+        public SettingsMessage Settings { get; set; } = new();
+
         public void Serialize(NetDataWriter writer)
         {
             writer.Put(PeerId);
             writer.Put(ConnectionTime.ToBinary());
             writer.Put(ServerVersion);
             InitialWorldSnapshot?.Serialize(writer);
+            Settings.Serialize(writer);
         }
 
         public void Deserialize(NetDataReader reader)
@@ -46,6 +53,7 @@ namespace Shared.Networking.Messages
             ConnectionTime = DateTime.FromBinary(reader.GetLong());
             ServerVersion = reader.GetString();
             InitialWorldSnapshot?.Deserialize(reader);
+            Settings.Deserialize(reader);
         }
     }
 }

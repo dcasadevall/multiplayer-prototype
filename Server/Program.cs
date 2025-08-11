@@ -1,157 +1,58 @@
 ﻿using Microsoft.Extensions.DependencyInjection;
 using Server.Logging;
-using Server.Scenes;
-using Shared;
-using Shared.ECS;
-using Shared.ECS.Simulation;
-using Shared.ECS.TickSync;
-using Shared.Logging;
-using Shared.Networking;
-using Shared.Scheduling;
 using Microsoft.Extensions.Configuration;
-using Server.AI;
-using Server.Player;
-using Shared.Damage;
-using Shared.ECS.Entities;
-using Shared.Physics;
-using Shared.Prediction;
-using Shared.Replication;
-using Shared.Respawn;
+using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Logging;
+using Shared.Settings;
 
-// Add Configuration
-var configuration = new ConfigurationBuilder()
-    .SetBasePath(AppContext.BaseDirectory)
-    .AddJsonFile("appsettings.json", optional: false, reloadOnChange: true)
-    .Build();
-
-var services = new ServiceCollection();
-
-// Configure and register logging settings
-var loggingSettings = new LoggingSettings();
-configuration.GetSection("Logging").Bind(loggingSettings);
-services.AddSingleton(loggingSettings);
-
-// Register ECS core
-services.AddSingleton<EntityRegistry>();
-
-// Server side logging
-services.AddSingleton<ILogger, ConsoleLogger>();
-
-// Register server systems
-services.AddSingleton<ISystem, WorldDiagnosticsSystem>();
-services.AddSingleton<ISystem, HealthSystem>();
-
-// Physics / Movement
-services.AddSingleton<ISystem, WorldAABBUpdateSystem>();
-services.AddSingleton<ISystem, VelocitySystem>();
-services.AddSingleton<CollisionSystem>();
-services.AddSingleton<ISystem>(sp => sp.GetRequiredService<CollisionSystem>());
-services.AddSingleton<ICollisionDetector>(sp => sp.GetRequiredService<CollisionSystem>());
-
-// Gameplay
-services.AddSingleton<ISystem, DamageSystem>();
-services.AddSingleton<ISystem, DeathSystem>();
-services.AddSingleton<ISystem, RespawnSystem>();
-services.AddSingleton<ISystem, BotAiSystem>();
-
-// Register TickSync and ServerTickSystem
-// This should be the LAST system before the replication system
-var tickSync = new TickSync();
-services.AddSingleton<ISystem>(_ => new ServerTickSystem(tickSync));
-services.AddSingleton<ITickSync>(tickSync);
-
-// Server replication
-services.AddSingleton<ServerReplicationSystem>();
-services.AddSingleton<ISystem>(sp => sp.GetRequiredService<ServerReplicationSystem>());
-services.AddSingleton<IInitializable>(sp => sp.GetRequiredService<ServerReplicationSystem>());
-services.AddSingleton<IDisposable>(sp => sp.GetRequiredService<ServerReplicationSystem>());
-services.AddSingleton<IWorldSnapshotProvider>(sp => sp.GetRequiredService<ServerReplicationSystem>());
-
-// Scene loading
-services.AddSingleton<SceneLoader>();
-
-// Entity lifecycle management
-services.AddSingleton<PlayerSpawnHandler>();
-services.AddSingleton<IInitializable>(sp => sp.GetRequiredService<PlayerSpawnHandler>());
-services.AddSingleton<IDisposable>(sp => sp.GetRequiredService<PlayerSpawnHandler>());
-services.AddSingleton<ISystem, SelfDestroyingSystem>();
-
-// Register all shared services (Networking, Scheduling, etc.)
-services.RegisterSharedTypes();
-
-// Register message sender and receiver, as the server
-// does not have a stateful connection object like the client.
-services.AddSingleton<IMessageSender, NetLibBinaryMessageSender>();
-services.AddSingleton<NetLibBinaryMessageReceiver>();
-services.AddSingleton<IMessageReceiver>(sp => sp.GetRequiredService<NetLibBinaryMessageReceiver>());
-services.AddSingleton<IInitializable>(sp => sp.GetRequiredService<NetLibBinaryMessageReceiver>());
-services.AddSingleton<IDisposable>(sp => sp.GetRequiredService<NetLibBinaryMessageReceiver>());
-
-// The scheduler is server specific (client will use a different scheduler)
-services.AddSingleton<IScheduler, TimerScheduler>();
-
-// Register the networking server abstraction
-services.AddSingleton<INetworkingServer, NetLibNetworkingServer>();
-
-// Server Input handling: Movement
-services.AddSingleton<PlayerMovementHandler>();
-services.AddSingleton<IInitializable, PlayerMovementHandler>();
-services.AddSingleton<IDisposable, PlayerMovementHandler>();
-
-// Server Input handling: Shots
-services.AddSingleton<PlayerShotHandler>();
-services.AddSingleton<IInitializable, PlayerShotHandler>();
-services.AddSingleton<IDisposable, PlayerShotHandler>();
-
-var serviceProvider = services.BuildServiceProvider();
-var entityRegistry = serviceProvider.GetRequiredService<EntityRegistry>();
-var scheduler = serviceProvider.GetRequiredService<IScheduler>();
-var sceneLoader = serviceProvider.GetRequiredService<SceneLoader>();
-
-// Initialize all initializable services
-foreach (var initializable in serviceProvider.GetServices<IInitializable>())
+namespace Server
 {
-    initializable.Initialize();
-}
-
-// Scene / World loading
-var path = Path.Combine(AppContext.BaseDirectory, "Scenes", "basic_scene.json");
-sceneLoader.Load(path);
-
-// Create a fixed timestep world running at the specified frequency
-// Add all the systems registered in the service provider
-var worldBuilder = new WorldBuilder(entityRegistry, tickSync, scheduler)
-    .WithFrequency(SharedConstants.WorldTicksPerSecond)
-    .WithWorldMode(WorldMode.Server);
-
-var systems = serviceProvider.GetServices<ISystem>().ToList();
-systems.ForEach(x => worldBuilder.AddSystem(x));
-var world = worldBuilder.Build();
-world.Start();
-
-Console.WriteLine("Starting fixed timestep world at 30Hz...");
-
-// Start the networking server using the abstraction
-var networkingServer = serviceProvider.GetRequiredService<INetworkingServer>();
-var serverHandle = networkingServer.StartServer(SharedConstants.ServerAddress,
-    SharedConstants.ServerPort,
-    SharedConstants.NetSecret);
-
-try
-{
-    // Wait for exit (could be a signal, keypress, etc.)
-    Console.WriteLine("Press Ctrl+C to exit...");
-    Thread.Sleep(Timeout.Infinite);
-}
-finally
-{
-    // Ensure the server is stopped when the loop exits
-    serverHandle.Dispose();
-    world.Dispose();
-
-    // Dispose all services that implement IDisposable
-    foreach (var disposable in serviceProvider.GetServices<IDisposable>())
+    internal class Program
     {
-        disposable.Dispose();
+        private const string BotSettingsSection = "Settings:BotSettings";
+        private const string NetworkSettingsSection = "Settings:NetworkSettings";
+        private const string PlayerSettingsSection = "Settings:PlayerSettings";
+        private const string ProjectileSettingsSection = "Settings:ProjectileSettings";
+        private const string SimulationSettingsSection = "Settings:SimulationSettings";
+
+        private static async Task Main(string[] args)
+        {
+            var host = new HostBuilder()
+                .ConfigureAppConfiguration((_, configApp) =>
+                {
+                    configApp.SetBasePath(Directory.GetCurrentDirectory());
+                    configApp.AddJsonFile("Server/appsettings.json", optional: false);
+                })
+                .ConfigureServices((hostContext, services) =>
+                {
+                    // Configure settings
+                    services.Configure<BotSettings>(hostContext.Configuration.GetSection(BotSettingsSection));
+                    services.Configure<NetworkSettings>(hostContext.Configuration.GetSection(NetworkSettingsSection));
+                    services.Configure<PlayerSettings>(hostContext.Configuration.GetSection(PlayerSettingsSection));
+                    services.Configure<ProjectileSettings>(hostContext.Configuration.GetSection(ProjectileSettingsSection));
+                    services.Configure<SimulationSettings>(hostContext.Configuration.GetSection(SimulationSettingsSection));
+
+                    services.AddSingleton(s => s.GetRequiredService<Microsoft.Extensions.Options.IOptions<BotSettings>>().Value);
+                    services.AddSingleton(s => s.GetRequiredService<Microsoft.Extensions.Options.IOptions<NetworkSettings>>().Value);
+                    services.AddSingleton(s => s.GetRequiredService<Microsoft.Extensions.Options.IOptions<PlayerSettings>>().Value);
+                    services.AddSingleton(s => s.GetRequiredService<Microsoft.Extensions.Options.IOptions<ProjectileSettings>>().Value);
+                    services.AddSingleton(s => s.GetRequiredService<Microsoft.Extensions.Options.IOptions<SimulationSettings>>().Value);
+
+                    // Configure logging
+                    services.Configure<LoggingSettings>(hostContext.Configuration.GetSection("Logging"));
+                    services.AddSingleton(s => s.GetRequiredService<Microsoft.Extensions.Options.IOptions<LoggingSettings>>().Value);
+                    services.AddSingleton<Shared.Logging.ILogger, ConsoleLogger>();
+
+                    // Register all the server-only services
+                    services.RegisterServerTypes();
+
+                    services.AddHostedService<Main>();
+                })
+                .ConfigureLogging((_, configLogging) => { configLogging.AddConsole(); })
+                .UseConsoleLifetime()
+                .Build();
+
+            await host.RunAsync();
+        }
     }
 }

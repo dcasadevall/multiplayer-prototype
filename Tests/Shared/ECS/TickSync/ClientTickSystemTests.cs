@@ -1,9 +1,8 @@
-using System.Linq;
 using NSubstitute;
-using Shared.ECS;
 using Shared.ECS.Entities;
 using Shared.ECS.TickSync;
 using Shared.Networking;
+using Shared.Settings;
 using Xunit;
 
 namespace SharedUnitTests.ECS.TickSync
@@ -21,7 +20,8 @@ namespace SharedUnitTests.ECS.TickSync
                 // Need to initialize TickSync to avoid the IsInitialized override
                 IsInitialized = true
             };
-            var system = new ClientTickSystem(tickSync, connection);
+            var simulationSettings = new SimulationSettings();
+            var system = new ClientTickSystem(simulationSettings, tickSync, connection);
 
             var registry = new EntityRegistry();
             var tickEntity = registry.CreateEntity();
@@ -52,7 +52,8 @@ namespace SharedUnitTests.ECS.TickSync
                 // Need to initialize TickSync to avoid the IsInitialized override
                 IsInitialized = true
             };
-            var system = new ClientTickSystem(tickSync, connection);
+            var simulationSettings = new SimulationSettings();
+            var system = new ClientTickSystem(simulationSettings, tickSync, connection);
 
             var registry = new EntityRegistry();
             var tickEntity = registry.CreateEntity();
@@ -81,7 +82,8 @@ namespace SharedUnitTests.ECS.TickSync
                 // Need to initialize TickSync to avoid the IsInitialized override
                 IsInitialized = true
             };
-            var system = new ClientTickSystem(tickSync, connection);
+            var simulationSettings = new SimulationSettings();
+            var system = new ClientTickSystem(simulationSettings, tickSync, connection);
 
             var registry = new EntityRegistry();
             var tickEntity = registry.CreateEntity();

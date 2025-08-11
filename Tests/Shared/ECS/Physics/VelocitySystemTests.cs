@@ -2,6 +2,7 @@ using System.Numerics;
 using Shared;
 using Shared.ECS.Entities;
 using Shared.Physics;
+using Shared.Settings;
 using Xunit;
 
 namespace SharedUnitTests.ECS.Physics
@@ -16,10 +17,11 @@ namespace SharedUnitTests.ECS.Physics
             entity.AddComponent(new PositionComponent { Value = new Vector3(1f, 2f, 3f) });
             entity.AddComponent(new VelocityComponent { Value = new Vector3(4f, 0f, -2f) });
 
-            var system = new VelocitySystem();
-            system.Update(registry, 0u, (float)SharedConstants.FixedDeltaTime.TotalSeconds);
+            var simulationSettings = new SimulationSettings();
+            var system = new VelocitySystem(simulationSettings);
+            system.Update(registry, 0u, (float)simulationSettings.FixedDeltaTime.TotalSeconds);
 
-            var expected = new Vector3(1f, 2f, 3f) + new Vector3(4f, 0f, -2f) * (float)SharedConstants.FixedDeltaTime.TotalSeconds;
+            var expected = new Vector3(1f, 2f, 3f) + new Vector3(4f, 0f, -2f) * (float)simulationSettings.FixedDeltaTime.TotalSeconds;
             var actual = entity.GetRequired<PositionComponent>().Value;
 
             Assert.InRange(actual.X, expected.X - 1e-6f, expected.X + 1e-6f);
@@ -35,14 +37,15 @@ namespace SharedUnitTests.ECS.Physics
             entity.AddComponent(new PositionComponent { Value = new Vector3(0f, 0f, 0f) });
             entity.AddComponent(new VelocityComponent { Value = new Vector3(1f, 2f, 3f) });
 
-            var system = new VelocitySystem();
+            var simulationSettings = new SimulationSettings();
+            var system = new VelocitySystem(simulationSettings);
 
             for (int i = 0; i < 5; i++)
             {
-                system.Update(registry, (uint)i, (float)SharedConstants.FixedDeltaTime.TotalSeconds);
+                system.Update(registry, (uint)i, (float)simulationSettings.FixedDeltaTime.TotalSeconds);
             }
 
-            var expected = new Vector3(1f, 2f, 3f) * (5f * (float)SharedConstants.FixedDeltaTime.TotalSeconds);
+            var expected = new Vector3(1f, 2f, 3f) * (5f * (float)simulationSettings.FixedDeltaTime.TotalSeconds);
             var actual = entity.GetRequired<PositionComponent>().Value;
 
             Assert.InRange(actual.X, expected.X - 1e-6f, expected.X + 1e-6f);

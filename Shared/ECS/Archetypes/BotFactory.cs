@@ -4,16 +4,24 @@ using Shared.ECS.Components;
 using Shared.ECS.Entities;
 using Shared.Physics;
 using Shared.Prediction;
+using Shared.Settings;
 
 namespace Shared.ECS.Archetypes
 {
-    public static class BotArchetype
+    public class BotFactory
     {
-        public static Entity Create(
-            EntityRegistry registry,
-            Vector3 spawnPosition)
+        private readonly EntityRegistry _registry;
+        private readonly BotSettings _settings;
+
+        public BotFactory(EntityRegistry registry, BotSettings settings)
         {
-            var botEntity = registry.CreateEntity();
+            _registry = registry;
+            _settings = settings;
+        }
+
+        public Entity Create(Vector3 spawnPosition)
+        {
+            var botEntity = _registry.CreateEntity();
 
             // Predicted spatial components
             botEntity.AddPredictedComponent(new PositionComponent { Value = spawnPosition });
@@ -23,18 +31,18 @@ namespace Shared.ECS.Archetypes
             var name = "Bot";
             botEntity.AddComponent(new HealthComponent
             {
-                MaxHealth = GameplayConstants.MaxBotHealth,
-                CurrentHealth = GameplayConstants.MaxBotHealth
+                MaxHealth = _settings.MaxBotHealth,
+                CurrentHealth = _settings.MaxBotHealth
             });
 
             botEntity.AddComponent(new NameComponent { Name = name });
-            botEntity.AddComponent(new PrefabComponent { PrefabName = GameplayConstants.PlayerPrefabName });
+            botEntity.AddComponent(new PrefabComponent { PrefabName = _settings.PrefabName });
             botEntity.AddComponent<BotTagComponent>();
             botEntity.AddComponent<RotationComponent>();
             botEntity.AddComponent(new LocalBoundsComponent
             {
-                Center = GameplayConstants.PlayerLocalBoundsCenter,
-                Size = GameplayConstants.PlayerLocalBoundsSize
+                Center = _settings.LocalBoundsCenter,
+                Size = _settings.LocalBoundsSize
             });
             botEntity.AddComponent<CollidingTagComponent>();
             botEntity.AddComponent(ColorComponent.RandomColor());

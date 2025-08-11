@@ -2,6 +2,7 @@ using System.Linq;
 using Shared.ECS.Entities;
 using Shared.Math;
 using Shared.Networking;
+using Shared.Settings;
 
 namespace Shared.ECS.TickSync
 {
@@ -24,16 +25,19 @@ namespace Shared.ECS.TickSync
         // How much we smooth the client tick per frame.
         private const uint TickSmoothAmount = 2;
 
+        private readonly SimulationSettings _simulationSettings;
         private readonly TickSync _tickSync;
         private readonly IClientConnection _connection;
 
         /// <summary>
         /// Constructs a new <see cref="ClientTickSystem"/>.
         /// </summary>
+        /// <param name="simulationSettings">The simulation settings used to determine tick rates and other parameters.</param>
         /// <param name="tickSync">The tick synchronization state to update.</param>
         /// <param name="connection">The client connection used to retrieve ping and other network state.</param>
-        public ClientTickSystem(TickSync tickSync, IClientConnection connection)
+        public ClientTickSystem(SimulationSettings simulationSettings, TickSync tickSync, IClientConnection connection)
         {
+            _simulationSettings = simulationSettings;
             _tickSync = tickSync;
             _connection = connection;
         }
@@ -74,7 +78,7 @@ namespace Shared.ECS.TickSync
         {
             // A. Calculate the ideal offset from the server based on latency.
             var pingInSeconds = _connection.PingMs / 1000.0f;
-            var targetOffset = (int)(pingInSeconds / SharedConstants.FixedDeltaTime.TotalSeconds) + TickBuffer;
+            var targetOffset = (int)(pingInSeconds / _simulationSettings.FixedDeltaTime.TotalSeconds) + TickBuffer;
 
             // B. Get our current, real offset.
             var currentOffset = (int)_tickSync.ClientTick - (int)_tickSync.ServerTick;

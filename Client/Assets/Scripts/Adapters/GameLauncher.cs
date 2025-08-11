@@ -4,10 +4,10 @@ using System.Threading.Tasks;
 using Core.Logging;
 using Core.Scheduling;
 using Microsoft.Extensions.DependencyInjection;
-using Shared;
 using Shared.Logging;
 using Shared.Networking;
 using Shared.Scheduling;
+using Shared.Settings;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 using ILogger = Shared.Logging.ILogger;
@@ -44,6 +44,10 @@ namespace Adapters
         
         [SerializeField] 
         private Transform _loginScreen;
+
+        [SerializeField] 
+        private Settings.GameSettings _gameSettings;
+        private NetworkSettings NetworkSettings => _gameSettings.NetworkSettings;
         
         private IServiceProvider _serviceProvider;
         private IServiceCollection _services;
@@ -106,9 +110,9 @@ namespace Adapters
             var client = _serviceProvider.GetRequiredService<INetworkingClient>();
             
             _logger.Info(LoggedFeature.Networking, "Connecting to server...");
-            _connection = await client.ConnectAsync(SharedConstants.ServerAddress, 
-                SharedConstants.ServerPort, 
-                SharedConstants.NetSecret);
+            _connection = await client.ConnectAsync(NetworkSettings.ServerAddress, 
+                NetworkSettings.ServerPort, 
+                NetworkSettings.NetSecret);
             
             _logger.Info(LoggedFeature.Networking, $"Connected successfully. Peer ID: {_connection.AssignedPeerId}");
 

@@ -2,9 +2,11 @@ using System.Numerics;
 using Server.AI;
 using Shared.Damage;
 using Shared.ECS;
+using Shared.ECS.Archetypes;
 using Shared.ECS.Components;
 using Shared.ECS.Entities;
 using Shared.Physics;
+using Shared.Settings;
 using Xunit;
 
 namespace ServerUnitTests.AI
@@ -19,7 +21,11 @@ namespace ServerUnitTests.AI
         public BotAiSystemTests()
         {
             _registry = new EntityRegistry();
-            _system = new BotAiSystem();
+            var simulationSettings = new SimulationSettings();
+            var projectileSettings = new ProjectileSettings();
+            var botSettings = new BotSettings();
+            var projectileFactory = new ProjectileFactory(_registry, projectileSettings, simulationSettings);
+            _system = new BotAiSystem(botSettings, projectileFactory, simulationSettings);
 
             // Create a mock player
             _player = _registry.CreateEntity();

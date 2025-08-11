@@ -11,6 +11,7 @@ using Shared.Networking;
 using Shared.Networking.Messages;
 using Shared.Physics;
 using Shared.Prediction;
+using Shared.Settings;
 using ILogger = Shared.Logging.ILogger;
 using Vector2 = System.Numerics.Vector2;
 using Vector3 = System.Numerics.Vector3;
@@ -30,6 +31,8 @@ namespace Core.Input
         private readonly ITickSync _tickSync;
         private readonly ILogger _logger;
         private readonly int _localPeerId;
+        private readonly PlayerSettings _playerSettings;
+        private readonly SimulationSettings _simulationSettings;
         
         private readonly Dictionary<uint, PredictedState> _stateBuffer = new();
 
@@ -55,12 +58,16 @@ namespace Core.Input
             IMessageSender messageSender,
             IInputListener inputListener,
             ITickSync tickSync,
-            ILogger logger)
+            ILogger logger,
+            PlayerSettings playerSettings,
+            SimulationSettings simulationSettings)
         {
             _messageSender = messageSender;
             _inputListener = inputListener;
             _tickSync = tickSync;
             _logger = logger;
+            _playerSettings = playerSettings;
+            _simulationSettings = simulationSettings;
             _localPeerId = clientConnection.AssignedPeerId;
         }
 
@@ -123,7 +130,7 @@ namespace Core.Input
 
             if (_inputListener.TryGetMovementAtTick(currentTick, out var moveDirection) && moveDirection.LengthSquared() > 0.1f)
             {
-                newVelocity = new Vector3(moveDirection.X, 0, moveDirection.Y) * GameplayConstants.PlayerSpeed;
+                newVelocity = new Vector3(moveDirection.X, 0, moveDirection.Y) * _playerSettings.PlayerSpeed;
                 newRotation = Quaternion.CreateFromYawPitchRoll(MathF.Atan2(moveDirection.X, moveDirection.Y), 0, 0);
             }
 
@@ -201,12 +208,12 @@ namespace Core.Input
                 // Apply the historical input for this tick
                 if (_inputListener.TryGetMovementAtTick(tick, out var moveDirection) && moveDirection.LengthSquared() > 0.1f)
                 {
-                    newVelocity = new Vector3(moveDirection.X, 0, moveDirection.Y) * GameplayConstants.PlayerSpeed;
+                    newVelocity = new Vector3(moveDirection.X, 0, moveDirection.Y) * _playerSettings.PlayerSpeed;
                     newRotation = Quaternion.CreateFromYawPitchRoll(MathF.Atan2(moveDirection.X, moveDirection.Y), 0, 0);
                 }
 
                 // Use FixedDeltaTime to ensure consistent simulation
-                var newPosition = previousState.Position + newVelocity * (float)SharedConstants.FixedDeltaTime.TotalSeconds;
+                var newPosition = previousState.Position + newVelocity * (float)_simulationSettings.FixedDeltaTime.TotalSeconds;
                 _stateBuffer[tick] = new PredictedState
                 {
                     Position = newPosition,

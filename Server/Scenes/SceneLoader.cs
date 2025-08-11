@@ -1,10 +1,8 @@
 using System.Numerics;
 using System.Text.Json;
 using System.Text.Json.Serialization;
-using Shared.ECS;
 using Shared.ECS.Archetypes;
 using Shared.ECS.Entities;
-using Shared.Physics;
 
 namespace Server.Scenes
 {
@@ -17,16 +15,16 @@ namespace Server.Scenes
         public Dictionary<string, JsonElement> Components { get; set; } = new();
     }
 
-    public class SceneLoader(EntityRegistry entityRegistry)
+    public class SceneLoader(BotFactory botFactory)
     {
         private class JsonPosition
         {
-            public float X { get; set; }
-            public float Y { get; set; }
-            public float Z { get; set; }
+            public float X { get; init; }
+            public float Y { get; init; }
+            public float Z { get; init; }
         }
 
-        private static readonly JsonSerializerOptions _jsonOptions = new() { PropertyNameCaseInsensitive = true };
+        private static readonly JsonSerializerOptions JsonOptions = new() { PropertyNameCaseInsensitive = true };
 
         /// <summary>
         /// Loads a scene from a JSON file and applies it to the registry using the snapshot consumer.
@@ -47,9 +45,9 @@ namespace Server.Scenes
                 if (desc.Archetype == "Bot")
                 {
                     var jsonPosition =
-                        JsonSerializer.Deserialize<JsonPosition>(desc.Components["PositionComponent"].GetRawText(), _jsonOptions);
+                        JsonSerializer.Deserialize<JsonPosition>(desc.Components["PositionComponent"].GetRawText(), JsonOptions);
                     var position = jsonPosition != null ? new Vector3(jsonPosition.X, jsonPosition.Y, jsonPosition.Z) : Vector3.Zero;
-                    BotArchetype.Create(entityRegistry, position);
+                    botFactory.Create(position);
                 }
             }
         }

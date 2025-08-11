@@ -2,7 +2,7 @@ using System.Numerics;
 using NSubstitute;
 using Server.Player;
 using Shared.Damage;
-using Shared.ECS;
+using Shared.ECS.Archetypes;
 using Shared.ECS.Components;
 using Shared.ECS.Entities;
 using Shared.ECS.TickSync;
@@ -10,6 +10,7 @@ using Shared.Input;
 using Shared.Logging;
 using Shared.Networking;
 using Shared.Physics;
+using Shared.Settings;
 using Xunit;
 
 namespace ServerUnitTests.Player
@@ -20,12 +21,34 @@ namespace ServerUnitTests.Player
         private readonly IMessageReceiver _messageReceiver = Substitute.For<IMessageReceiver>();
         private readonly ILogger _logger = Substitute.For<ILogger>();
         private readonly ITickSync _tickSync = Substitute.For<ITickSync>();
+        private readonly ProjectileFactory _projectileFactory;
+
+        /// <summary>
+        /// Set Up the PlayerShotHandler with necessary dependencies.
+        /// </summary>
+        public PlayerShotHandlerTests()
+        {
+            ProjectileSettings projectileSettings = new();
+            SimulationSettings simulationSettings = new();
+            _projectileFactory = new ProjectileFactory(_registry, projectileSettings, simulationSettings);
+        }
 
         [Fact]
         public void HandlePlayerShot_ShouldSpawnProjectile_WhenValidShotReceived()
         {
             // Arrange
-            var handler = new PlayerShotHandler(_registry, _messageReceiver, _tickSync, _logger);
+            var simulationSettings = new SimulationSettings();
+            var projectileSettings = new ProjectileSettings();
+            var playerSettings = new PlayerSettings();
+            var handler = new PlayerShotHandler(_registry,
+                _messageReceiver,
+                _tickSync,
+                _logger,
+                _projectileFactory,
+                simulationSettings,
+                projectileSettings,
+                playerSettings);
+
             var peerId = 42;
 
             // Set up server tick via tickSync mock
@@ -66,7 +89,18 @@ namespace ServerUnitTests.Player
         public void HandlePlayerShot_ShouldBlockShot_WhenCooldownNotExpired()
         {
             // Arrange
-            var handler = new PlayerShotHandler(_registry, _messageReceiver, _tickSync, _logger);
+            var simulationSettings = new SimulationSettings();
+            var projectileSettings = new ProjectileSettings();
+            var playerSettings = new PlayerSettings();
+            var handler = new PlayerShotHandler(_registry,
+                _messageReceiver,
+                _tickSync,
+                _logger,
+                _projectileFactory,
+                simulationSettings,
+                projectileSettings,
+                playerSettings);
+
             var peerId = 42;
 
             // Set up server tick via tickSync mock
@@ -106,7 +140,18 @@ namespace ServerUnitTests.Player
         public void HandlePlayerShot_ShouldAllowShot_WhenCooldownExpired()
         {
             // Arrange
-            var handler = new PlayerShotHandler(_registry, _messageReceiver, _tickSync, _logger);
+            var simulationSettings = new SimulationSettings();
+            var projectileSettings = new ProjectileSettings();
+            var playerSettings = new PlayerSettings();
+            var handler = new PlayerShotHandler(_registry,
+                _messageReceiver,
+                _tickSync,
+                _logger,
+                _projectileFactory,
+                simulationSettings,
+                projectileSettings,
+                playerSettings);
+
             var peerId = 42;
 
             // Set up server tick via tickSync mock
@@ -148,7 +193,18 @@ namespace ServerUnitTests.Player
         public void HandlePlayerShot_ShouldTrackCooldownPerPeer()
         {
             // Arrange
-            var handler = new PlayerShotHandler(_registry, _messageReceiver, _tickSync, _logger);
+            var simulationSettings = new SimulationSettings();
+            var projectileSettings = new ProjectileSettings();
+            var playerSettings = new PlayerSettings();
+            var handler = new PlayerShotHandler(_registry,
+                _messageReceiver,
+                _tickSync,
+                _logger,
+                _projectileFactory,
+                simulationSettings,
+                projectileSettings,
+                playerSettings);
+
             var peerId1 = 42;
             var peerId2 = 43;
 
@@ -195,7 +251,17 @@ namespace ServerUnitTests.Player
         public void HandlePlayerShot_ShouldNotSpawnProjectile_WhenPlayerEntityNotFound()
         {
             // Arrange
-            var handler = new PlayerShotHandler(_registry, _messageReceiver, _tickSync, _logger);
+            var simulationSettings = new SimulationSettings();
+            var projectileSettings = new ProjectileSettings();
+            var playerSettings = new PlayerSettings();
+            var handler = new PlayerShotHandler(_registry,
+                _messageReceiver,
+                _tickSync,
+                _logger,
+                _projectileFactory,
+                simulationSettings,
+                projectileSettings,
+                playerSettings);
 
             // Set up server tick via tickSync mock
             _tickSync.ServerTick.Returns(10U);
@@ -220,7 +286,18 @@ namespace ServerUnitTests.Player
         public void HandlePlayerShot_ShouldNotSpawnProjectile_WhenTickIsOutOfSync(uint shotTick, uint serverTick)
         {
             // Arrange
-            var handler = new PlayerShotHandler(_registry, _messageReceiver, _tickSync, _logger);
+            var simulationSettings = new SimulationSettings();
+            var projectileSettings = new ProjectileSettings();
+            var playerSettings = new PlayerSettings();
+            var handler = new PlayerShotHandler(_registry,
+                _messageReceiver,
+                _tickSync,
+                _logger,
+                _projectileFactory,
+                simulationSettings,
+                projectileSettings,
+                playerSettings);
+
             var peerId = 42;
 
             // Set up server tick via tickSync mock
@@ -251,7 +328,18 @@ namespace ServerUnitTests.Player
         public void OnPeerDisconnected_ShouldCleanupCooldownTracking()
         {
             // Arrange
-            var handler = new PlayerShotHandler(_registry, _messageReceiver, _tickSync, _logger);
+            var simulationSettings = new SimulationSettings();
+            var projectileSettings = new ProjectileSettings();
+            var playerSettings = new PlayerSettings();
+            var handler = new PlayerShotHandler(_registry,
+                _messageReceiver,
+                _tickSync,
+                _logger,
+                _projectileFactory,
+                simulationSettings,
+                projectileSettings,
+                playerSettings);
+
             var peerId = 42;
 
             // Set up server tick via tickSync mock

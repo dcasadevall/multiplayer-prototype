@@ -1,6 +1,5 @@
 using System.Numerics;
 using Shared;
-using Shared.ECS;
 using Shared.ECS.Components;
 using Shared.ECS.Entities;
 using Shared.Input;
@@ -8,13 +7,18 @@ using Shared.Logging;
 using Shared.Networking;
 using Shared.Physics;
 using Shared.Scheduling;
+using Shared.Settings;
 
 namespace Server.Player
 {
     /// <summary>
     /// Listens for <see cref="PlayerMovementMessage"/> messages from the network and updates the velocity of the corresponding player entity.
     /// </summary>
-    public class PlayerMovementHandler(EntityRegistry entityRegistry, IMessageReceiver messageReceiver, ILogger logger)
+    public class PlayerMovementHandler(
+        EntityRegistry entityRegistry,
+        IMessageReceiver messageReceiver,
+        ILogger logger,
+        PlayerSettings playerSettings)
         : IInitializable, IDisposable
     {
         private IDisposable? _subscription;
@@ -45,7 +49,7 @@ namespace Server.Player
             }
 
             var moveDirection = new Vector3(msg.MoveDirection.X, 0, msg.MoveDirection.Y);
-            var velocity = moveDirection * GameplayConstants.PlayerSpeed;
+            var velocity = moveDirection * playerSettings.PlayerSpeed;
 
             entity.AddOrReplaceComponent(new VelocityComponent { Value = velocity });
 

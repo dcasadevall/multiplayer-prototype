@@ -1,11 +1,11 @@
 using System.Numerics;
-using Shared;
 using Shared.Damage;
 using Shared.ECS.Archetypes;
 using Shared.ECS.Components;
 using Shared.ECS.Entities;
 using Shared.ECS.Simulation;
 using Shared.Respawn;
+using Shared.Settings;
 using Xunit;
 
 namespace SharedUnitTests.Damage
@@ -23,8 +23,12 @@ namespace SharedUnitTests.Damage
         {
             // Arrange: Setup registry, system, and a player with zero health
             var registry = new EntityRegistry();
-            var system = new DeathSystem();
-            var player = PlayerArchetype.Create(registry, 1, Vector3.Zero);
+            var playerSettings = new PlayerSettings();
+            var botSettings = new BotSettings();
+            var simulationSettings = new SimulationSettings();
+            var playerFactory = new PlayerFactory(registry, playerSettings);
+            var system = new DeathSystem(playerSettings, botSettings, simulationSettings);
+            var player = playerFactory.Create(1, Vector3.Zero);
             player.AddOrReplaceComponent(new HealthComponent
             {
                 CurrentHealth = 0,
@@ -46,8 +50,12 @@ namespace SharedUnitTests.Damage
         {
             // Arrange: Setup registry, system, and a player with zero health
             var registry = new EntityRegistry();
-            var system = new DeathSystem();
-            var player = PlayerArchetype.Create(registry, 1, Vector3.Zero);
+            var playerSettings = new PlayerSettings();
+            var playerFactory = new PlayerFactory(registry, playerSettings);
+            var player = playerFactory.Create(1, Vector3.Zero);
+            var botSettings = new BotSettings();
+            var simulationSettings = new SimulationSettings();
+            var system = new DeathSystem(playerSettings, botSettings, simulationSettings);
             player.AddOrReplaceComponent(new HealthComponent
             {
                 CurrentHealth = 0,
@@ -60,7 +68,9 @@ namespace SharedUnitTests.Damage
             // Assert: Death record should have correct RespawnAtTick value
             var deathRecord = registry.With<RespawnComponent>().Single();
             var respawnable = deathRecord.GetRequired<RespawnComponent>();
-            Assert.Equal(42 + GameplayConstants.PlayerRespawnTime.ToNumTicks(), respawnable.RespawnAtTick);
+            Assert.Equal(
+                42 + playerSettings.PlayerRespawnTime.ToNumTicks(simulationSettings.WorldTicksPerSecond),
+                respawnable.RespawnAtTick);
         }
 
         [Fact]
@@ -68,8 +78,13 @@ namespace SharedUnitTests.Damage
         {
             // Arrange: Setup registry, system, and a player with zero health
             var registry = new EntityRegistry();
-            var system = new DeathSystem();
-            var player = PlayerArchetype.Create(registry, 1, Vector3.Zero);
+            var playerSettings = new PlayerSettings();
+            var playerFactory = new PlayerFactory(registry, playerSettings);
+            var botSettings = new BotSettings();
+            var simulationSettings = new SimulationSettings();
+            var system = new DeathSystem(playerSettings, botSettings, simulationSettings);
+            var player = playerFactory.Create(1, Vector3.Zero);
+
             player.AddOrReplaceComponent(new HealthComponent
             {
                 CurrentHealth = 0,
@@ -90,8 +105,12 @@ namespace SharedUnitTests.Damage
         {
             // Arrange
             var registry = new EntityRegistry();
-            var deathSystem = new DeathSystem();
-            var player = PlayerArchetype.Create(registry, 1, Vector3.Zero);
+            var playerSettings = new PlayerSettings();
+            var playerFactory = new PlayerFactory(registry, playerSettings);
+            var botSettings = new BotSettings();
+            var simulationSettings = new SimulationSettings();
+            var system = new DeathSystem(playerSettings, botSettings, simulationSettings);
+            var player = playerFactory.Create(1, Vector3.Zero);
 
             // Act
             // Simulate the player taking lethal damage
@@ -99,7 +118,7 @@ namespace SharedUnitTests.Damage
             var newHealth = new HealthComponent { MaxHealth = health.MaxHealth, CurrentHealth = 0 };
             player.AddOrReplaceComponent(newHealth);
 
-            deathSystem.Update(registry, 1, 0.016f);
+            system.Update(registry, 1, 0.016f);
 
             // Assert
             var deathRecords = registry.With<RespawnComponent>().ToList();

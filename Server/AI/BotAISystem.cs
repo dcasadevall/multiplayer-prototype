@@ -4,10 +4,8 @@ using Shared.ECS;
 using Shared.ECS.Archetypes;
 using Shared.ECS.Components;
 using Shared.ECS.Entities;
-using Shared.ECS.Simulation;
 using Shared.Physics;
-using Shared.Input;
-using System;
+using Shared.Settings;
 
 namespace Server.AI
 {
@@ -16,7 +14,8 @@ namespace Server.AI
     /// It includes logic for chasing and attacking players, as well as retreating when health is low.
     /// When no players are present, bots will roam around randomly.
     /// </summary>
-    public class BotAiSystem : ISystem
+    public class BotAiSystem(BotSettings botSettings, ProjectileFactory projectileFactory, SimulationSettings simulationSettings)
+        : ISystem
     {
         private readonly Random _random = new();
 
@@ -37,8 +36,9 @@ namespace Server.AI
                 var botPosition = bot.GetRequired<PositionComponent>().Value;
 
                 // Retreat logic
-                if ((float)botHealth.CurrentHealth / botHealth.MaxHealth < ServerConstants.BotRetreatHealthPercentThreshold)
+                if ((float)botHealth.CurrentHealth / botHealth.MaxHealth < botSettings.BotRetreatHealthPercentThreshold)
                 {
+                    bot.TryRemove<RoamingStateComponent>(); // Stop roaming when retreating
                     // Find a safe spot to run to (e.g., away from the nearest player)
                     var nearestPlayer = FindClosestPlayer(botPosition, players);
                     if (nearestPlayer != null)
@@ -52,7 +52,7 @@ namespace Server.AI
                             Random.Shared.NextSingle() - 0.5f
                         );
 
-                        bot.AddOrReplaceComponent(new VelocityComponent { Value = direction * ServerConstants.BotRetreatSpeed });
+                        bot.AddOrReplaceComponent(new VelocityComponent { Value = direction * botSettings.BotRetreatSpeed });
                     }
 
                     continue;
@@ -67,9 +67,9 @@ namespace Server.AI
                     var direction = Vector3.Normalize(targetPosition - botPosition);
                     var distance = Vector3.Distance(botPosition, targetPosition);
 
-                    if (distance > ServerConstants.BotAttackDistance)
+                    if (distance > botSettings.BotAttackDistance)
                     {
-                        bot.AddOrReplaceComponent(new VelocityComponent { Value = direction * 2f });
+                        bot.AddOrReplaceComponent(new VelocityComponent { Value = direction * botSettings.BotApproachSpeed });
                     }
                     else
                     {
@@ -100,11 +100,12 @@ namespace Server.AI
                         {
                             bot.AddOrReplaceComponent(new ShootingCooldownComponent
                             {
-                                EndTick = tickNumber + ServerConstants.BotShootingCooldown.ToNumTicks()
+                                EndTick = tickNumber + (uint)(botSettings.BotShootingCooldown.TotalSeconds *
+                                                              simulationSettings.WorldTicksPerSecond)
                             });
 
                             // Shoot the thing :)
-                            ProjectileArchetype.CreateFromEntity(registry, bot, tickNumber);
+                            projectileFactory.CreateFromEntity(bot, tickNumber);
                         }
                     }
                 }
@@ -116,12 +117,14 @@ namespace Server.AI
                     {
                         // Pick a new random point to roam to
                         var randomDirection = new Vector3((float)_random.NextDouble() * 2 - 1, 0, (float)_random.NextDouble() * 2 - 1);
-                        roamState.TargetPosition = botPosition + Vector3.Normalize(randomDirection) * ServerConstants.BoatRoamRadius;
-                        roamState.NextRoamTick = tickNumber + ServerConstants.BotRoamInterval.ToNumTicks();
+                        roamState.TargetPosition = botPosition + Vector3.Normalize(randomDirection) * botSettings.BoatRoamRadius;
+                        roamState.NextRoamTick = tickNumber +
+                                                 (uint)(botSettings.BotRoamInterval.TotalSeconds *
+                                                        simulationSettings.WorldTicksPerSecond);
                     }
 
                     var direction = Vector3.Normalize(roamState.TargetPosition - botPosition);
-                    bot.AddOrReplaceComponent(new VelocityComponent { Value = direction * 1.5f });
+                    bot.AddOrReplaceComponent(new VelocityComponent { Value = direction * botSettings.BotApproachSpeed });
 
                     var rotation = Quaternion.CreateFromYawPitchRoll(
                         MathF.Atan2(direction.X, direction.Z), 0, 0);

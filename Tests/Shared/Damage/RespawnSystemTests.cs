@@ -1,7 +1,9 @@
 using Shared.ECS;
+using Shared.ECS.Archetypes;
 using Shared.ECS.Components;
 using Shared.ECS.Entities;
 using Shared.Respawn;
+using Shared.Settings;
 using Xunit;
 
 namespace SharedUnitTests.Damage
@@ -19,7 +21,11 @@ namespace SharedUnitTests.Damage
         {
             // Arrange: Setup registry, system, and a death record entity with respawn time
             var registry = new EntityRegistry();
-            var system = new RespawnSystem();
+            var playerSettings = new PlayerSettings();
+            var botSettings = new BotSettings();
+            var playerFactory = new PlayerFactory(registry, playerSettings);
+            var botFactory = new BotFactory(registry, botSettings);
+            var system = new RespawnSystem(botFactory, playerFactory);
 
             var deathRecord = registry.CreateEntity();
             deathRecord.AddComponent(new RespawnComponent { RespawnAtTick = 10 });

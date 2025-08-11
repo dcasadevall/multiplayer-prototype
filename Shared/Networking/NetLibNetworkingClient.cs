@@ -6,6 +6,7 @@ using Shared.Logging;
 using Shared.Networking.Messages;
 using Shared.Replication;
 using Shared.Scheduling;
+using Shared.Settings;
 using ILogger = Shared.Logging.ILogger;
 
 namespace Shared.Networking
@@ -22,6 +23,7 @@ namespace Shared.Networking
         private readonly IScheduler _scheduler;
         private CancellationTokenSource? _cts;
         private IDisposable? _pollHandle;
+        private bool _disposed;
 
         /// <summary>
         /// Constructs a new <see cref="NetLibNetworkingClient"/>.
@@ -102,7 +104,8 @@ namespace Shared.Networking
                     messageSender,
                     messageReceiver,
                     msg.InitialWorldSnapshot,
-                    msg.PeerId);
+                    msg.PeerId,
+                    msg.Settings);
 
                 _logger.Debug(LoggedFeature.Networking, $"Client {peer.Id} connected. Address: {peer.Address}");
                 tcs.TrySetResult(connection);
@@ -146,12 +149,14 @@ namespace Shared.Networking
         /// </summary>
         public void Dispose()
         {
+            if (_disposed) return;
             _logger.Debug("Disposing NetLibNetworkingClient...");
 
             _cts?.Cancel();
             _pollHandle?.Dispose();
             _netManager.Stop();
             _cts?.Dispose();
+            _disposed = true;
         }
 
         /// <summary>
@@ -175,6 +180,7 @@ namespace Shared.Networking
             public int PingMs => _peer.Ping;
 
             public WorldDeltaMessage InitialWorldSnapshot { get; set; }
+            public SettingsMessage Settings { get; set; }
 
             public ClientConnection(NetPeer peer,
                 EventBasedNetListener listener,
@@ -182,7 +188,8 @@ namespace Shared.Networking
                 IMessageSender messageSender,
                 NetLibBinaryMessageReceiver messageReceiver,
                 WorldDeltaMessage initialWorldSnapshot,
-                int assignedPeerId)
+                int assignedPeerId,
+                SettingsMessage settings)
             {
                 _peer = peer;
                 _listener = listener;
@@ -190,6 +197,7 @@ namespace Shared.Networking
                 MessageSender = messageSender;
                 AssignedPeerId = assignedPeerId;
                 InitialWorldSnapshot = initialWorldSnapshot;
+                Settings = settings;
 
                 // We store the concrete implementation as we need
                 // to manage its disposal

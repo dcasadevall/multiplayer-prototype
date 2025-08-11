@@ -1,5 +1,4 @@
 using Shared;
-using Shared.ECS;
 using Shared.ECS.Components;
 using Shared.ECS.Archetypes;
 using Shared.ECS.Entities;
@@ -9,6 +8,7 @@ using Shared.Input;
 using Shared.Logging;
 using Shared.Networking;
 using Shared.Scheduling;
+using Shared.Settings;
 
 namespace Server.Player
 {
@@ -20,7 +20,11 @@ namespace Server.Player
         EntityRegistry entityRegistry,
         IMessageReceiver messageReceiver,
         ITickSync tickSync,
-        ILogger logger)
+        ILogger logger,
+        ProjectileFactory projectileFactory,
+        SimulationSettings simulationSettings,
+        ProjectileSettings projectileSettings,
+        PlayerSettings playerSettings)
         : IInitializable, IDisposable
     {
         private IDisposable? _subscription;
@@ -84,8 +88,7 @@ namespace Server.Player
                 // tick of receiving the shot message.
                 // we need a buffer of player positions at X tick so we can
                 // spawn the projectile at the correct position.
-                var projectile = ProjectileArchetype.CreateFromEntity(
-                    entityRegistry,
+                var projectile = projectileFactory.CreateFromEntity(
                     playerEntity,
                     tickSync.ServerTick);
 
@@ -113,8 +116,8 @@ namespace Server.Player
             var serverTick = tickSync.ServerTick;
 
             // // Validate tick (shouldn't be too far in the future or past
-            if (shotMessage.Tick > serverTick + GameplayConstants.MaxShotTickDeviation ||
-                shotMessage.Tick < serverTick - GameplayConstants.MaxShotTickDeviation)
+            if (shotMessage.Tick > serverTick + projectileSettings.MaxShotTickDeviation ||
+                shotMessage.Tick < serverTick - projectileSettings.MaxShotTickDeviation)
             {
                 logger.Warn("Shot tick {0} is too far out of sync (current: {1})", shotMessage.Tick, serverTick);
                 return false;
@@ -123,7 +126,7 @@ namespace Server.Player
             // Validate cooldown - prevent shot spamming
             if (_lastShotTicks.TryGetValue(peerId, out var lastShotTick))
             {
-                if (shotMessage.Tick < lastShotTick + GameplayConstants.PlayerShotCooldown.ToNumTicks())
+                if (shotMessage.Tick < lastShotTick + playerSettings.PlayerShotCooldown.ToNumTicks(simulationSettings.WorldTicksPerSecond))
                 {
                     logger.Warn("Shot from peer {0} blocked by server cooldown. Last shot: {1}, Current: {2}",
                         peerId, lastShotTick, shotMessage.Tick);

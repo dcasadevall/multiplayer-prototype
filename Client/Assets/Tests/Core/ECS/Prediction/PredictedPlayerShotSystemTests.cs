@@ -4,8 +4,7 @@ using Core.ECS.Entities;
 using Core.Input;
 using NSubstitute;
 using NUnit.Framework;
-using Shared;
-using Shared.ECS;
+using Shared.ECS.Archetypes;
 using Shared.ECS.Components;
 using Shared.ECS.Entities;
 using Shared.ECS.Simulation;
@@ -14,6 +13,7 @@ using Shared.Input;
 using Shared.Networking;
 using Shared.Networking.Messages;
 using Shared.Physics;
+using Shared.Settings;
 using ILogger = Shared.Logging.ILogger;
 
 namespace Tests.Core.ECS.Prediction
@@ -28,6 +28,10 @@ namespace Tests.Core.ECS.Prediction
         private Entity _playerEntity;
         private PredictedPlayerShotSystem _system;
         private ITickSync _tickSync;
+        private PlayerSettings _playerSettings;
+        private ProjectileSettings _projectileSettings;
+        private SimulationSettings _simulationSettings;
+        private ProjectileFactory _projectileFactory;
 
         [SetUp]
         public void Setup()
@@ -38,6 +42,7 @@ namespace Tests.Core.ECS.Prediction
             _logger = Substitute.For<ILogger>();
             _registry = new EntityRegistry();
             _tickSync = Substitute.For<ITickSync>();
+            _projectileFactory = Substitute.For<ProjectileFactory>();
 
             _clientConnection.AssignedPeerId.Returns(1);
 
@@ -52,7 +57,10 @@ namespace Tests.Core.ECS.Prediction
                 _messageSender,
                 _clientConnection,
                 _tickSync,
-                _logger
+                _logger,
+                _projectileFactory,
+                _playerSettings,
+                _simulationSettings
             );
         }
 
@@ -64,7 +72,7 @@ namespace Tests.Core.ECS.Prediction
             _registry.GetLocalPlayerEntity(_clientConnection.AssignedPeerId).GetRequired<PositionComponent>().Value = Vector3.Zero;
             
             // Make sure our tick is ahead of the cooldown
-            _tickSync.ClientTick.Returns(GameplayConstants.PlayerShotCooldown.ToNumTicks() + 1);
+            _tickSync.ClientTick.Returns(_playerSettings.PlayerShotCooldown.ToNumTicks(_simulationSettings.WorldTicksPerSecond) + 1);
 
             // Act: Raise the OnShoot event
             _inputListener.OnShoot += Raise.Event<Action>();
@@ -97,7 +105,7 @@ namespace Tests.Core.ECS.Prediction
         public void Update_NoShotInput_DoesNotCreateProjectileOrSendMessage()
         {
             // Arrange: Make sure our tick is ahead of the cooldown
-            var tick = GameplayConstants.PlayerShotCooldown.ToNumTicks() + 1;
+            var tick = _playerSettings.PlayerShotCooldown.ToNumTicks(_simulationSettings.WorldTicksPerSecond) + 1;
             _tickSync.ClientTick.Returns(tick);
 
             // Do not raise OnShoot event
@@ -116,7 +124,7 @@ namespace Tests.Core.ECS.Prediction
         public void Update_ServerProjectileArrives_AssociatesAndDestroysPredictedProjectile()
         {
             // Arrange: Make sure our tick is ahead of the cooldown
-            var tick = GameplayConstants.PlayerShotCooldown.ToNumTicks() + 3;
+            var tick = _playerSettings.PlayerShotCooldown.ToNumTicks(_simulationSettings.WorldTicksPerSecond) + 3;
             _tickSync.ClientTick.Returns(tick);
             var predictedId = Guid.NewGuid();
 

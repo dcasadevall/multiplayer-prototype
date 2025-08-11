@@ -1,5 +1,4 @@
 using LiteNetLib;
-using Shared.ECS;
 using Shared.ECS.Archetypes;
 using Shared.ECS.Entities;
 using Shared.Logging;
@@ -15,6 +14,7 @@ namespace Server.Player
     public class PlayerSpawnHandler(
         EventBasedNetListener netEventBroadcaster,
         EntityRegistry entityRegistry,
+        PlayerFactory playerFactory,
         ILogger logger)
         : IInitializable, IDisposable
     {
@@ -50,11 +50,7 @@ namespace Server.Player
 
             try
             {
-                var playerEntity = PlayerArchetype.Create(
-                    entityRegistry,
-                    peer.Id,
-                    new System.Numerics.Vector3(x, y, z));
-
+                var playerEntity = playerFactory.Create(peer.Id, new System.Numerics.Vector3(x, y, z));
                 logger.Info(LoggedFeature.Player, "Created player entity {0} for peer {1}", playerEntity.Id, peer.Id);
             }
             catch (Exception ex)

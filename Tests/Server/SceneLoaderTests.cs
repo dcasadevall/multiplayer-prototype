@@ -3,26 +3,25 @@ using System.Text.Json;
 using Server.Scenes;
 using Shared.Damage;
 using Shared.ECS;
+using Shared.ECS.Archetypes;
 using Shared.ECS.Components;
 using Shared.ECS.Entities;
 using Shared.Physics;
+using Shared.Settings;
 using Xunit;
 
 namespace ServerUnitTests
 {
     public class SceneLoaderTests
     {
-        private static SceneLoader CreateSceneLoader(EntityRegistry registry)
-        {
-            return new SceneLoader(registry);
-        }
-
         [Fact]
         public void Load_WithBotArchetype_ShouldCreateBotEntity()
         {
             // Arrange
             var registry = new EntityRegistry();
-            var loader = CreateSceneLoader(registry);
+            var botSettings = new BotSettings();
+            var botFactory = new BotFactory(registry, botSettings);
+            var loader = new SceneLoader(botFactory);
             var json = @"[
             {
                 ""archetype"": ""Bot"",
@@ -66,7 +65,9 @@ namespace ServerUnitTests
         {
             // Arrange
             var registry = new EntityRegistry();
-            var loader = CreateSceneLoader(registry);
+            var botSettings = new BotSettings();
+            var botFactory = new BotFactory(registry, botSettings);
+            var loader = new SceneLoader(botFactory);
             var invalidJson = "{ invalid json }";
 
             var tempFile = Path.GetTempFileName();
@@ -88,11 +89,13 @@ namespace ServerUnitTests
         {
             // Arrange
             var registry = new EntityRegistry();
-            var loader = CreateSceneLoader(registry);
+            var botSettings = new BotSettings();
+            var botFactory = new BotFactory(registry, botSettings);
+            var sceneLoader = new SceneLoader(botFactory);
             var nonExistentPath = "non_existent_file.json";
 
             // Act & Assert
-            Assert.Throws<FileNotFoundException>(() => loader.Load(nonExistentPath));
+            Assert.Throws<FileNotFoundException>(() => sceneLoader.Load(nonExistentPath));
         }
     }
 }

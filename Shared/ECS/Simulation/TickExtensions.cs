@@ -9,13 +9,14 @@ namespace Shared.ECS.Simulation
         /// This assumes a fixed tick rate defined by SharedConstants.WorldTicksPerSecond.
         /// </summary>
         /// <param name="timeSpan"></param>
+        /// <param name="worldTicksPerSecond"></param>
         /// <returns></returns>
-        public static uint ToNumTicks(this TimeSpan timeSpan)
+        public static uint ToNumTicks(this TimeSpan timeSpan, uint worldTicksPerSecond)
         {
             // Calculate the number of ticks by dividing the total seconds by the tick rate in seconds.
             // The tick rate is expected to be in seconds, so we convert it to seconds by
             // multiplying by 1000 to convert milliseconds to seconds.
-            return (uint)(timeSpan.TotalSeconds * SharedConstants.WorldTicksPerSecond);
+            return (uint)(timeSpan.TotalSeconds * worldTicksPerSecond);
         }
     }
 }

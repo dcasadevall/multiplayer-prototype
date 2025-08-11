@@ -12,6 +12,7 @@ namespace Shared.Scheduling
         private readonly IEnumerable<ITickable> _tickables;
         private readonly IScheduler _scheduler;
         private readonly CancellationTokenSource _cancellationTokenSource;
+        private bool _disposed;
 
         public TickableScheduler(IEnumerable<ITickable> tickables, IScheduler scheduler)
         {
@@ -39,8 +40,14 @@ namespace Shared.Scheduling
 
         public void Dispose()
         {
+            if (_disposed) 
+            {
+                return;
+            }
+
             _cancellationTokenSource.Cancel();
             _cancellationTokenSource.Dispose();
+            _disposed = true;
         }
     }
 }

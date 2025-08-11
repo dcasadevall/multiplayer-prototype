@@ -10,6 +10,7 @@ using Shared.Networking;
 using Shared.Networking.Messages;
 using Shared.Physics;
 using Shared.Prediction;
+using Shared.Settings;
 using ILogger = Shared.Logging.ILogger;
 
 namespace Tests.Core.ECS.Prediction
@@ -24,6 +25,8 @@ namespace Tests.Core.ECS.Prediction
         private Entity _playerEntity;
         private PredictedPlayerMovementSystem _system;
         private IMessageSender _messageSender;
+        private SimulationSettings _simulationSettings;
+        private PlayerSettings _playerSettings;
 
         [SetUp]
         public void Setup()
@@ -34,6 +37,8 @@ namespace Tests.Core.ECS.Prediction
             _tickSync = new TickSync();
             _registry = new EntityRegistry();
             _messageSender = Substitute.For<IMessageSender>();
+            _playerSettings = new PlayerSettings();
+            _simulationSettings = new SimulationSettings();
 
             _clientConnection.AssignedPeerId.Returns(1);
 
@@ -50,7 +55,9 @@ namespace Tests.Core.ECS.Prediction
                 _messageSender,
                 _inputListener,
                 _tickSync,
-                _logger
+                _logger,
+                _playerSettings,
+                _simulationSettings
             );
         }
 

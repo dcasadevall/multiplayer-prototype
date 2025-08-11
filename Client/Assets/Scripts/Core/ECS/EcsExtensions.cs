@@ -2,10 +2,12 @@ using System;
 using Core.ECS.Rendering;
 using Microsoft.Extensions.DependencyInjection;
 using Shared.ECS;
+using Shared.ECS.Archetypes;
 using Shared.ECS.Entities;
 using Shared.ECS.TickSync;
 using Shared.Networking;
 using Shared.Replication;
+using Shared.Settings;
 
 namespace Core.ECS
 {
@@ -29,6 +31,9 @@ namespace Core.ECS
         {
             // Register Entity Registry
             services.AddSingleton<EntityRegistry>();
+            services.AddSingleton<PlayerFactory>();
+            services.AddSingleton<ProjectileFactory>();
+            services.AddSingleton<BotFactory>();
             
             // Register core client systems
             // Client replication must go first
@@ -41,7 +46,10 @@ namespace Core.ECS
             // systems that need it.
             var tickSync = new TickSync();
             services.AddSingleton<ITickSync>(tickSync);
-            services.AddSingleton<ISystem, ClientTickSystem>(sp => new ClientTickSystem(tickSync, sp.GetRequiredService<IClientConnection>()));
+            services.AddSingleton<ISystem, ClientTickSystem>(sp => new ClientTickSystem(
+                sp.GetRequiredService<SimulationSettings>(), 
+                tickSync,
+                sp.GetRequiredService<IClientConnection>()));
             
             // Entity view system creates and manages entity game object creation and destruction
             services.AddSingleton<EntityViewSystem>();
