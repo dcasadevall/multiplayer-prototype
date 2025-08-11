@@ -1,153 +1,189 @@
 # Multiplayer Prototype: ECS Architecture Overview
 
-## 🏗️ Project Structure
+## Project Structure
 
 ```
 /Shared/           # Shared ECS logic (used by both server and client)
-  /ECS/            # Core ECS interfaces and base types
-    IComponent.cs  # Marker interface for all components
-    ...
-  /Components/     # Data-only component definitions (Position, Health, etc.)
-  /Entities/       # Entity, EntityId, EntityManager
-  /Systems/        # System interfaces and implementations
-/Server/           # .NET authoritative server
-/Client/           # Unity client (uses Shared.dll)
+  /Damage/         # DamageSystem, HealthSystem (regen), DeathSystem, RespawnSystem
+  /ECS/
+    /Components/   # Commonly used components that don't fit into a specific feature
+    /Entities/     # Entity, EntityId, EntityRegistry
+    /Simulation/   # World, WorldBuilder, Tick scheduling attributes
+    /TickSync/     # Tick synchronization between client and server
+  /Networking/     # Messaging, client/server abstractions, LiteNetLib adapters
+  /Physics/        # AABB, CollisionSystem (O(n^2)), UnitCollisionSystem, velocity integration
+  /Prediction/     # PredictedComponent<T> wrapper & helpers
+  /Replication/    # Delta serialization, component type registry
+  /Settings/       # Gameplay settings (Player, Bot, Projectile, Simulation) and SettingsMessage
+/Server/           # .NET authoritative server (headless)
+  /AI/             # BotAiSystem (retreat, attack, basic steering)
+  /Player/         # Server-side input, spawn handlers & shot validation
+  /Scenes/         # Scene JSON + loader
+  appsettings.json # Runtime configuration copied next to the executable
+/Client/           # Unity client (consumes Shared.dll)
+  /Assets/Scripts/Core      # Core client business logic (prediction, input, ECS client systems)
+  /Assets/Scripts/Adapters  # Bootstrapping/DI, presentation & rendering glue to Unity
+  /Assets/Resources         # Prefabs and UI
+/tests/            # xUnit tests for Shared and Server
+/tools/            # ComponentId generator and coverage script
 ```
 
-## 🎮 Architectural Principles
+## Architectural Principles
 
-- **Entity-Component-System (ECS):**
-  - Entities are unique IDs (no logic or data themselves)
-  - Components are pure data (no logic)
-  - Systems contain all logic and operate on entities with specific components
-- **SOLID Principles:**
-  - Single Responsibility: Components = data, Systems = logic
-  - Open/Closed: Add new features by composing new components/systems
-  - Inversion of Control: Systems and managers are injected or resolved, not hardwired
-- **Shared Logic:**
-  - All gameplay rules, state, and serialization live in /Shared
-  - Server and client both use the same ECS code for consistency
+- **Entity-Component-System (ECS)**
+  - Entities are IDs; components are pure data; systems implement logic
+- **Shared-first logic**
+  - Simulation rules, replication, and serialization live under `/Shared` and are used by both server and client
+- **Authoritative server**
+  - Server drives simulation and replication; clients predict & reconcile
 
-## 🔄 Replication & Networking
+## Replication & Networking
 
-- **Server:**
-  - Maintains the authoritative ECS world
-  - Serializes and broadcasts snapshots of all replicable entities/components
-  - Receives and validates client intents (input, actions)
-- **Client:**
-  - Receives world snapshots, reconstructs local ECS world
-  - Renders entities using Unity GameObjects
-  - Sends player intents (movement, actions) to server
+- Server produces `WorldDeltaMessage` snapshots/deltas and broadcasts via LiteNetLib
+- Client receives deltas and rebuilds local ECS state, rendering with Unity GameObjects
+- Prediction via `PredictedComponent<T>` + reconciliation
+- On connect, server sends `ConnectedMessage` with initial snapshot and `SettingsMessage`
 
-## 📦 Example: Adding a New Component
+## Prerequisites
 
-1. Define a new data-only struct/class in `/Shared/Components/`:
-   ```csharp
-   public class VelocityComponent : IComponent
-   {
-       public Vector3 Value;
-   }
-   ```
-2. Systems can now query for entities with `VelocityComponent` and update them.
+- .NET 8 SDK
+- Unity (LTS recommended)
+- reportgenerator (for coverage)
+  ```shell
+  dotnet tool install --global dotnet-reportgenerator-globaltool
+  ```
 
-## 🧩 Why This Design?
+## Build & Run (Server)
 
-- **Scalability:** Easily supports hundreds of entities and flexible game rules
-- **Testability:** Core logic is decoupled from Unity and can be unit tested
-- **Maintainability:** New features = new components/systems, not rewrites
-- **Consistency:** Server and client always agree on game rules and state
+- Configuration file: `Server/appsettings.json`
+  - For portable launches, copy next to the server executable. Add this to `Server.csproj` if not present:
+    ```xml
+    <ItemGroup>
+      <None Update="appsettings.json">
+        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      </None>
+    </ItemGroup>
+    ```
+- Load configuration from the executable directory (see `Program.cs`):
+  - Use `AppContext.BaseDirectory` as the configuration base path and `appsettings.json` filename.
+- Run:
+  ```shell
+  dotnet run --project Server
+  ```
 
-## 🧪 Testing & Code Coverage
+## Unity Client: Workflow
 
-This project uses xUnit for unit tests. You can run tests and generate a code coverage report to ensure code quality.
+- Build `Shared` and copy artifacts into Unity after Shared changes:
+  ```shell
+  # From repo root
+  dotnet build
+  dotnet run --project tools/ComponentIdGenerator
+  dotnet build
+  cp ./Shared/bin/Debug/netstandard2.1/Shared.dll ./Client/Assets/
+  cp ./Shared/bin/Debug/netstandard2.1/Shared.pdb ./Client/Assets/
+  ```
+- Launch Unity and press Play; the client connects to the server, consumes replication, and renders entities.
 
-### Prerequisites
+## Testing & Code Coverage
 
-You'll need the `reportgenerator` global tool. Install it with:
-```shell
-dotnet tool install --global dotnet-reportgenerator-globaltool
-```
+- Run tests:
+  ```shell
+  dotnet test
+  ```
+- Coverage report:
+  ```shell
+  ./tools/coverage.sh
+  ```
+  The report is generated in `coveragereport/` and can be opened in a browser.
 
-### Running Tests
+## Component ID Generation
 
-To run all unit tests from the command line, use the standard `dotnet test` command:
-```shell
-dotnet test
-```
+This project uses a code generation step to map components to compact integer IDs for network serialization.
 
-### Generating a Coverage Report
+- Run whenever adding/renaming/removing an `IComponent`:
+  ```shell
+  dotnet build
+  dotnet run --project tools/ComponentIdGenerator
+  dotnet build
+  ```
 
-A helper script is provided to run tests, collect coverage data, and generate a detailed HTML report.
+## Key Systems Overview
 
-To run the script, execute:
-```shell
-./tools/coverage.sh
-```
-
-This will:
-1. Run all tests and collect coverage data.
-2. Generate an HTML report in the `coveragereport/` directory.
-3. Print a link to the local `index.html` file, which you can open in a browser to view the report.
-
-
-## 🚀 Next Steps
-
-- Implement core components (Position, Health, etc.)
-- Build basic systems (Movement, Combat, Respawn)
-- Set up serialization for network replication
-- Integrate with LiteNetLib (server) and Unity (client)
-- Add scene loading from JSON for initial world state
+- **Physics**
+  - `WorldAABBUpdateSystem`: builds world-space AABBs from position/rotation/local bounds
+  - `CollisionSystem`: naïve O(n^2) broad/naïve narrow phase for intersections
+  - `UnitCollisionSystem`: separates overlapping units; ignores entities with `DoesNotOccupySpaceTagComponent`
+  - `VelocitySystem`: integrates velocity using `SimulationSettings.FixedDeltaTime`
+- **Damage & Lifecycle**
+  - `DamageSystem`: applies damage on collision; destroys projectiles on hit
+  - `HealthSystem`: health regeneration (default +5 per run) capped at MaxHealth
+  - `DeathSystem`: converts zero-HP entities into `RespawnComponent` records and destroys originals
+  - `RespawnSystem`: respawns bots/players when `RespawnAtTick` is reached
+- **AI**
+  - `BotAiSystem`: retreat/attack behavior, faces movement direction and target
 
 ---
 
-*This architecture is designed for rapid prototyping and robust multiplayer gameplay, following industry best practices for modern game development.*
+## Roadmap: Toward a Globally Distributed Real‑Time Multiplayer Mobile Game
 
-## 🧬 Component ID Generation
+A pragmatic plan of technical work to evolve this prototype into a planet‑scale, low‑latency mobile title.
 
-This project uses a code generation step to create a static mapping of component types to unique integer IDs. This is essential for efficient network serialization, as it allows us to send a small ID instead of a long type name.
+### 1) Netcode & Simulation
+- **Entity thread safety and performance**: Systems should be given a safely mutable set of entities, and access to an efficient query system. Currently we use many iterations over list copies. We guarantee
+thread safety by running the world simulation on a single thread, but we are also using event handlers
+that are not on the same thread (should be easy to create an event handler that pipes callbacks to the
+same thread as the world simulation).
+- **Interest management**: per‑client relevance filtering, spatial partitioning (grids/quadtrees) to cut bandwidth.
+- **Delta & compression**: component‑level change tracking, bit‑packing, dictionary compression; snapshot interpolation.
+- **Lag compensation**: server‑side rewind for hitscan/projectiles to address mobile/geo latency.
+- **Prediction/reconciliation improvements**: per‑component policies, client drift detection.
 
-### When to Run the Generator
+### 2) Matchmaking Logic
 
-You **must** run the component ID generator whenever you:
-- Add a new `IComponent` type.
-- Rename an existing `IComponent` type.
-- Remove an `IComponent` type.
+**Lobby / Matchmaking**: Add a regional matchmaking system to group up players based on region preference
+or predefined group code
+- **Session management**: admission control, rejoin, migration on node failure.
 
-Failure to do so will result in serialization errors and mismatches between the client and server.
+### 3) Transport, Routing and Infrastructure
+- **World Delta improvements**: Send the deltas via unreliable channel. Use a cursor system
+so clients can ack the last tick received.
+- **Region routing**: geo‑DNS/Anycast to nearest edge; region data centers with automatic failover.
+- **Containerized game servers**: immutable images, config via env/secrets; blue/green & canary deploys.
 
-### How to Run the Generator
+### 4) Data & Persistence
+- **Authoritative storage**: player account, inventory, MMR, cosmetics; cloud K/V + RDBMS for transactions.
+- **State snapshots**: crash‑safe checkpoints for long‑lived sessions; deterministic replays for debugging.
 
-1.  **Build the Solution**: The generator needs to inspect the latest compiled assemblies. Make sure you have recently built the `Shared` and `Server` projects.
-    ```shell
-    dotnet build
-    ```
-2.  **Run the Tool**: Execute the generator tool from the root of the repository:
-    ```shell
-    dotnet run --project tools/ComponentIdGenerator
-    ```
+### 5) Security & Integrity
+- **Authentication**: Third party authentication (Apple / Google, etc..)
+- **Anti‑cheat Reporting**: Repeated server validation reporting, with rate limiting and ip ban.
 
-This will overwrite the `Shared/ECS/Replication/ComponentTypeRegistry.Generated.cs` file with the updated mapping. It is safe to commit this generated file to version control.
+### 6) Observability & SRE
+- **Metrics**: p50/p95/p99 RTT, server tick time, backlog, packet loss, churn; per‑region SLOs.
+- **Tracing & logging**: structured logs, distributed traces across gateway → game server → storage.
+- **Dashboards & alerting**: capacity, errors, hot shards; on‑call runbooks and game‑specific health checks.
 
-## 🎯 Unity Client: Refresh Shared.dll after changes
+### 7) Mobile Readiness
+- **Adaptive networking**: dynamic tick rate, LOD of state, tolerant to backgrounding and packet loss.
+- **Connectivity resilience**: seamless roaming (Wi‑Fi ↔ LTE), auto‑reconnect
+- **Perf & battery**: CPU/GPU frame budgets, GC minimization, asset streaming, shader variants.
 
-After modifying code in `/Shared`, rebuild and copy the artifacts into the Unity client so it picks up the latest logic.
+### 8) Developer Experience
+- **CI/CD**: Deploy to game host Github Actions.
+- **Load testing**: headless bot swarm + chaos (packet loss, latency, disconnect storms).
 
-```shell
-# From repo root
-# 1) Build
-dotnet build
+### 9) Content & Live Ops
+- **Config as data**: live‑tunable gameplay settings, rollout with staged percentages & region gates.
+- **Seasonal systems**: battle pass, events, challenges.
+- **Store & payments**: platform entitlements, fraud prevention, purchase receipts validation.
 
-# 2) Regenerate component IDs (if you've added/renamed/removed components)
-dotnet run --project tools/ComponentIdGenerator
+### 10) Risk & Compliance
+- **Privacy & data residency**: regional storage controls, GDPR/CCPA tooling.
+- **Age gating & chat safety**: moderation, filtering, reporting pipelines.
 
-# 3) Build again to ensure the generated map is included
-dotnet build
+---
 
-# 4) Copy the Shared.dll and PDB into the Unity project's Assets folder
-cp ./Shared/bin/Debug/netstandard2.1/Shared.dll ./Client/Assets/
-cp ./Shared/bin/Debug/netstandard2.1/Shared.pdb ./Client/Assets/
-```
-
-Notes:
-- If Unity is open, it will auto-reimport the updated DLL. If it doesn’t, re-focus the Unity Editor or force a reimport.
-- Adjust `Debug`/`Release` paths as needed depending on your build configuration.
+## Notes & Tips
+- Run the component ID generator whenever you add/rename/remove components (see above).
+- Ensure `appsettings.json` is copied next to the server executable; configure `Program.cs` to read from `AppContext.BaseDirectory` so launch directory doesn’t matter.
+- Keep Unity’s `Shared.dll` in sync after every change under `/Shared`.
