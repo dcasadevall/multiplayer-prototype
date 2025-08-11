@@ -96,6 +96,26 @@
   ```
   The report is generated in `coveragereport/` and can be opened in a browser.
 
+### Code Coverage Overview
+
+- A sample coverage dashboard is available at:
+  
+  ![Code Coverage](docs/Code%20Coverage.jpg)
+  
+- Critical paths covered by current tests:
+  - **ECS Core**: `Entity`, `EntityRegistry`, entity lifecycle events (create/modify/remove)
+  - **Physics**: `VelocitySystem`, `WorldAABBUpdateSystem`, `CollisionSystem`, `UnitCollisionSystem`
+  - **Damage & Lifecycle**:
+    - `DamageSystem` (damage application, projectile destruction)
+    - `HealthSystem` (regen behavior and capping at MaxHealth)
+    - `DeathSystem` (death detection and record creation)
+    - `RespawnSystem` (timed respawn for players/bots)
+  - **Replication**: `BinaryComponentSerializer`, `WorldDeltaMessage`, `EntityDelta`, `ClientReplicationSystem`, integration tests
+  - **Prediction & Tick Sync**: `PredictedComponentExtensions`, `ClientTickSystem`
+  - **Messaging**: message construction/serialization (Connected, Delta, PlayerShot/Movement)
+
+> CI note: On deploy, GitHub Actions runs unit tests and uploads the HTML coverage report from `coveragereport/` as a build artifact.
+
 ## Component ID Generation
 
 This project uses a code generation step to map components to compact integer IDs for network serialization.
