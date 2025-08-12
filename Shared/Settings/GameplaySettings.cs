@@ -104,6 +104,11 @@ namespace Shared.Settings
         public TimeSpan PlayerRespawnTime { get; set; } = TimeSpan.FromSeconds(4);
 
         /// <summary>
+        /// Duration of the invulnerability window after respawn.
+        /// </summary>
+        public TimeSpan PlayerSpawnProtectionDuration { get; set; } = TimeSpan.FromSeconds(4);
+
+        /// <summary>
         /// The center of the player's local bounds.
         /// </summary>
         public Vector3 PlayerLocalBoundsCenter { get; set; } = Vector3.UnitY;

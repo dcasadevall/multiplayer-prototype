@@ -29,8 +29,10 @@ namespace Server.AI
         /// <param name="deltaTime">The time since the last tick.</param>
         public void Update(EntityRegistry registry, uint tickNumber, float deltaTime)
         {
-            var players = registry.With<PlayerTagComponent>().ToList();
             var bots = registry.With<BotTagComponent>().ToList();
+            var players = registry.With<PlayerTagComponent>()
+                .Where(x => !x.Has<InvulnerableComponent>())
+                .ToList();
 
             foreach (var bot in bots)
             {

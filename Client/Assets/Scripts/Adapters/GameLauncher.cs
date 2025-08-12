@@ -47,7 +47,7 @@ namespace Adapters
 
         [SerializeField] 
         private Settings.GameSettings _gameSettings;
-        private NetworkSettings NetworkSettings => _gameSettings.NetworkSettings;
+        private Settings.NetworkClientSettings NetworkSettings => _gameSettings.NetworkSettings;
         
         private IServiceProvider _serviceProvider;
         private IServiceCollection _services;

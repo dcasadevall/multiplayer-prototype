@@ -1,12 +1,14 @@
 using System;
+using UnityEngine;
 
-namespace Shared.Settings
+namespace Adapters.Settings
 {
     /// <summary>
-    /// Network Settings are used in client as ScriptableObject too, so they need to be serializable.
+    /// Because of how appsettings work on .net core, we need to create a separate class for the client
+    /// if we want to serialize it as a ScriptableObject.
     /// </summary>
     [Serializable]
-    public class NetworkSettings
+    public class NetworkClientSettings
     {
         /// <summary>
         /// Server address for the game server.
@@ -14,19 +16,25 @@ namespace Shared.Settings
         /// For fly.io, you need to use "fly-global-services" on the server since,
         /// and [your-app-name].fly.dev on the client side.
         /// </summary>
-        public string ServerAddress { get; set; } = "0.0.0.0";
+        [SerializeField]
+        private string _serverAddress = "multiplayer-prototype.fly.dev";
+        public string ServerAddress => _serverAddress;
 
         /// <summary>
         /// Port number for the server to listen on.
         /// In a real application, this should be configurable and not hardcoded,
         /// but for simplicity, we use a constant here.
         /// </summary>
-        public int ServerPort { get; set; } = 9050;
+        [SerializeField]
+        private int _serverPort = 9050;
+        public int ServerPort => _serverPort;
 
         /// <summary>
         /// Secret key used to connect to the server.
         /// This would be stored as a deployment secret in a real application.
         /// </summary>
-        public string NetSecret { get; set; } = "your-secret-key";
+        [SerializeField]
+        private string _netSecret = "your-secret-key"; 
+        public string NetSecret => _netSecret;
     }
 }

@@ -126,6 +126,16 @@ namespace Shared.ECS.Entities
         }
 
         /// <summary>
+        /// WithAll returns all entities that contain the specified component type.
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <returns></returns>
+        public IEnumerable<Entity> Without<T>() where T : IComponent
+        {
+            return GetAll().Where(entity => !entity.Has<T>());
+        }
+
+        /// <summary>
         /// WithAll returns all entities that contain all the specified component types.
         /// </summary>
         /// <typeparam name="T"></typeparam>

@@ -23,9 +23,10 @@ namespace SharedUnitTests.Damage
             var registry = new EntityRegistry();
             var playerSettings = new PlayerSettings();
             var botSettings = new BotSettings();
+            var simulationSettings = new SimulationSettings();
             var playerFactory = new PlayerFactory(registry, playerSettings);
             var botFactory = new BotFactory(registry, botSettings);
-            var system = new RespawnSystem(botFactory, playerFactory);
+            var system = new RespawnSystem(botFactory, playerFactory, playerSettings, simulationSettings);
 
             var deathRecord = registry.CreateEntity();
             deathRecord.AddComponent(new RespawnComponent { RespawnAtTick = 10 });

@@ -1,7 +1,6 @@
-using Shared.Settings;
 using UnityEngine;
 
-namespace Settings
+namespace Adapters.Settings
 {
     /// <summary>
     /// Game settings contains settings that are not sent by the server.
@@ -10,7 +9,8 @@ namespace Settings
     [CreateAssetMenu(fileName = "GameSettings", menuName = "Settings/Game Settings")]
     public class GameSettings : ScriptableObject
     {
-        [Header("Network Settings")]
-        public NetworkSettings NetworkSettings;
+        [SerializeField]
+        private NetworkClientSettings _networkSettings;
+        public NetworkClientSettings NetworkSettings => _networkSettings;
     }
 }

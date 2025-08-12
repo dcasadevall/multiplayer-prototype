@@ -183,12 +183,12 @@ UDP ports.
     - Run `fly launch --path deploy/fly.toml`. This command will:
         - Read the configuration from the specified path.
         - Prompt you to choose an app name (e.g., `ecs-multiplayer-prototype`) and an organization.
-    - You do not need to set up a Postgres database or deploy immediately when prompted.
+    - You do not need to deploy immediately when prompted.
 
 2. **Deploy**
     - Once the app is launched, deploy it by running:
       ```shell
-      fly deploy -a multiplayer-prototype -c deploy/fly.toml
+      fly deploy -c deploy/fly.toml
       ```
     - `flyctl` will build the Docker image using the settings in `deploy/fly.toml`, push it to Fly.io's registry, and provision a virtual
       machine to run the server.
@@ -210,18 +210,49 @@ This project uses a code generation step to map components to compact integer ID
 
 ## Key Systems Overview
 
-- **Physics**
-    - `WorldAABBUpdateSystem`: builds world-space AABBs from position/rotation/local bounds
-    - `CollisionSystem`: naïve O(n^2) broad/naïve narrow phase for intersections
-    - `UnitCollisionSystem`: separates overlapping units; ignores entities with `DoesNotOccupySpaceTagComponent`
-    - `VelocitySystem`: integrates velocity using `SimulationSettings.FixedDeltaTime`
-- **Damage & Lifecycle**
-    - `DamageSystem`: applies damage on collision; destroys projectiles on hit
-    - `HealthSystem`: health regeneration (default +5 per run) capped at MaxHealth
-    - `DeathSystem`: converts zero-HP entities into `RespawnComponent` records and destroys originals
-    - `RespawnSystem`: respawns bots/players when `RespawnAtTick` is reached
-- **AI**
-    - `BotAiSystem`: retreat/attack behavior, faces movement direction and target
+- Input and Physics (client vs server)
+  - `PredictedPlayerMovementSystem` (client): captures input, predicts local movement, reconciles with the server.
+  - `VelocityPredictionSystem` (client): prediction-friendly velocity handling used on the client.
+  - `VelocitySystem` (server/shared): authoritative physics integration of velocity → position each tick.
+
+- Replication & Tick Sync
+  - `ClientReplicationSystem` (client): applies world deltas to the local ECS world.
+  - `ServerReplicationSystem` (server): tracks changes and broadcasts `WorldDeltaMessage`.
+  - `ClientTickSystem` (client): client tick sync.
+  - `ServerTickSystem` (server): server tick scheduling.
+
+- Networking
+  - `NetLibNetworkingServer` (server): LiteNetLib-based UDP server, sends Connected + world deltas.
+  - `NetLibNetworkingClient` (client): LiteNetLib client, receives snapshots and connects to server.
+  - `PlayerMovementHandler` (server): validates and applies player movement inputs.
+  - `PlayerShotHandler` (server): validates shots and spawns authoritative projectiles.
+
+- Physics
+  - `WorldAABBUpdateSystem` (shared): computes world-space AABB from position/rotation/local bounds.
+  - `CollisionSystem` (shared): naïve O(n^2) pairwise collision detection; provides collision queries.
+  - `UnitCollisionSystem` (shared): resolves overlapping units by separating AABBs; ignores `DoesNotOccupySpaceTagComponent`.
+
+- Damage & Lifecycle
+  - `DamageSystem` (shared): applies damage when projectiles collide; skips invulnerable entities.
+  - `HealthSystem` (shared): simple health regeneration up to MaxHealth.
+  - `DeathSystem` (shared): destroys zero‑HP entities, creates respawn records.
+  - `RespawnSystem` (shared): respawns players/bots at scheduled ticks; applies invulnerability.
+  - `InvulnerabilitySystem` (shared): removes expired `InvulnerableComponent`.
+  - `SelfDestroyingSystem` (shared): destroys entities when TTL elapses.
+
+- AI
+  - `BotAiSystem` (server): pursuit/retreat targeting, respects invulnerability; fires projectiles with cooldown.
+
+- Rendering & UI (client)
+  - `EntityViewSystem` (client): creates and updates Unity GameObjects based on ECS entities.
+  - `WorldAABBRenderSystem` (client): debug draw of world AABBs.
+  - `HealthBarRenderSystem` (client): renders health bars over entities.
+  - `ColorRenderingSystem` (client): applies color to entity views.
+  - `InvulnerableEntityRenderingSystem` (client): visual “blink” for invulnerable entities.
+
+- Input & Shooting (client)
+  - `InputSystem` (client): captures player input per tick.
+  - `PredictedPlayerShotSystem` (client): spawns predicted projectiles and sends `PlayerShotMessage`.
 
 ---
 

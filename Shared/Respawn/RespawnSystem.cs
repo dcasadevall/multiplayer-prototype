@@ -1,9 +1,12 @@
 using System;
 using System.Linq;
+using Shared.Damage;
 using Shared.ECS;
 using Shared.ECS.Archetypes;
 using Shared.ECS.Components;
 using Shared.ECS.Entities;
+using Shared.ECS.Simulation;
+using Shared.Settings;
 
 namespace Shared.Respawn
 {
@@ -16,12 +19,19 @@ namespace Shared.Respawn
     {
         private readonly BotFactory _botFactory;
         private readonly PlayerFactory _playerFactory;
+        private readonly PlayerSettings _playerSettings;
+        private readonly SimulationSettings _simulationSettings;
         private readonly Random _rand = new();
 
-        public RespawnSystem(BotFactory botFactory, PlayerFactory playerFactory)
+        public RespawnSystem(BotFactory botFactory,
+            PlayerFactory playerFactory,
+            PlayerSettings playerSettings,
+            SimulationSettings simulationSettings)
         {
             _botFactory = botFactory;
             _playerFactory = playerFactory;
+            _playerSettings = playerSettings;
+            _simulationSettings = simulationSettings;
         }
 
         /// <summary>
@@ -47,7 +57,14 @@ namespace Shared.Respawn
                 if (entity.Has<PeerComponent>())
                 {
                     var peerId = entity.GetRequired<PeerComponent>().PeerId;
-                    _playerFactory.Create(peerId, spawnPosition);
+                    var player = _playerFactory.Create(peerId, spawnPosition);
+
+                    // Apply invulnerability window on respawn
+                    var protectionTicks = _playerSettings.PlayerSpawnProtectionDuration.ToNumTicks(_simulationSettings.WorldTicksPerSecond);
+                    player.AddComponent(new InvulnerableComponent
+                    {
+                        EndsAtTick = tickNumber + protectionTicks
+                    });
                 }
                 else
                 {

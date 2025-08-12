@@ -1,15 +1,16 @@
 
-# fly.toml app configuration file for ecs-multiplayer-prototype
-# See https://fly.io/docs/reference/configuration/ for information about how to use this file.
-
-app = "ecs-multiplayer-prototype"
-primary_region = "iad" # e.g., Ashburn, VA. Change to your preferred region.
+# Fly.io app configuration
+# Rename the app name below or override with `-a your-app-name` when deploying
+app = "multiplayer-prototype"
+primary_region = "iad"
 
 [build]
   dockerfile = "Dockerfile"
 
-# This service handles HTTP traffic for Fly.io's health checks.
-# Fly will set the PORT env var to 8080. Our HttpHealthServer binds to this port via TCP.
+[env]
+  DOTNET_ENVIRONMENT = "Fly"
+
+# TCP service for health checks (maps 80/443 to internal 8080)
 [[services]]
   protocol = "tcp"
   internal_port = 8080
@@ -22,11 +23,15 @@ primary_region = "iad" # e.g., Ashburn, VA. Change to your preferred region.
     port = 443
     handlers = ["tls", "http"]
 
-# This service exposes the game's UDP port to the public.
-# Our NetLibNetworkingServer also binds to the internal_port (8080) but on the UDP protocol.
+  [services.concurrency]
+    hard_limit = 25
+    soft_limit = 20
+    type = "requests"
+
+# UDP game service; external and internal ports must match
 [[services]]
   protocol = "udp"
-  internal_port = 8080 # The app listens on this port for UDP traffic
+  internal_port = 9050
 
   [[services.ports]]
-    port = 8080 # The public-facing UDP port that clients will connect to.
+    port = 9050

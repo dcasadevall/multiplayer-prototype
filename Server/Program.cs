@@ -22,7 +22,17 @@ namespace Server
                 {
                     var basePath = AppContext.BaseDirectory;
                     configApp.SetBasePath(basePath);
-                    configApp.AddJsonFile("appsettings.json", optional: false);
+                    configApp.AddJsonFile("appsettings.json", optional: false, reloadOnChange: true);
+                    var onFly = !string.IsNullOrEmpty(Environment.GetEnvironmentVariable("FLY_APP_NAME")) ||
+                                string.Equals(Environment.GetEnvironmentVariable("DOTNET_ENVIRONMENT"), "Fly",
+                                    StringComparison.OrdinalIgnoreCase);
+                    if (onFly)
+                    {
+                        Console.WriteLine("Running on Fly.io, loading appsettings.fly.json");
+                        configApp.AddJsonFile("appsettings.fly.json", optional: true, reloadOnChange: true);
+                    }
+
+                    configApp.AddEnvironmentVariables();
                 })
                 .ConfigureServices((hostContext, services) =>
                 {

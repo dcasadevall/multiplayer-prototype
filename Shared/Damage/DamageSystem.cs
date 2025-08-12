@@ -55,7 +55,13 @@ namespace Shared.Damage
                     if (!registry.TryGet(collisionId, out var targetEntity))
                         continue;
 
+                    // Skip damage if target has no health component
+                    // We could technically create a "TakesDamageComponent" too
                     if (!targetEntity.Has<HealthComponent>())
+                        continue;
+
+                    // Skip damage if target is invulnerable
+                    if (targetEntity.Has<InvulnerableComponent>())
                         continue;
 
                     // Prevent friendly fire if not allowed

@@ -1,9 +1,14 @@
 using LiteNetLib;
+using Shared.Damage;
 using Shared.ECS.Archetypes;
 using Shared.ECS.Entities;
 using Shared.Logging;
 using Shared.Respawn;
 using Shared.Scheduling;
+using Shared.ECS.Components;
+using Shared.ECS.Simulation;
+using Shared.ECS.TickSync;
+using Shared.Settings;
 
 namespace Server.Player
 {
@@ -15,6 +20,9 @@ namespace Server.Player
         EventBasedNetListener netEventBroadcaster,
         EntityRegistry entityRegistry,
         PlayerFactory playerFactory,
+        ITickSync tickSync,
+        PlayerSettings playerSettings,
+        SimulationSettings simulationSettings,
         ILogger logger)
         : IInitializable, IDisposable
     {
@@ -51,6 +59,13 @@ namespace Server.Player
             try
             {
                 var playerEntity = playerFactory.Create(peer.Id, new System.Numerics.Vector3(x, y, z));
+
+                // Add spawn invulnerability window
+                var protectionTicks = playerSettings.PlayerSpawnProtectionDuration.ToNumTicks(simulationSettings.WorldTicksPerSecond);
+                playerEntity.AddComponent(new InvulnerableComponent
+                {
+                    EndsAtTick = tickSync.ServerTick + protectionTicks
+                });
                 logger.Info(LoggedFeature.Player, "Created player entity {0} for peer {1}", playerEntity.Id, peer.Id);
             }
             catch (Exception ex)

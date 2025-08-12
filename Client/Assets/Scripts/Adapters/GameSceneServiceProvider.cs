@@ -80,6 +80,7 @@ namespace Adapters
 
             // Rendering stuff
             serviceCollection.AddSingleton<ISystem, ColorRenderingSystem>();
+            serviceCollection.AddSingleton<ISystem, InvulnerableEntityRenderingSystem>();
 
             // Entity lifecycle systems
             serviceCollection.AddSingleton<ISystem, SelfDestroyingSystem>();
