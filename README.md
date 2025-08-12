@@ -118,6 +118,14 @@
 
 ## How to Play
 
+You can play a live version of the game in your browser on Unity Play:
+
+**[️Play Online Now](https://play.unity.com/en/games/c6bef702-ce4b-4eb2-847a-cd47b182e7d6/ecs-multiplayer-prototype)**
+
+The browser client connects to the latest version of the server deployed on Fly.io.
+
+---
+
 ### 1. Playing Locally
 
 1.  **Run the Server**: Open a terminal at the repository root and run the server:

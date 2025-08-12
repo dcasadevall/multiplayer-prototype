@@ -1,4 +1,5 @@
 using System;
+using System.Net;
 using System.Threading;
 using System.Threading.Tasks;
 using LiteNetLib;
@@ -122,7 +123,7 @@ namespace Shared.Networking
             _listener.PeerDisconnectedEvent += OnDisconnected;
 
             _logger.Info($"NetLibNetworkingClient: Connecting to server at {address}:{port}");
-            _netManager.Connect(address, port, netSecret);
+            _netManager.Connect(new IPEndPoint(IPAddress.Parse(address), port), netSecret);
 
             try
             {
