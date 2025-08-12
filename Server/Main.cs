@@ -38,15 +38,6 @@ namespace Server
                         var sceneLoader = _serviceProvider.GetRequiredService<SceneLoader>();
                         var tickSync = _serviceProvider.GetRequiredService<ITickSync>();
                         var networkSettings = _serviceProvider.GetRequiredService<NetworkSettings>();
-
-                        // Handle heroku port. required for heroku deployment.
-                        var envPort = Environment.GetEnvironmentVariable("PORT");
-                        if (!string.IsNullOrEmpty(envPort) && int.TryParse(envPort, out var herokuPort))
-                        {
-                            // Align UDP server port with Heroku assigned port.
-                            networkSettings.ServerPort = herokuPort;
-                        }
-
                         var simulationSettings = _serviceProvider.GetRequiredService<SimulationSettings>();
 
                         // Initialize all initializable services

@@ -116,27 +116,69 @@
 
 > CI note: On deploy, GitHub Actions runs unit tests and uploads the HTML coverage report from `coveragereport/` as a build artifact.
 
-## Deploying to Heroku (Docker)
+## How to Play
 
-This repository includes a Dockerfile for building the server and a helper script to deploy to Heroku using the Container Registry (under `deploy/`).
+### 1. Playing Locally
 
-Prerequisites:
-- Docker installed and running
-- Heroku CLI installed and authenticated (`heroku login`)
-- Set up your docker environment to allow for 4-8GB or the image will run out of memory
+1.  **Run the Server**: Open a terminal at the repository root and run the server:
+    ```shell
+    dotnet run --project Server
+    ```
+    The server will start and listen on `0.0.0.0:8080` by default.
 
-Build and deploy (default app name `ecs-multiplayer-sample`):
-```shell
-# From repo root
-./deploy/heroku-deploy.sh
+2.  **Run the Client**:
+    - Open the `Client` project in the Unity Editor.
+    - Ensure the `Client/Assets/Scripts/Adapters/Settings/GameSettings.asset` is configured to connect to `localhost` on port `8080`.
+    - Press the **Play** button in the editor.
 
-# Or specify a different app name and optional tag
-./deploy/heroku-deploy.sh my-heroku-app v1
-```
+### 2. Playing Remotely (via Fly.io)
 
-Notes:
-- Ensure your Heroku app has the “Container Registry” feature enabled.
-- The server listens on `Settings:NetworkSettings:ServerPort` from `Server/appsettings.json` (default 9050). If the `PORT` environment variable is set (e.g., on Heroku), the server will bind to that value automatically at runtime.
+1.  **Deploy the Server**: Make sure you have deployed the server to Fly.io by following the deployment steps below.
+
+2.  **Configure the Client**:
+    - In the Unity Editor, select the `Client/Assets/Scripts/Adapters/Settings/GameSettings.asset` file.
+    - In the Inspector, change the `Server Address` to your Fly.io app's hostname (e.g., `ecs-multiplayer-prototype.fly.dev`).
+    - Change the `Server Port` to `8080`.
+
+3.  **Run the Client**:
+    - Press the **Play** button in the editor, or build a standalone client and run it.
+
+## Deploying to Fly.io (Docker)
+
+This project is configured for deployment to [Fly.io](https://fly.io), a modern PaaS that supports containerized applications with dedicated UDP ports.
+
+### Prerequisites
+
+- [Docker](https://www.docker.com/products/docker-desktop/) installed and running.
+- The [Fly.io CLI (`flyctl`)](https://fly.io/docs/hands-on/install-flyctl/) installed and authenticated (`flyctl auth login`).
+
+### How It Works
+
+- **`fly.toml`**: This configuration file (in `deploy/fly.toml`) tells Fly.io how to build and run the application. It defines two services:
+    1.  A **TCP service** on ports 80/443 for HTTP/S traffic. This is used by Fly.io for health checks.
+    2.  A **UDP service** on port 8080 (by default) for the game server itself.
+- **`Server/Health/HttpHealthServer.cs`**: A minimal, built-in TCP server that responds to Fly.io's health checks on the port specified by the `PORT` environment variable (which Fly sets to 8080).
+- **`Dockerfile`**: The Dockerfile at `deploy/Dockerfile` builds the server. It's configured to work on both `amd64` (standard cloud servers) and `arm64` (Apple Silicon) architectures for development and deployment.
+
+### Deployment Steps
+
+1.  **Launch the App (First-Time Deploy)**
+    - Navigate to the repository root in your terminal.
+    - Run `fly launch --path deploy/fly.toml`. This command will:
+        - Read the configuration from the specified path.
+        - Prompt you to choose an app name (e.g., `ecs-multiplayer-prototype`) and an organization.
+    - You do not need to set up a Postgres database or deploy immediately when prompted.
+
+2.  **Deploy**
+    - Once the app is launched, deploy it by running:
+      ```shell
+      fly deploy -a multiplayer-prototype -c deploy/fly.toml
+      ```
+    - `flyctl` will build the Docker image using the settings in `deploy/fly.toml`, push it to Fly.io's registry, and provision a virtual machine to run the server.
+
+3.  **Connect Your Client**
+    - After deployment, your game server will be available at `<your-app-name>.fly.dev` on the UDP port defined in `fly.toml` (e.g., 8080).
+    - Update your Unity client's `NetworkSettings` to point to this address and port to connect.
 
 ## Component ID Generation
 

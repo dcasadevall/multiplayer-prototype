@@ -10,16 +10,16 @@ namespace Shared.Settings
     {
         /// <summary>
         /// Server address for the game server.
-        /// In a real application, this would be configurable and not hardcoded (or shared).
+        /// Defaults to 0.0.0.0 to listen on all available network interfaces, which is required for containerized deployments.
         /// </summary>
-        public string ServerAddress = "localhost";
+        public string ServerAddress = "0.0.0.0";
 
         /// <summary>
         /// Port number for the server to listen on.
         /// In a real application, this should be configurable and not hardcoded,
         /// but for simplicity, we use a constant here.
         /// </summary>
-        public int ServerPort = 9050;
+        public int ServerPort = 8080;
 
         /// <summary>
         /// Secret key used to connect to the server.

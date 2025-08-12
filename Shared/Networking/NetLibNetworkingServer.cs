@@ -97,9 +97,7 @@ namespace Shared.Networking
             _eventListener.PeerConnectedEvent += OnPeerConnected;
 
             // Use the address parameter if provided, otherwise fallback to default
-            if (!string.IsNullOrWhiteSpace(address) &&
-                address != "0.0.0.0" &&
-                address != "localhost")
+            if (!string.IsNullOrWhiteSpace(address) && address != "localhost")
             {
                 _netManager.Start(IPAddress.Parse(address), IPAddress.IPv6Any, port);
             }

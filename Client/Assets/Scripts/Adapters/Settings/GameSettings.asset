@@ -12,3 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 1b542f9c3d1954c9c9af5c6d8ee905cf, type: 3}
   m_Name: GameSettings
   m_EditorClassIdentifier: 
+  NetworkSettings:
+    ServerAddress: localhost
+    ServerPort: 8080
+    NetSecret: your-secret-key
