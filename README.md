@@ -82,6 +82,10 @@
   cp ./Shared/bin/Debug/netstandard2.1/Shared.dll ./Client/Assets/
   cp ./Shared/bin/Debug/netstandard2.1/Shared.pdb ./Client/Assets/
   ```
+- Restore Unity NuGet packages (first time or after dependency changes):
+  - Open the Unity project in `Client/`
+  - In the Unity Editor menu, go to `NuGet` → `Restore` (NuGetForUnity)
+  - Wait for packages from `Client/Assets/packages.config` to be restored and imported
 - Launch Unity and press Play; the client connects to the server, consumes replication, and renders entities.
 
 ## Testing & Code Coverage
