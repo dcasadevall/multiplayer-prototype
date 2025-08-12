@@ -136,7 +136,7 @@ The browser client connects to the latest version of the server deployed on Fly.
    ```shell
    dotnet run --project Server
    ```
-   The server will start and listen on `127.0.0.1:8080` by default.
+   The server will start and listen on `0.0.0.0:9050` by default.
 
 2. **Run the Client**:
     - Open the `Client` project in the Unity Editor.
@@ -149,8 +149,7 @@ The browser client connects to the latest version of the server deployed on Fly.
 
 2. **Configure the Client**:
     - In the Unity Editor, select the `Client/Assets/Scripts/Adapters/Settings/GameSettings.asset` file.
-    - In the Inspector, change the `Server Address` to your Fly.io app's hostname (e.g., `ecs-multiplayer-prototype.fly.dev`).
-    - Change the `Server Port` to `8080`.
+    - In the Inspector, change the `Server Address` to your Fly.io app's hostname (e.g.,`multiplayer-prototype.fly.dev`).
 
 3. **Run the Client**:
     - Press the **Play** button in the editor, or build a standalone client and run it.
@@ -168,10 +167,9 @@ UDP ports.
 ### How It Works
 
 - **`fly.toml`**: This configuration file (in `deploy/fly.toml`) tells Fly.io how to build and run the application. It defines two services:
-    1. A **TCP service** on ports 80/443 for HTTP/S traffic. This is used by Fly.io for health checks.
-    2. A **UDP service** on port 8080 (by default) for the game server itself.
-- **`Server/Health/HttpHealthServer.cs`**: A minimal, built-in TCP server that responds to Fly.io's health checks on the port specified by
-  the `PORT` environment variable (which Fly sets to 8080).
+    1. A **TCP service** on ports 8080/443 for HTTP/S traffic. This is used by Fly.io for health checks.
+    2. A **UDP service** on port 9050 (by default) for the game server itself.
+- **`Server/Health/HttpHealthServer.cs`**: A minimal, built-in TCP server that responds to Fly.io's health checks at port 8080.
 - **`Dockerfile`**: The Dockerfile at `deploy/Dockerfile` builds the server. It's configured to work on both `amd64` (standard cloud
   servers) and `arm64` (Apple Silicon) architectures for development and deployment.
 
@@ -193,7 +191,7 @@ UDP ports.
       machine to run the server.
 
 3. **Connect Your Client**
-    - After deployment, your game server will be available at `<your-app-name>.fly.dev` on the UDP port defined in `fly.toml` (e.g., 8080).
+    - After deployment, your game server will be available at `<your-app-name>.fly.dev` on the UDP port defined in `fly.toml` (e.g., 9050).
     - Update your Unity client's `NetworkSettings` to point to this address and port to connect.
 
 ## Component ID Generation

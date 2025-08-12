@@ -48,7 +48,11 @@ namespace Core.Input
 
         private void HandleShotInput()
         {
-            if (!UnityEngine.Input.GetKey(KeyCode.Space)) return;
+            if (!UnityEngine.Input.GetKey(KeyCode.Space) &&
+                !UnityEngine.Input.GetButton("Fire1"))
+            {
+                return; // No shooting input detected
+            }
             
             OnShoot?.Invoke();
         }
