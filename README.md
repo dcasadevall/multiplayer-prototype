@@ -292,6 +292,16 @@ or predefined group code
 
 ---
 
+## Debugging Tools
+
+- Bandwidth/Network Stats Overlay (Client)
+  - In Play Mode, press `F3` to toggle the in-game bandwidth/packet stats overlay.
+  - Useful to validate message rates, snapshot sizes, and client RTT.
+
+- ECS Inspector (Unity Editor)
+  - In the Unity Editor (Play Mode), open: `Debug` → `ECS Inspector`.
+  - Browse entities, components, and systems live while the simulation runs.
+
 ## Notes & Tips
 
 - Run the component ID generator whenever you add/rename/remove components (see above).

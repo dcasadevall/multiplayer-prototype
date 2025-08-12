@@ -43,7 +43,6 @@ namespace Core.Scheduling
         {
             var go = new GameObject("MainThreadScheduler");
             _dispatcher = go.AddComponent<MainThreadDispatcher>();
-            UnityEngine.Object.DontDestroyOnLoad(go);
         }
 
         public IDisposable ScheduleAtFixedRate(Action action, TimeSpan initialDelay, TimeSpan period, CancellationToken cancellationToken = default)
