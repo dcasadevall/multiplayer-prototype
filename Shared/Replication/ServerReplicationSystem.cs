@@ -251,10 +251,11 @@ namespace Shared.Replication
             // Handle created entities
             foreach (var entityId in _createdEntities)
             {
+                // Since the entity was removed and created in the same tick,
+                // we don't send a create or destroy delta for it.
                 if (_removedEntities.Contains(entityId))
                 {
-                    throw new InvalidOperationException(
-                        $"Entity {entityId} cannot be created because it was previously destroyed.");
+                    continue;
                 }
 
                 if (!_entityRegistry.TryGet(entityId, out var entity))
@@ -274,10 +275,11 @@ namespace Shared.Replication
             // Handle destroyed entities
             foreach (var entityId in _removedEntities)
             {
+                // Since the entity was removed and created in the same tick,
+                // we don't send a create or destroy delta for it.
                 if (_createdEntities.Contains(entityId))
                 {
-                    throw new InvalidOperationException(
-                        $"Entity {entityId} cannot be destroyed because it was previously created.");
+                    continue;
                 }
 
                 deltas.Add(new EntityDelta { EntityId = entityId.Value, IsDestroyed = true });

@@ -96,13 +96,42 @@ namespace Shared.Networking
             _eventListener.ConnectionRequestEvent += OnConnectionRequest;
             _eventListener.PeerConnectedEvent += OnPeerConnected;
 
-            // Use the address parameter if provided, otherwise fallback to default
-            if (!string.IsNullOrWhiteSpace(address) && address != "localhost")
+            // Bind strategy:
+            // - If a concrete address/hostname is provided (e.g., "fly-global-services"), resolve and bind to IPv4.
+            // - Otherwise, bind on the default interface by port only.
+            try
             {
-                _netManager.Start(IPAddress.Parse(address), IPAddress.IPv6Any, port);
+                if (!string.IsNullOrWhiteSpace(address) && address != "0.0.0.0" && address != "localhost")
+                {
+                    // Try DNS resolution (supports hostnames like "fly-global-services")
+                    var addresses = Dns.GetHostAddresses(address);
+                    var ipv4 = addresses.FirstOrDefault(ip => ip.AddressFamily == System.Net.Sockets.AddressFamily.InterNetwork);
+                    if (ipv4 != null)
+                    {
+                        _netManager.Start(ipv4, IPAddress.IPv6Any, port);
+                        _logger.Info(LoggedFeature.Networking, "Server bound UDP on {0}:{1}", ipv4, port);
+                    }
+                    else
+                    {
+                        // Fallback to default bind
+                        _netManager.Start(port);
+                        _logger.Warn(LoggedFeature.Networking, "Could not resolve IPv4 for {0}. Bound on default interface for port {1}",
+                            address, port);
+                    }
+                }
+                else
+                {
+                    _netManager.Start(port);
+                    _logger.Info(LoggedFeature.Networking, "Server bound UDP on default interface at port {0}", port);
+                }
             }
-            else
+            catch (Exception ex)
             {
+                _logger.Error(LoggedFeature.Networking,
+                    "Failed to bind on {0}:{1} - {2}. Falling back to default.",
+                    address,
+                    port,
+                    ex.Message);
                 _netManager.Start(port);
             }
 
