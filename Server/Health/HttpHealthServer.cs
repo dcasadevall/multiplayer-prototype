@@ -11,26 +11,23 @@ namespace Server.Health
     /// Minimal TCP HTTP server that binds to the Heroku-assigned PORT to satisfy boot checks.
     /// Also updates <see cref="NetworkSettings.ServerPort"/> to the same value for the UDP server.
     /// </summary>
-    public sealed class HttpHealthServer(NetworkSettings networkSettings, ILogger logger) : IInitializable, IDisposable
+    public sealed class HttpHealthServer(ILogger logger) : IInitializable, IDisposable
     {
+        private const int DefaultPort = 8080;
         private CancellationTokenSource? _cts;
         private Task? _serverTask;
 
         public void Initialize()
         {
             var envPort = Environment.GetEnvironmentVariable("PORT");
-            if (string.IsNullOrEmpty(envPort) || !int.TryParse(envPort, out var herokuPort))
+            if (string.IsNullOrEmpty(envPort) || !int.TryParse(envPort, out var healthPort))
             {
-                logger.Info("No PORT environment variable found; skipping HTTP health server. Using configured UDP port {0}.", networkSettings.ServerPort);
-                return;
+                healthPort = DefaultPort;
             }
 
-            // Align UDP server port with Heroku's assigned port
-            networkSettings.ServerPort = herokuPort;
-
             _cts = new CancellationTokenSource();
-            _serverTask = Task.Run(() => RunListenerAsync(herokuPort, _cts.Token), _cts.Token);
-            logger.Info("HTTP health server started on port {0}", herokuPort);
+            _serverTask = Task.Run(() => RunListenerAsync(healthPort, _cts.Token), _cts.Token);
+            logger.Info("HTTP health server started on port {0}", healthPort);
         }
 
         public void Dispose()

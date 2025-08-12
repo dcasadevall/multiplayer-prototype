@@ -13,6 +13,6 @@ MonoBehaviour:
   m_Name: GameSettings
   m_EditorClassIdentifier: 
   NetworkSettings:
-    ServerAddress: 127.0.0.1
-    ServerPort: 8080
+    ServerAddress: localhost
+    ServerPort: 9050
     NetSecret: your-secret-key

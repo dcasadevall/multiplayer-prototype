@@ -11,6 +11,8 @@ namespace Shared.Settings
         /// <summary>
         /// Server address for the game server.
         /// Defaults to 0.0.0.0 to listen on all available network interfaces, which is required for containerized deployments.
+        /// For fly.io, you need to use "fly-global-services" on the server since,
+        /// and [your-app-name].fly.dev on the client side.
         /// </summary>
         public string ServerAddress = "0.0.0.0";
 
@@ -19,7 +21,7 @@ namespace Shared.Settings
         /// In a real application, this should be configurable and not hardcoded,
         /// but for simplicity, we use a constant here.
         /// </summary>
-        public int ServerPort = 8080;
+        public int ServerPort = 9050;
 
         /// <summary>
         /// Secret key used to connect to the server.
