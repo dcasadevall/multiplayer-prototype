@@ -116,6 +116,11 @@ namespace Shared.Networking
             {
                 if (connectedPeer == null || Equals(peer, connectedPeer))
                 {
+                    // If we are disconnected, we need to clean up the connection
+                    messageReceiver.Dispose();
+                    _pollHandle?.Dispose();
+                    _cts?.Cancel();
+                    _netManager.Stop();
                     tcs.TrySetException(new Exception($"Failed to connect: {info.Reason}"));
                 }
             }
@@ -123,7 +128,15 @@ namespace Shared.Networking
             _listener.PeerDisconnectedEvent += OnDisconnected;
 
             _logger.Info($"NetLibNetworkingClient: Connecting to server at {address}:{port}");
-            _netManager.Connect(new IPEndPoint(IPAddress.Parse(address), port), netSecret);
+            if (address.Equals(IPAddress.Loopback.ToString()))
+            {
+                _netManager.Connect(new IPEndPoint(IPAddress.Parse(address), port), netSecret);
+            }
+            else
+            {
+                _netManager.Connect(address, port, netSecret);
+            }
+
 
             try
             {
