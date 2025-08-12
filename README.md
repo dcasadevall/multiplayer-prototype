@@ -31,11 +31,11 @@
 ## Architectural Principles
 
 - **Entity-Component-System (ECS)**
-  - Entities are IDs; components are pure data; systems implement logic
+    - Entities are IDs; components are pure data; systems implement logic
 - **Shared-first logic**
-  - Simulation rules, replication, and serialization live under `/Shared` and are used by both server and client
+    - Simulation rules, replication, and serialization live under `/Shared` and are used by both server and client
 - **Authoritative server**
-  - Server drives simulation and replication; clients predict & reconcile
+    - Server drives simulation and replication; clients predict & reconcile
 
 ## Replication & Networking
 
@@ -56,16 +56,16 @@
 ## Build & Run (Server)
 
 - Configuration file: `Server/appsettings.json`
-  - For portable launches, copy next to the server executable. Add this to `Server.csproj` if not present:
-    ```xml
-    <ItemGroup>
-      <None Update="appsettings.json">
-        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-      </None>
-    </ItemGroup>
-    ```
+    - For portable launches, copy next to the server executable. Add this to `Server.csproj` if not present:
+      ```xml
+      <ItemGroup>
+        <None Update="appsettings.json">
+          <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        </None>
+      </ItemGroup>
+      ```
 - Load configuration from the executable directory (see `Program.cs`):
-  - Use `AppContext.BaseDirectory` as the configuration base path and `appsettings.json` filename.
+    - Use `AppContext.BaseDirectory` as the configuration base path and `appsettings.json` filename.
 - Run:
   ```shell
   dotnet run --project Server
@@ -99,20 +99,20 @@
 ### Code Coverage Overview
 
 - A sample coverage dashboard is available at:
-  
+
   ![Code Coverage](docs/Code%20Coverage.jpg)
-  
+
 - Critical paths covered by current tests:
-  - **ECS Core**: `Entity`, `EntityRegistry`, entity lifecycle events (create/modify/remove)
-  - **Physics**: `VelocitySystem`, `WorldAABBUpdateSystem`, `CollisionSystem`, `UnitCollisionSystem`
-  - **Damage & Lifecycle**:
-    - `DamageSystem` (damage application, projectile destruction)
-    - `HealthSystem` (regen behavior and capping at MaxHealth)
-    - `DeathSystem` (death detection and record creation)
-    - `RespawnSystem` (timed respawn for players/bots)
-  - **Replication**: `BinaryComponentSerializer`, `WorldDeltaMessage`, `EntityDelta`, `ClientReplicationSystem`, integration tests
-  - **Prediction & Tick Sync**: `PredictedComponentExtensions`, `ClientTickSystem`
-  - **Messaging**: message construction/serialization (Connected, Delta, PlayerShot/Movement)
+    - **ECS Core**: `Entity`, `EntityRegistry`, entity lifecycle events (create/modify/remove)
+    - **Physics**: `VelocitySystem`, `WorldAABBUpdateSystem`, `CollisionSystem`, `UnitCollisionSystem`
+    - **Damage & Lifecycle**:
+        - `DamageSystem` (damage application, projectile destruction)
+        - `HealthSystem` (regen behavior and capping at MaxHealth)
+        - `DeathSystem` (death detection and record creation)
+        - `RespawnSystem` (timed respawn for players/bots)
+    - **Replication**: `BinaryComponentSerializer`, `WorldDeltaMessage`, `EntityDelta`, `ClientReplicationSystem`, integration tests
+    - **Prediction & Tick Sync**: `PredictedComponentExtensions`, `ClientTickSystem`
+    - **Messaging**: message construction/serialization (Connected, Delta, PlayerShot/Movement)
 
 > CI note: On deploy, GitHub Actions runs unit tests and uploads the HTML coverage report from `coveragereport/` as a build artifact.
 
@@ -128,32 +128,33 @@ The browser client connects to the latest version of the server deployed on Fly.
 
 ### 1. Playing Locally
 
-1.  **Run the Server**: Open a terminal at the repository root and run the server:
-    ```shell
-    dotnet run --project Server
-    ```
-    The server will start and listen on `0.0.0.0:8080` by default.
+1. **Run the Server**: Open a terminal at the repository root and run the server:
+   ```shell
+   dotnet run --project Server
+   ```
+   The server will start and listen on `127.0.0.1:8080` by default.
 
-2.  **Run the Client**:
+2. **Run the Client**:
     - Open the `Client` project in the Unity Editor.
     - Ensure the `Client/Assets/Scripts/Adapters/Settings/GameSettings.asset` is configured to connect to `localhost` on port `8080`.
     - Press the **Play** button in the editor.
 
 ### 2. Playing Remotely (via Fly.io)
 
-1.  **Deploy the Server**: Make sure you have deployed the server to Fly.io by following the deployment steps below.
+1. **Deploy the Server**: Make sure you have deployed the server to Fly.io by following the deployment steps below.
 
-2.  **Configure the Client**:
+2. **Configure the Client**:
     - In the Unity Editor, select the `Client/Assets/Scripts/Adapters/Settings/GameSettings.asset` file.
     - In the Inspector, change the `Server Address` to your Fly.io app's hostname (e.g., `ecs-multiplayer-prototype.fly.dev`).
     - Change the `Server Port` to `8080`.
 
-3.  **Run the Client**:
+3. **Run the Client**:
     - Press the **Play** button in the editor, or build a standalone client and run it.
 
 ## Deploying to Fly.io (Docker)
 
-This project is configured for deployment to [Fly.io](https://fly.io), a modern PaaS that supports containerized applications with dedicated UDP ports.
+This project is configured for deployment to [Fly.io](https://fly.io), a modern PaaS that supports containerized applications with dedicated
+UDP ports.
 
 ### Prerequisites
 
@@ -163,28 +164,31 @@ This project is configured for deployment to [Fly.io](https://fly.io), a modern 
 ### How It Works
 
 - **`fly.toml`**: This configuration file (in `deploy/fly.toml`) tells Fly.io how to build and run the application. It defines two services:
-    1.  A **TCP service** on ports 80/443 for HTTP/S traffic. This is used by Fly.io for health checks.
-    2.  A **UDP service** on port 8080 (by default) for the game server itself.
-- **`Server/Health/HttpHealthServer.cs`**: A minimal, built-in TCP server that responds to Fly.io's health checks on the port specified by the `PORT` environment variable (which Fly sets to 8080).
-- **`Dockerfile`**: The Dockerfile at `deploy/Dockerfile` builds the server. It's configured to work on both `amd64` (standard cloud servers) and `arm64` (Apple Silicon) architectures for development and deployment.
+    1. A **TCP service** on ports 80/443 for HTTP/S traffic. This is used by Fly.io for health checks.
+    2. A **UDP service** on port 8080 (by default) for the game server itself.
+- **`Server/Health/HttpHealthServer.cs`**: A minimal, built-in TCP server that responds to Fly.io's health checks on the port specified by
+  the `PORT` environment variable (which Fly sets to 8080).
+- **`Dockerfile`**: The Dockerfile at `deploy/Dockerfile` builds the server. It's configured to work on both `amd64` (standard cloud
+  servers) and `arm64` (Apple Silicon) architectures for development and deployment.
 
 ### Deployment Steps
 
-1.  **Launch the App (First-Time Deploy)**
+1. **Launch the App (First-Time Deploy)**
     - Navigate to the repository root in your terminal.
     - Run `fly launch --path deploy/fly.toml`. This command will:
         - Read the configuration from the specified path.
         - Prompt you to choose an app name (e.g., `ecs-multiplayer-prototype`) and an organization.
     - You do not need to set up a Postgres database or deploy immediately when prompted.
 
-2.  **Deploy**
+2. **Deploy**
     - Once the app is launched, deploy it by running:
       ```shell
       fly deploy -a multiplayer-prototype -c deploy/fly.toml
       ```
-    - `flyctl` will build the Docker image using the settings in `deploy/fly.toml`, push it to Fly.io's registry, and provision a virtual machine to run the server.
+    - `flyctl` will build the Docker image using the settings in `deploy/fly.toml`, push it to Fly.io's registry, and provision a virtual
+      machine to run the server.
 
-3.  **Connect Your Client**
+3. **Connect Your Client**
     - After deployment, your game server will be available at `<your-app-name>.fly.dev` on the UDP port defined in `fly.toml` (e.g., 8080).
     - Update your Unity client's `NetworkSettings` to point to this address and port to connect.
 
@@ -202,17 +206,17 @@ This project uses a code generation step to map components to compact integer ID
 ## Key Systems Overview
 
 - **Physics**
-  - `WorldAABBUpdateSystem`: builds world-space AABBs from position/rotation/local bounds
-  - `CollisionSystem`: naïve O(n^2) broad/naïve narrow phase for intersections
-  - `UnitCollisionSystem`: separates overlapping units; ignores entities with `DoesNotOccupySpaceTagComponent`
-  - `VelocitySystem`: integrates velocity using `SimulationSettings.FixedDeltaTime`
+    - `WorldAABBUpdateSystem`: builds world-space AABBs from position/rotation/local bounds
+    - `CollisionSystem`: naïve O(n^2) broad/naïve narrow phase for intersections
+    - `UnitCollisionSystem`: separates overlapping units; ignores entities with `DoesNotOccupySpaceTagComponent`
+    - `VelocitySystem`: integrates velocity using `SimulationSettings.FixedDeltaTime`
 - **Damage & Lifecycle**
-  - `DamageSystem`: applies damage on collision; destroys projectiles on hit
-  - `HealthSystem`: health regeneration (default +5 per run) capped at MaxHealth
-  - `DeathSystem`: converts zero-HP entities into `RespawnComponent` records and destroys originals
-  - `RespawnSystem`: respawns bots/players when `RespawnAtTick` is reached
+    - `DamageSystem`: applies damage on collision; destroys projectiles on hit
+    - `HealthSystem`: health regeneration (default +5 per run) capped at MaxHealth
+    - `DeathSystem`: converts zero-HP entities into `RespawnComponent` records and destroys originals
+    - `RespawnSystem`: respawns bots/players when `RespawnAtTick` is reached
 - **AI**
-  - `BotAiSystem`: retreat/attack behavior, faces movement direction and target
+    - `BotAiSystem`: retreat/attack behavior, faces movement direction and target
 
 ---
 
@@ -221,10 +225,12 @@ This project uses a code generation step to map components to compact integer ID
 A pragmatic plan of technical work to evolve this prototype into a planet‑scale, low‑latency mobile title.
 
 ### 1) Netcode & Simulation
-- **Entity thread safety and performance**: Systems should be given a safely mutable set of entities, and access to an efficient query system. Currently we use many iterations over list copies. We guarantee
-thread safety by running the world simulation on a single thread, but we are also using event handlers
-that are not on the same thread (should be easy to create an event handler that pipes callbacks to the
-same thread as the world simulation).
+
+- **Entity thread safety and performance**: Systems should be given a safely mutable set of entities, and access to an efficient query
+  system. Currently we use many iterations over list copies. We guarantee
+  thread safety by running the world simulation on a single thread, but we are also using event handlers
+  that are not on the same thread (should be easy to create an event handler that pipes callbacks to the
+  same thread as the world simulation).
 - **Interest management**: per‑client relevance filtering, spatial partitioning (grids/quadtrees) to cut bandwidth.
 - **Delta & compression**: component‑level change tracking, bit‑packing, dictionary compression; snapshot interpolation.
 - **Lag compensation**: server‑side rewind for hitscan/projectiles to address mobile/geo latency.
@@ -234,48 +240,59 @@ same thread as the world simulation).
 
 **Lobby / Matchmaking**: Add a regional matchmaking system to group up players based on region preference
 or predefined group code
+
 - **Session management**: admission control, rejoin, migration on node failure.
 
 ### 3) Transport, Routing and Infrastructure
+
 - **World Delta improvements**: Send the deltas via unreliable channel. Use a cursor system
-so clients can ack the last tick received.
+  so clients can ack the last tick received.
 - **Region routing**: geo‑DNS/Anycast to nearest edge; region data centers with automatic failover.
 - **Containerized game servers**: immutable images, config via env/secrets; blue/green & canary deploys.
 
 ### 4) Data & Persistence
+
 - **Authoritative storage**: player account, inventory, MMR, cosmetics; cloud K/V + RDBMS for transactions.
 - **State snapshots**: crash‑safe checkpoints for long‑lived sessions; deterministic replays for debugging.
 
 ### 5) Security & Integrity
+
 - **Authentication**: Third party authentication (Apple / Google, etc..)
 - **Anti‑cheat Reporting**: Repeated server validation reporting, with rate limiting and ip ban.
 
 ### 6) Observability & SRE
+
 - **Metrics**: p50/p95/p99 RTT, server tick time, backlog, packet loss, churn; per‑region SLOs.
 - **Tracing & logging**: structured logs, distributed traces across gateway → game server → storage.
 - **Dashboards & alerting**: capacity, errors, hot shards; on‑call runbooks and game‑specific health checks.
 
 ### 7) Mobile Readiness
+
 - **Adaptive networking**: dynamic tick rate, LOD of state, tolerant to backgrounding and packet loss.
 - **Connectivity resilience**: seamless roaming (Wi‑Fi ↔ LTE), auto‑reconnect
 - **Perf & battery**: CPU/GPU frame budgets, GC minimization, asset streaming, shader variants.
 
 ### 8) Developer Experience
+
 - **CI/CD**: Deploy to game host Github Actions.
 - **Load testing**: headless bot swarm + chaos (packet loss, latency, disconnect storms).
 
 ### 9) Content & Live Ops
+
 - **Config as data**: live‑tunable gameplay settings, rollout with staged percentages & region gates.
 - **Seasonal systems**: battle pass, events, challenges.
 - **Store & payments**: platform entitlements, fraud prevention, purchase receipts validation.
 
 ### 10) Risk & Compliance
+
 - **Privacy & data residency**: regional storage controls, GDPR/CCPA tooling.
 - **Age gating & chat safety**: moderation, filtering, reporting pipelines.
 
 ---
 
 ## Notes & Tips
+
 - Run the component ID generator whenever you add/rename/remove components (see above).
-- Ensure `appsettings.json` is copied next to the server executable; configure `Program.cs` to read from `AppContext.BaseDirectory` so launch directory doesn’t matter.
+- Ensure `appsettings.json` is copied next to the server executable; configure `Program.cs` to read from `AppContext.BaseDirectory` so
+  launch directory doesn’t matter.
 - Keep Unity’s `Shared.dll` in sync after every change under `/Shared`.
