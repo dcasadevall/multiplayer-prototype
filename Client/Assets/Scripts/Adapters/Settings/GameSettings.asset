@@ -13,6 +13,6 @@ MonoBehaviour:
   m_Name: GameSettings
   m_EditorClassIdentifier: 
   NetworkSettings:
-    ServerAddress: 127.0.0.1
+    ServerAddress: multiplayer-prototype.fly.dev
     ServerPort: 9050
     NetSecret: your-secret-key

@@ -86,7 +86,9 @@
   - Open the Unity project in `Client/`
   - In the Unity Editor menu, go to `NuGet` → `Restore` (NuGetForUnity)
   - Wait for packages from `Client/Assets/packages.config` to be restored and imported
-- Launch Unity and press Play; the client connects to the server, consumes replication, and renders entities.
+- Launch Unity and press Play; then:
+  - Click **Start Local** to connect to your locally running server.
+  - Click **Start Remote** to connect to the default remote (`multiplayer-prototype.fly.dev`). No manual address changes needed.
 
 ## Testing & Code Coverage
 
@@ -139,9 +141,9 @@ The browser client connects to the latest version of the server deployed on Fly.
    The server will start and listen on `0.0.0.0:9050` by default.
 
 2. **Run the Client**:
-    - Open the `Client` project in the Unity Editor.
-    - Ensure the `Client/Assets/Scripts/Adapters/Settings/GameSettings.asset` is configured to connect to `127.0.0.1` on port `9050`.
-    - Press the **Play** button in the editor.
+   - Open the `Client` project in the Unity Editor.
+   - Press the **Play** button in the editor.
+   - Click **Start Local** to connect to your local server (no manual address changes required).
 
 ### 2. Playing Remotely (via Fly.io)
 
@@ -150,9 +152,10 @@ The browser client connects to the latest version of the server deployed on Fly.
 2. **Configure the Client**:
     - In the Unity Editor, select the `Client/Assets/Scripts/Adapters/Settings/GameSettings.asset` file.
     - In the Inspector, change the `Server Address` to your Fly.io app's hostname (e.g.,`multiplayer-prototype.fly.dev`).
+    - Press the **Start Local** button on game start.
 
 3. **Run the Client**:
-    - Press the **Play** button in the editor, or build a standalone client and run it.
+    - Press the **Start Remote** button on game start.
 
 ## Deploying to Fly.io (Docker)
 

@@ -116,13 +116,15 @@ namespace Adapters
         /// This method should be called by the UI (e.g., Splash Screen) after the user
         /// initiates the login/connect action.
         /// </summary>
-        public async Task StartGameAsync()
+        public async Task StartGameAsync(bool remotePlay)
         {
             // 1. Connect to the server
             var client = _serviceProvider.GetRequiredService<INetworkingClient>();
             
             _logger.Info(LoggedFeature.Networking, "Connecting to server...");
-            _connection = await client.ConnectAsync(NetworkSettings.ServerAddress, 
+            var serverAddress = remotePlay ? NetworkSettings.ServerAddress : "127.0.0.1";
+            
+            _connection = await client.ConnectAsync(serverAddress, 
                 NetworkSettings.ServerPort, 
                 NetworkSettings.NetSecret);
             
