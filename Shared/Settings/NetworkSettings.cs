@@ -10,8 +10,9 @@ namespace Shared.Settings
     {
         /// <summary>
         /// Server address for the game server.
+        /// Defaults to 0.0.0.0 to listen on all available network interfaces, which is required for containerized deployments.
         /// </summary>
-        public string ServerAddress = "127.0.0.1";
+        public string ServerAddress = "0.0.0.0";
 
         /// <summary>
         /// Port number for the server to listen on.
