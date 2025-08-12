@@ -140,7 +140,7 @@ The browser client connects to the latest version of the server deployed on Fly.
 
 2. **Run the Client**:
     - Open the `Client` project in the Unity Editor.
-    - Ensure the `Client/Assets/Scripts/Adapters/Settings/GameSettings.asset` is configured to connect to `localhost` on port `8080`.
+    - Ensure the `Client/Assets/Scripts/Adapters/Settings/GameSettings.asset` is configured to connect to `127.0.0.1` on port `9050`.
     - Press the **Play** button in the editor.
 
 ### 2. Playing Remotely (via Fly.io)

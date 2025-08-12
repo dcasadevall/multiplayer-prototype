@@ -52,7 +52,7 @@ private void Awake()
 
 Configure the server connection in the Unity Inspector:
 
-- **Server Address**: The server's IP address (default: "localhost")
+- **Server Address**: The server's IP address (default: "127.0.0.1")
 - **Server Port**: The server's port number (default: 9050)
 - **Ticks Per Second**: ECS world update rate (default: 30)
 
