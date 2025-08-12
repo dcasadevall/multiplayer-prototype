@@ -2,11 +2,9 @@ using System;
 using System.Net;
 using System.Threading;
 using LiteNetLib;
-using Shared.ECS.TickSync;
 using Shared.Logging;
 using Shared.Networking.Messages;
 using Shared.Scheduling;
-using Shared.ECS.Entities;
 using System.Linq;
 using Shared.Replication;
 using Shared.Settings;
@@ -101,7 +99,8 @@ namespace Shared.Networking
             // - Otherwise, bind on the default interface by port only.
             try
             {
-                if (!string.IsNullOrWhiteSpace(address) && address != "0.0.0.0" && address != "localhost")
+                _logger.Info(LoggedFeature.Networking, "Starting server on {0}:{1}", address, port);
+                if (!address.Equals(IPAddress.Loopback.ToString()) && address != "0.0.0.0")
                 {
                     // Try DNS resolution (supports hostnames like "fly-global-services")
                     var addresses = Dns.GetHostAddresses(address);
