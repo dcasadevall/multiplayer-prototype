@@ -7,6 +7,7 @@ using Shared.ECS;
 using Shared.ECS.Entities;
 using Shared.ECS.TickSync;
 using Shared.Input;
+using Shared.Logging;
 using Shared.Networking;
 using Shared.Networking.Messages;
 using Shared.Physics;
@@ -20,7 +21,7 @@ using Quaternion = System.Numerics.Quaternion;
 namespace Core.Input
 {
     /// <summary>
-    /// Handles local player movement including input capture, prediction, and reconciliation.
+    /// Handles local player movement including input capture, prediction, smoothing and reconciliation.
     /// Only operates on the local player entity with PlayerTagComponent.
     /// Sends the intended movement input to the server for authoritative processing.
     /// </summary>
@@ -36,16 +37,23 @@ namespace Core.Input
         
         private readonly Dictionary<uint, PredictedState> _stateBuffer = new();
 
-        // How far off the predicted position can be before we need to reconcile with the server
-        private const float ReconciliationThreshold = 0.1f;
-        // How quickly to correct the error. Lower is smoother
-        private const float ReconciliationSmoothingFactor = 0.15f;
+        // Threshold to trigger reconciliation against server state (meters)
+        private const float ReconciliationThreshold = 0.10f;
 
-        // Stores the positional error that needs to be smoothed out.
+        // Tighter epsilon to early-out tiny corrections (meters)
+        private const float ReconcileEpsilon = 0.02f;
+
+        // Exponential smoothing constant (higher = faster decay of visual error)
+        private const float ReconciliationLambda = 10f;
+
+        // Visual-only reconciliation error that we decay over time
         private Vector3 _reconciliationError = Vector3.Zero;
-        
-        // Store last input sent to the server to avoid sending duplicate inputs
+
+        // Avoid sending redundant input states
         private Vector2 _lastMovementSent = Vector2.Zero;
+
+        // Track the furthest tick we've actually predicted to; used to bound resimulation
+        private uint _lastPredictedTick;
 
         private struct PredictedState
         {
@@ -74,21 +82,18 @@ namespace Core.Input
         public void Update(EntityRegistry registry, uint tickNumber, float deltaTime)
         {
             var localPlayer = registry.GetLocalPlayerEntity(_localPeerId);
-
             if (localPlayer == null) return;
-            
-            // Send any new movement input to the server
-            // This could be done in a separate system,
-            // but we handle it here to keep all the local movement logic together.
+
+            // 1) Send input delta to server
             SendMovementInputIfNecessary(tickNumber);
 
-            // Apply prediction and smoothing
-            ProcessLocalPlayerMovement(localPlayer, tickNumber, deltaTime);
+            // 2) Predict locally using Δt to mirror server integration exactly
+            ProcessLocalPlayerMovement(localPlayer, tickNumber);
 
-            // Check for reconciliation against server state
+            // 3) Reconcile against server authoritative state (when available)
             CheckReconciliation(localPlayer, tickNumber);
 
-            // Clean up old states from the buffer
+            // 4) Keep only a sliding window around last known server tick
             PruneOldStates(_tickSync.ServerTick);
         }
 
@@ -102,50 +107,55 @@ namespace Core.Input
             
             // Only send an update to the server if the input state has actually changed.
             if (moveDirection == _lastMovementSent) return;
-            
-            var playerMovementMsg = new PlayerMovementMessage
+
+            var msg = new PlayerMovementMessage
             {
                 ClientTick = clientTick,
                 MoveDirection = moveDirection
             };
-            
-            // Send the new input state to the server.
-            _messageSender.SendMessageToServer(MessageType.PlayerMovement, playerMovementMsg);
 
-            // Update the last sent move direction.
+            _messageSender.SendMessageToServer(MessageType.PlayerMovement, msg);
             _lastMovementSent = moveDirection;
         }
 
-        private void ProcessLocalPlayerMovement(Entity localPlayer, uint currentTick, float deltaTime)
+        private void ProcessLocalPlayerMovement(Entity localPlayer, uint currentTick)
         {
             var position = localPlayer.GetRequired<PositionComponent>();
             var rotation = localPlayer.GetRequired<RotationComponent>();
 
+            // Get last predicted state; if none, seed from current components
             var lastState = _stateBuffer.TryGetValue(currentTick - 1, out var state)
                 ? state
                 : new PredictedState { Position = position.Value, Rotation = rotation.Value };
 
-            var newVelocity = Vector3.Zero;
+            Vector3 velocity = Vector3.Zero;
             var newRotation = lastState.Rotation;
 
-            if (_inputListener.TryGetMovementAtTick(currentTick, out var moveDirection) && moveDirection.LengthSquared() > 0.1f)
+            if (_inputListener.TryGetMovementAtTick(currentTick, out var rawDir) &&
+                rawDir.LengthSquared() > 0.01f)
             {
-                newVelocity = new Vector3(moveDirection.X, 0, moveDirection.Y) * _playerSettings.PlayerSpeed;
-                newRotation = Quaternion.CreateFromYawPitchRoll(MathF.Atan2(moveDirection.X, moveDirection.Y), 0, 0);
+                var dir = Vector2.Normalize(rawDir);
+                
+                // Convention: X = right, Z = forward (Unity world). Map (x,y) -> (x,0,z=y).
+                velocity = new Vector3(dir.X, 0f, dir.Y) * _playerSettings.PlayerSpeed;
+                newRotation = Quaternion.CreateFromYawPitchRoll(MathF.Atan2(dir.X, dir.Y), 0f, 0f);
             }
 
-            // 1. Calculate the uncorrected prediction for this tick.
-            var newPosition = lastState.Position + newVelocity * deltaTime;
+            // Use fixed delta to match server exactly
+            float dt = (float)_simulationSettings.FixedDeltaTime.TotalSeconds;
+            var newPosition = lastState.Position + velocity * dt;
 
             // Store this pure state in our history.
             _stateBuffer[currentTick] = new PredictedState { Position = newPosition, Rotation = newRotation };
+            _lastPredictedTick = Math.Max(currentTick, _lastPredictedTick);
 
-            // 2. Smoothly reduce any existing reconciliation error each frame.
-            _reconciliationError = Vector3.Lerp(_reconciliationError, Vector3.Zero, ReconciliationSmoothingFactor);
+            // Exponential smoothing of visual reconciliation error; rate independent of tick rate
+            float alpha = 1f - MathF.Exp(-ReconciliationLambda * dt);
+            _reconciliationError = Vector3.Lerp(_reconciliationError, Vector3.Zero, alpha);
 
-            // 3. The final visual position is our pure prediction plus the diminishing error.
+            // Write visual components (predicted + decaying error)
             localPlayer.AddOrReplaceComponent(new PositionComponent { Value = newPosition + _reconciliationError });
-            localPlayer.AddOrReplaceComponent(new VelocityComponent { Value = newVelocity });
+            localPlayer.AddOrReplaceComponent(new VelocityComponent { Value = velocity });
             localPlayer.AddOrReplaceComponent(new RotationComponent { Value = newRotation });
         }
 
@@ -154,84 +164,96 @@ namespace Core.Input
             var predictedComponent = localPlayer.GetRequired<PredictedComponent<PositionComponent>>();
             if (!predictedComponent.HasServerValue) return;
 
-            // The server tick that this position data represents
+            // The server tick is the authoritative tick for this reconciliation check
+            // Since the replication tick rate is == to the simulation tick rate for this sample.
             uint serverDataTick = _tickSync.ServerTick;
-    
-            // We need to have a predicted state for this tick to compare against
-            if (!_stateBuffer.TryGetValue(serverDataTick, out var predictedStateOnThatTick)) return;
 
-            var serverPosition = predictedComponent.ServerValue!.Value;
-            var error = Vector3.Distance(predictedStateOnThatTick.Position, serverPosition);
-
-            if (error > ReconciliationThreshold)
+            if (!_stateBuffer.TryGetValue(serverDataTick, out var predictedAtServerTick))
             {
-                _logger.Debug($"Reconciliation needed at tick {serverDataTick}. Error: {error:F3}");
+                // We don't have history for that tick; nothing to compare against.
+                predictedComponent.ServerValue = null;
+                return;
+            }
 
-                // Store current visual position before correction
-                var currentVisualPosition = localPlayer.GetRequired<PositionComponent>().Value;
+            var serverPos = predictedComponent.ServerValue!.Value;
+            var errorSq = Vector3.DistanceSquared(predictedAtServerTick.Position, serverPos);
 
-                // Correct and re-simulate using the same deltaTime as original predictions
-                CorrectStateAndResimulate(serverDataTick, serverPosition);
+            if (errorSq >= ReconciliationThreshold * ReconciliationThreshold)
+            {
+                _logger.Debug(LoggedFeature.Prediction, $"Reconciliation at tick {serverDataTick}. Error={MathF.Sqrt(errorSq):F3}m");
+                var currentVisual = localPlayer.GetRequired<PositionComponent>().Value;
+                CorrectStateAndResimulate(serverDataTick, serverPos);
 
-                // Calculate new error after re-simulation
-                if (_stateBuffer.TryGetValue(currentTick, out var correctedCurrentState))
+                if (_stateBuffer.TryGetValue(currentTick, out var correctedNow))
                 {
-                    _reconciliationError = currentVisualPosition - correctedCurrentState.Position;
+                    // Visual error is the delta from what we were showing to the corrected prediction
+                    _reconciliationError = currentVisual - correctedNow.Position;
                 }
             }
-            
-            // Clear the server value after processing
+
+            // Consume server value
             predictedComponent.ServerValue = null;
         }
 
         private void CorrectStateAndResimulate(uint authoritativeTick, Vector3 authoritativePosition)
         {
-            // Keep the originally predicted rotation for the authoritative tick, since the server doesn't correct it
-            var authoritativeRotation = _stateBuffer.TryGetValue(authoritativeTick, out var oldState)
+            // Early-out on tiny corrections
+            if (_stateBuffer.TryGetValue(authoritativeTick, out var before) &&
+                Vector3.DistanceSquared(before.Position, authoritativePosition) < ReconcileEpsilon * ReconcileEpsilon)
+            {
+                return;
+            }
+
+            // Keep client-rotation at that tick (server isn't correcting rotation)
+            var keepRotation = _stateBuffer.TryGetValue(authoritativeTick, out var oldState)
                 ? oldState.Rotation
                 : Quaternion.Identity;
-            
-            // Correct the state at the authoritative tick with server data
+
             _stateBuffer[authoritativeTick] = new PredictedState
             {
                 Position = authoritativePosition,
-                Rotation = authoritativeRotation
+                Rotation = keepRotation
             };
 
-            // Re-simulate from the corrected tick forward to the current client tick
-            for (uint tick = authoritativeTick + 1; tick <= _tickSync.ClientTick; tick++)
+            // Only resim ticks we had actually predicted (avoid fabricating future ticks)
+            uint resimEnd = _lastPredictedTick;
+            if (authoritativeTick >= resimEnd)
             {
-                var previousState = _stateBuffer[tick - 1];
-                var newVelocity = Vector3.Zero;
-                var newRotation = previousState.Rotation;
+                return;
+            }
 
-                // Apply the historical input for this tick
-                if (_inputListener.TryGetMovementAtTick(tick, out var moveDirection) && moveDirection.LengthSquared() > 0.1f)
+            float dt = (float)_simulationSettings.FixedDeltaTime.TotalSeconds;
+
+            for (uint tick = authoritativeTick + 1; tick <= resimEnd; tick++)
+            {
+                if (!_stateBuffer.TryGetValue(tick - 1, out var prev))
                 {
-                    newVelocity = new Vector3(moveDirection.X, 0, moveDirection.Y) * _playerSettings.PlayerSpeed;
-                    newRotation = Quaternion.CreateFromYawPitchRoll(MathF.Atan2(moveDirection.X, moveDirection.Y), 0, 0);
+                    // Missing history (pruned or arrived late) — stop here safely
+                    break;
                 }
 
-                // Use FixedDeltaTime to ensure consistent simulation
-                var newPosition = previousState.Position + newVelocity * (float)_simulationSettings.FixedDeltaTime.TotalSeconds;
-                _stateBuffer[tick] = new PredictedState
+                Vector3 velocity = Vector3.Zero;
+                var rot = prev.Rotation;
+
+                if (_inputListener.TryGetMovementAtTick(tick, out var rawDir) &&
+                    rawDir.LengthSquared() > 0.01f)
                 {
-                    Position = newPosition,
-                    Rotation = newRotation
-                };
+                    var dir = Vector2.Normalize(rawDir);
+                    velocity = new Vector3(dir.X, 0f, dir.Y) * _playerSettings.PlayerSpeed;
+                    rot = Quaternion.CreateFromYawPitchRoll(MathF.Atan2(dir.X, dir.Y), 0f, 0f);
+                }
+
+                var pos = prev.Position + velocity * dt;
+                _stateBuffer[tick] = new PredictedState { Position = pos, Rotation = rot };
             }
         }
 
         private void PruneOldStates(uint lastServerTick)
         {
-            // Keep a small buffer of states before the last known server tick
-            var cutoffTick = lastServerTick > 20 ? lastServerTick - 20 : 0;
-            var oldKeys = _stateBuffer.Keys.Where(k => k < cutoffTick).ToList();
-
-            foreach (var key in oldKeys)
-            {
-                _stateBuffer.Remove(key);
-            }
+            // Keep a small lookback window behind the latest server tick (e.g., 20 ticks)
+            uint keepFrom = lastServerTick > 20 ? lastServerTick - 20 : 0;
+            var toRemove = _stateBuffer.Keys.Where(k => k < keepFrom).ToList();
+            toRemove.ForEach(k => _stateBuffer.Remove(k));
         }
     }
 }
